@@ -1,0 +1,71 @@
+spring:
+
+  server: 8080
+  application:
+    name: batch-scheduler-service
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/batch_scheduler
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 5
+
+  jpa:
+    hibernate:
+      ddl-auto: update  # O "validate" en producción
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        jdbc:
+          batch_size: 50
+        default_schema: public
+        # Desactivar validación de tipo estricta (si necesitas convivencia temporal)
+        # type: jsonb
+        # use_jdbc_metadata_defaults: false
+        # jdbc.lob.non_contextual_creation: true
+
+  sql:
+    init:
+      mode: always  # Para cargar data.sql al inicio
+      continue-on-error: true
+
+  batch:
+    jdbc:
+      initialize-schema: always
+    job:
+      enabled: false  # Desactivamos auto-ejecución
+
+# Configuración JobRunr
+org:
+  jobrunr:
+    background-job-server:
+      enabled: true
+      worker-count: 3
+    dashboard:
+      enabled: true
+      port: 8000
+    database:
+      skip-create: false
+      type: postgresql
+      datasource:
+        jdbc-url: jdbc:postgresql://localhost:5432/batch_scheduler
+        username: postgres
+        password: password
+    job-scheduler:
+      enabled: true
+    job:
+      default-number-of-retries: 3
+      retry-back-off-time-seed: 3
+    miscellaneous:
+      allow-anonymous-data-usage: false
+
+# Configuración de la aplicación
+app:
+  batch:
+    chunk-size: 100
+    email:
+      enabled: true
+      from: batch-scheduler@company.com

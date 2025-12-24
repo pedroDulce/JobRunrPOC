@@ -1,0 +1,4 @@
+# Desde PowerShell (como Administrador si hay restricciones)
+cd C:\pedro.dulce\develop\JobRunnerPOC
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser  # Solo primera vez
+.\test-poc.ps1
