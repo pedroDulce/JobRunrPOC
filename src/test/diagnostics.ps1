@@ -7,7 +7,7 @@ Write-Host "`n1. Verificando puerto 8000..." -ForegroundColor Yellow
 try {
     $portCheck = Test-NetConnection -ComputerName localhost -Port 8000
     if ($portCheck.TcpTestSucceeded) {
-        Write-Host "   OK - Puerto 8000 está abierto" -ForegroundColor Green
+        Write-Host "   OK - Puerto 8000 esta abierto" -ForegroundColor Green
     } else {
         Write-Host "   ERROR - Puerto 8000 no responde" -ForegroundColor Red
     }
@@ -39,9 +39,9 @@ Write-Host "   Luego accede a: http://localhost:8001" -ForegroundColor Cyan
 
 Write-Host "`n=================================" -ForegroundColor Cyan
 Write-Host "PASOS PARA SOLUCIONAR:" -ForegroundColor Yellow
-Write-Host "1. Revisa application.yml (la configuración de arriba)" -ForegroundColor White
+Write-Host "1. Revisa application.yml (la configuracion de arriba)" -ForegroundColor White
 Write-Host "2. Busca 'JobRunr' en los logs de inicio de Spring Boot" -ForegroundColor White
-Write-Host "3. Prueba con puerto 8001 si 8000 está ocupado" -ForegroundColor White
+Write-Host "3. Prueba con puerto 8001 si 8000 esta ocupado" -ForegroundColor White
 Write-Host "4. Comparte los logs COMPLETOS de inicio de Spring Boot" -ForegroundColor White
 
 Write-Host "`nPresiona cualquier tecla para continuar..." -ForegroundColor Yellow
