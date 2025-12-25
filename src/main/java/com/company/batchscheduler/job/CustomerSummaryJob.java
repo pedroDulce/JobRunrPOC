@@ -7,12 +7,13 @@ import org.jobrunr.jobs.annotations.Job;
 import org.springframework.batch.core.JobParameters;
 import org.springframework.stereotype.Component;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-// CustomerSummaryJob.java
 @Component
 @Slf4j
 @RequiredArgsConstructor
@@ -28,19 +29,17 @@ public class CustomerSummaryJob {
 
         try {
             log.info("🚀 Iniciando job {} con fecha: {}", jobId, processDateStr);
+            log.info("¿sendEmailStr? " + sendEmailStr);
 
             // Convertir String a LocalDate
             LocalDate processDate = LocalDate.parse(processDateStr);
             boolean sendEmail = Boolean.parseBoolean(sendEmailStr);
 
-            // Tu lógica de negocio aquí
             log.info("Procesando resumen para fecha: {}", processDate);
-
             if (sendEmail && emailRecipient != null) {
                 log.info("📧 Enviando email a: {}", emailRecipient);
-                emailService.sendEmail(emailRecipient,
-                        "Job completado - " + jobId,
-                        "El job " + jobId + " se ejecutó exitosamente para la fecha " + processDate);
+                sendSummaryEmail(parseDateStr(processDateStr), jobId, emailRecipient);
+                log.info("El job " + jobId + " se ejecutó exitosamente para la fecha " + processDate);
             }
 
             log.info("✅ Job {} completado exitosamente", jobId);
@@ -53,19 +52,16 @@ public class CustomerSummaryJob {
 
     // Método para ejecución inmediata (también con Strings)
     @Job(name = "Ejecución inmediata de resumen")
-    public void executeImmediately(String processDateStr, boolean sendEmail, String recipient) {
+    public void executeImmediately(String processDateStr, boolean sendEmail, String emailRecipient) {
         String jobId = UUID.randomUUID().toString();
         log.info("Ejecutando job inmediato {} para fecha: {}", jobId, processDateStr);
 
         // Convertir y procesar
         LocalDate processDate = LocalDate.parse(processDateStr);
-
-        // Tu lógica aquí...
-
-        if (sendEmail && recipient != null) {
-            emailService.sendEmail(recipient,
-                    "Ejecución inmediata completada",
-                    "Job ejecutado para fecha: " + processDate);
+        log.info("Procesando resumen para fecha: {}", processDate);
+        if (sendEmail && emailRecipient != null) {
+            sendSummaryEmail(parseDateStr(processDateStr), jobId, emailRecipient);
+            log.info("El job " + jobId + " de ejecución inmediata finalizó de forma exitosa en la fecha " + processDate);
         }
     }
 
@@ -93,6 +89,15 @@ public class CustomerSummaryJob {
 
         } catch (Exception e) {
             log.warn("⚠️ No se pudo enviar email: {}", e.getMessage());
+        }
+    }
+
+    public static Date parseDateStr(String dateString) {
+        SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
+        try {
+            return formatter.parse(dateString);
+        } catch (ParseException e) {
+            throw new RuntimeException(e);
         }
     }
 

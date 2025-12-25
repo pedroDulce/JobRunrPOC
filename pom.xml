@@ -47,6 +47,14 @@
       <artifactId>spring-boot-starter-batch</artifactId>
     </dependency>
 
+    <!-- Maven -->
+    <dependency>
+      <groupId>io.github.resilience4j</groupId>
+      <artifactId>resilience4j-spring-boot2</artifactId>
+      <version>2.1.0</version> <!-- Verifica la versión más reciente -->
+    </dependency>
+
+
     <!-- https://mvnrepository.com/artifact/org.jobrunr/jobrunr-spring-boot-3-starter -->
     <dependency>
       <groupId>org.jobrunr</groupId>

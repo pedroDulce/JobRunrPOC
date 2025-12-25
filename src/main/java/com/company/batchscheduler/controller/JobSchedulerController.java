@@ -2,16 +2,20 @@ package com.company.batchscheduler.controller;
 
 import com.company.batchscheduler.job.CustomerSummaryJob;
 import com.company.batchscheduler.model.dto.ImmediateJobRequest;
+import com.company.batchscheduler.model.dto.JobResult;
+import com.company.batchscheduler.model.dto.JobRequest;
 import com.company.batchscheduler.model.dto.JobScheduleRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.jobrunr.jobs.annotations.Job;
 import org.jobrunr.scheduling.JobScheduler;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -30,6 +34,36 @@ public class JobSchedulerController {
 
     private final JobScheduler jobScheduler;
     private final CustomerSummaryJob customerSummaryJob;
+    private final RestTemplate restTemplate;
+
+    @Job(name = "Ejecutar job remoto", retries = 2)
+    public void executeRemoteJob(String jobType, String parametersJson, String microserviceUrl) {
+
+        // RECOMENDACIÓN: colocar la url del microservicio y la expres.cron por variables en el
+        // configMaps del micro de arquitectura
+        log.info("Despachando job {} a: {}", jobType, microserviceUrl);
+        JobRequest request = new JobRequest(jobType, parametersJson);
+        try {
+            ResponseEntity<JobResult> response = restTemplate.postForEntity(
+                    microserviceUrl + "/api/jobs/execute",
+                    request,
+                    JobResult.class
+            );
+
+            if (response.getStatusCode().is2xxSuccessful() &&
+                    response.getBody() != null &&
+                    response.getBody().isSuccess()) {
+                log.info("✅ Job remoto ejecutado exitosamente");
+            } else {
+                throw new RuntimeException("Job remoto falló: " +
+                        (response.getBody() != null ?
+                                response.getBody().getMessage() : "Unknown error"));
+            }
+        } catch (Exception e) {
+            log.error("❌ Error llamando a microservicio: {}", e.getMessage());
+            throw e;
+        }
+    }
 
     @PostMapping("/schedule")
     @Operation(summary = "Programar job recurrente")
@@ -186,6 +220,7 @@ public class JobSchedulerController {
         }
     }
 
+
     // Mantener el método validateCronExpression igual
     private void validateCronExpression(String cronExpression) {
         if (cronExpression == null || cronExpression.trim().isEmpty()) {
@@ -196,8 +231,10 @@ public class JobSchedulerController {
         if (parts.length != 6) {
             throw new IllegalArgumentException(
                     "La expresión cron debe tener 6 campos (segundos minutos horas día mes día-semana). " +
+                            "Ejemplo: 0 0 2 1 * *   ==> 1er día de cada mes a las 2 AM. " +
                             "Recibido: " + cronExpression
             );
         }
     }
+
 }
