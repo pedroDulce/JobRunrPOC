@@ -1,7 +1,6 @@
 package com.company.batchscheduler.controller;
 
 import com.company.batchscheduler.job.EmbebbedCustomerSummaryJob;
-import com.company.batchscheduler.job.RemoteJobExecutor;
 import common.batch.dto.ImmediateJobRequest;
 import common.batch.dto.JobRequest;
 import common.batch.dto.JobScheduleRequest;

@@ -1,8 +1,9 @@
 package org.example.batch.job;
 
-import com.company.batchscheduler.repository.DailySummaryRepository;
+import common.batch.EmailService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.example.batch.repository.DailySummaryRepository;
 import org.jobrunr.jobs.annotations.Job;
 import org.springframework.stereotype.Component;
 

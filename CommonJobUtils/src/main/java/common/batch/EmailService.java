@@ -1,4 +1,4 @@
-package com.company.batchscheduler.job;
+package common.batch;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;

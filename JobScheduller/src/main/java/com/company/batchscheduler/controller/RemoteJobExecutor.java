@@ -1,4 +1,4 @@
-package com.company.batchscheduler.job;
+package com.company.batchscheduler.controller;
 
 import common.batch.dto.JobRequest;
 import common.batch.dto.JobResult;
