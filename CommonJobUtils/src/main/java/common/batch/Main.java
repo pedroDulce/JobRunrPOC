@@ -1,4 +1,4 @@
-package common.batch.dto;
+package common.batch;
 
 public class Main {
 

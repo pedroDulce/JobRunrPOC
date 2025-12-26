@@ -23,26 +23,13 @@ public class JobExecutorController {
         log.info("Recibido job: {}", request.getJobType());
 
         try {
-            // Ejecutar según tipo
-            Object result = switch (request.getJobType()) {
-                case "customer-summary" -> processCustomerSummary(request);
-                case "report-generation" -> generateReport(request);
-                case "data-migration" -> migrateData(request);
-                default -> throw new IllegalArgumentException("Tipo desconocido");
-            };
+            // Ejecutar
+            Object result = processCustomerSummary(request);
             return ResponseEntity.ok(JobResult.success(result));
         } catch (Exception e) {
             log.error("Job falló: {}", e.getMessage(), e);
             return ResponseEntity.status(500).body(JobResult.failure(e.getMessage()));
         }
-    }
-
-    private Object migrateData(JobRequest request) {
-        return "Prueba de migrateData processing";
-    }
-
-    private Object generateReport(JobRequest request) {
-        return "Prueba de generateReport processing";
     }
 
     private Object processCustomerSummary(JobRequest request) {

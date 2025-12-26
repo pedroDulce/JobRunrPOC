@@ -1,6 +1,6 @@
 package com.company.batchscheduler.controller;
 
-import com.company.batchscheduler.job.CustomerSummaryJob;
+import com.company.batchscheduler.job.EmbebbedCustomerSummaryJob;
 import com.company.batchscheduler.job.RemoteJobExecutor;
 import common.batch.dto.ImmediateJobRequest;
 import common.batch.dto.JobRequest;
@@ -11,7 +11,6 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jobrunr.scheduling.JobScheduler;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -32,7 +31,7 @@ import java.util.UUID;
 public class JobSchedulerController {
 
     private final JobScheduler jobScheduler;
-    private final CustomerSummaryJob customerSummaryJob;
+    private final EmbebbedCustomerSummaryJob embebbedCustomerSummaryJob;
     //@Autowired
     private final RemoteJobExecutor remoteJobExecutor;
 
@@ -63,7 +62,7 @@ public class JobSchedulerController {
             jobScheduler.scheduleRecurrently(
                     jobId,
                     request.getCronExpression(),
-                    () -> customerSummaryJob.generateDailySummary(
+                    () -> embebbedCustomerSummaryJob.generateDailySummary(
                             jobId,           // String
                             processDateStr,  // String
                             sendEmailStr,    // String
@@ -113,7 +112,7 @@ public class JobSchedulerController {
                     : "default@company.com";
 
             jobScheduler.enqueue(() ->
-                    customerSummaryJob.executeImmediately(
+                    embebbedCustomerSummaryJob.executeImmediately(
                             processDateStr,
                             request.isSendEmail(),
                             emailRecipient
@@ -164,7 +163,7 @@ public class JobSchedulerController {
 
             jobScheduler.schedule(
                     scheduledTime,
-                    () -> customerSummaryJob.generateDailySummary(
+                    () -> embebbedCustomerSummaryJob.generateDailySummary(
                             jobId,
                             processDateStr,
                             "true",  // sendEmail

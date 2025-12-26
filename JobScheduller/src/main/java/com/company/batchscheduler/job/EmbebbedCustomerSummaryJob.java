@@ -6,9 +6,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.jobrunr.jobs.annotations.Job;
 import org.springframework.stereotype.Component;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -16,7 +13,7 @@ import java.util.UUID;
 @Component
 @Slf4j
 @RequiredArgsConstructor
-public class CustomerSummaryJob {
+public class EmbebbedCustomerSummaryJob {
 
     private final DailySummaryRepository dailySummaryRepository;
     private final EmailService emailService;
@@ -88,15 +85,6 @@ public class CustomerSummaryJob {
 
         } catch (Exception e) {
             log.warn("⚠️ No se pudo enviar email: {}", e.getMessage());
-        }
-    }
-
-    public static Date parseDateStr(String dateString) {
-        SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
-        try {
-            return formatter.parse(dateString);
-        } catch (ParseException e) {
-            throw new RuntimeException(e);
         }
     }
 
