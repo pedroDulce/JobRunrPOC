@@ -13,7 +13,7 @@ CREATE TABLE customer_transactions (
     amount DECIMAL(10,2),
     currency VARCHAR(3),
     transaction_date DATE,
-    status VARCHAR(20) DEFAULT 'ENQUEUED',
+    status VARCHAR(20) DEFAULT 'PENDIENTE',
     source_file VARCHAR(255),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

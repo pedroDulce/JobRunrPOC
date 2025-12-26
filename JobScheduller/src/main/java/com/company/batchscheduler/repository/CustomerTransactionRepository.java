@@ -20,7 +20,7 @@ public interface CustomerTransactionRepository extends JpaRepository<CustomerTra
     List<CustomerTransaction> findByStatus(String status);
 
     @Query("SELECT ct FROM CustomerTransaction ct " +
-            "WHERE ct.status = 'ENQUEUED' " +
+            "WHERE ct.status = 'PENDIENTE' " +
             "AND ct.transactionDate <= :date " +
             "ORDER BY ct.transactionDate, ct.customerId")
     List<CustomerTransaction> findPendingUntilDate(@Param("date") LocalDate date);
