@@ -59,7 +59,7 @@ public class JobSchedulerController {
         JobStatus status = JobStatus.builder()
                 .jobId(request.getJobId())
                 .jobType(request.getJobType().toString())
-                .status("PENDING")
+                .status("ENQUEUED")
                 .message("Job enqueued for execution")
                 .createdAt(LocalDateTime.now())
                 .build();

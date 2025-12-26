@@ -46,7 +46,7 @@ public class BatchConfig {
                 SELECT id, transaction_id, customer_id, amount, 
                        currency, transaction_date, status, source_file, created_at
                 FROM customer_transactions 
-                WHERE status = 'PENDING' 
+                WHERE status = 'ENQUEUED' 
                 AND transaction_date = ? 
                 ORDER BY customer_id
                 """)
