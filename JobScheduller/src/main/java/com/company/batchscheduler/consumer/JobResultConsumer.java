@@ -1,4 +1,4 @@
-package com.company.batchscheduler.controller;
+package com.company.batchscheduler.consumer;
 
 import common.batch.dto.JobResult;
 import common.batch.model.JobStatus;
