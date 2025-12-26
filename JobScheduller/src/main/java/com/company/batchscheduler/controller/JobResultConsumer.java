@@ -3,31 +3,34 @@ package com.company.batchscheduler.controller;
 import common.batch.dto.JobResult;
 import common.batch.model.JobStatus;
 import common.batch.repository.JobStatusRepository;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 
-import java.time.LocalDateTime;
 
 @Component
+@RequiredArgsConstructor
 @Slf4j
 public class JobResultConsumer {
 
-    @Autowired
-    private JobStatusRepository statusRepository;
+    private final JobStatusRepository statusRepository;
 
-    @KafkaListener(topics = "job-results", groupId = "scheduler-group")
+    @KafkaListener(topics = "${kafka.topics.job-results}", groupId = "scheduler-group")
     public void consumeJobResult(JobResult result) {
-        log.info("Received job result: {}", result.getJobId());
+        log.info("Received job result for jobId: {}", result.getJobId());
 
-        JobStatus status = statusRepository.findByJobId(result.getJobId())
-                .orElse(new JobStatus());
-
-        status.setStatus(result.getSuccess() ? "COMPLETED" : "FAILED");
-        status.setFinishedAt(LocalDateTime.now());
-        status.setMessage(result.getMessage());
-        statusRepository.save(status);
+        statusRepository.findByJobId(result.getJobId()).ifPresentOrElse(
+                status -> {
+                    status.setStatus(result.getSuccess() ? "COMPLETED" : "FAILED");
+                    status.setMessage(result.getMessage());
+                    status.setFinishedAt(result.getCompletedAt());
+                    statusRepository.save(status);
+                    log.info("Updated status for job {} to {}", result.getJobId(), status.getStatus());
+                },
+                () -> log.warn("No job status found for jobId: {}", result.getJobId())
+        );
     }
 
 }

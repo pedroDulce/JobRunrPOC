@@ -11,9 +11,13 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jobrunr.scheduling.JobScheduler;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.support.SendResult;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -22,6 +26,7 @@ import java.time.LocalTime;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 
 @Tag(name = "Job Scheduling", description = "API para programación de trabajos batch")
@@ -31,13 +36,96 @@ import java.util.UUID;
 @Slf4j
 public class JobSchedulerController {
 
+    @Value("${kafka.topics.job-requests}")
+    private String jobRequestsTopic;
+
     private final KafkaTemplate<String, JobRequest> kafkaTemplate;
+
     private final JobStatusRepository statusRepository;
 
     private final JobScheduler jobScheduler;
     private final EmbebbedCustomerSummaryJob embebbedCustomerSummaryJob;
-    //@Autowired
+
     private final RemoteJobExecutor remoteJobExecutor;
+
+    @PostMapping("/execute-remote-async")
+    public ResponseEntity<JobResponse> executeRemoteJob(@RequestBody JobRequest request) {
+        // Generar jobId si no viene
+        if (request.getJobId() == null) {
+            request.setJobId(UUID.randomUUID().toString());
+        }
+
+        // Guardar estado inicial en BD
+        JobStatus status = JobStatus.builder()
+                .jobId(request.getJobId())
+                .jobType(request.getJobType().toString())
+                .status("PENDING")
+                .message("Job enqueued for execution")
+                .createdAt(LocalDateTime.now())
+                .build();
+        statusRepository.save(status);
+
+        // Publicar mensaje a Kafka usando CompletableFuture
+        try {
+            CompletableFuture<SendResult<String, JobRequest>> future =
+                    kafkaTemplate.send(jobRequestsTopic, request.getJobId(), request);
+
+            future.whenComplete((result, ex) -> {
+                if (ex != null) {
+                    log.error("Failed to publish job {} to Kafka: {}",
+                            request.getJobId(), ex.getMessage());
+                    // Actualizar estado a FAILED de forma asíncrona
+                    updateJobStatus(request.getJobId(), "FAILED",
+                            "Failed to enqueue job: " + ex.getMessage());
+                } else {
+                    log.info("Job {} published to Kafka successfully. Offset: {}",
+                            request.getJobId(), result.getRecordMetadata().offset());
+                }
+            });
+
+        } catch (Exception e) {
+            log.error("Error sending to Kafka: {}", e.getMessage());
+            status.setStatus("FAILED");
+            status.setMessage("Failed to enqueue job: " + e.getMessage());
+            statusRepository.save(status);
+
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(JobResponse.builder()
+                            .jobId(request.getJobId())
+                            .status("ERROR")
+                            .message("Failed to enqueue job")
+                            .timestamp(LocalDateTime.now())
+                            .build());
+        }
+
+        // Responder inmediatamente
+        return ResponseEntity.accepted().body(
+                JobResponse.builder()
+                        .jobId(request.getJobId())
+                        .status("ACCEPTED")
+                        .message("Job enqueued for asynchronous execution")
+                        .timestamp(LocalDateTime.now())
+                        .build()
+        );
+    }
+
+    // Método helper para actualizar estado de forma asíncrona
+    @Async
+    public void updateJobStatus(String jobId, String status, String message) {
+        statusRepository.findByJobId(jobId).ifPresent(jobStatus -> {
+            jobStatus.setStatus(status);
+            jobStatus.setMessage(message);
+            jobStatus.setUpdatedAt(LocalDateTime.now());
+            statusRepository.save(jobStatus);
+        });
+    }
+
+    @GetMapping("/status/{jobId}")
+    public ResponseEntity<JobStatus> getStatus(@PathVariable String jobId) {
+        return statusRepository.findByJobId(jobId)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
 
     @PostMapping("/schedule-recurrent")
     @Operation(summary = "Programar job recurrente")
@@ -216,34 +304,7 @@ public class JobSchedulerController {
         ));
     }
 
-    @PostMapping("/execute-remote-async")
-    public ResponseEntity<JobResponse> executeRemoteJob(@RequestBody JobRequest request) {
-        // 1. Guardar estado "ENQUEUED" en BD
-        JobStatus status = new JobStatus();
-        status.setJobId(request.getJobId());
-        status.setStatus("ENQUEUED");
-        status.setCreatedAt(LocalDateTime.now());
-        statusRepository.save(status);
 
-        // 2. Publicar mensaje a Kafka (no bloqueante)
-        kafkaTemplate.send("job-requests", String.valueOf(request.getJobId()), request);
-
-        // 3. Responder inmediatamente
-        return ResponseEntity.accepted().body(
-                new JobResponse(request.getJobId(), "Job enqueued for execution")
-        );
-    }
-
-    @GetMapping("/status/{jobId}")
-    public ResponseEntity<JobStatus> getStatus(@PathVariable String jobId) {
-        return statusRepository.findByJobId(jobId)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
-    }
-
-
-
-    // Mantener el método validateCronExpression igual
     private void validateCronExpression(String cronExpression) {
         if (cronExpression == null || cronExpression.trim().isEmpty()) {
             throw new IllegalArgumentException("La expresión cron no puede estar vacía");

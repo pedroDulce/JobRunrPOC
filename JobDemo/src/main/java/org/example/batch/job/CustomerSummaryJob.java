@@ -19,7 +19,6 @@ public class CustomerSummaryJob {
     private final DailySummaryRepository dailySummaryRepository;
     private final EmailService emailService;
 
-    // Método modificado para aceptar Strings
     @Job(name = "Generar resumen diario de clientes", retries = 2)
     public String generateDailySummary(JobRequest jobRequest) {
 
@@ -27,10 +26,12 @@ public class CustomerSummaryJob {
         try {
             String processDateStr = (String) jobRequest.getParameter("date");
             String emailRecipient = (String) jobRequest.getParameter("emailRecipient");
-            log.info("🚀 Iniciando job {} con fecha: {}", jobId, processDateStr);
+            log.info("🚀 Iniciando job {} con fecha: {} y tipo: {}", jobId, processDateStr, jobRequest.getJobType());
 
             // Convertir String a LocalDate
             LocalDate processDate = LocalDate.parse(processDateStr);
+
+            Thread.sleep(20000); // 20 segundos
 
             log.info("Procesando resumen para fecha: {}", processDate);
             if (emailRecipient != null) {
@@ -45,7 +46,7 @@ public class CustomerSummaryJob {
 
         } catch (Exception e) {
             log.error("❌ Error en job {}: {}", jobId, e.getMessage(), e);
-            throw e;
+            throw new IllegalArgumentException("Unknown job type: " + jobRequest.getJobType());
         }
     }
 

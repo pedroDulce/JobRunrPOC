@@ -54,3 +54,25 @@ resilience4j.circuitbreaker:
       wait-duration-in-open-state: 5s
       failure-rate-threshold: 50
       event-consumer-buffer-size: 10
+
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      group-id: ${spring.application.name}-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "*"
+        spring.json.value.default.type: common.batch.dto.JobRequest
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        spring.json.add.type.headers: false
+
+# Topics de Kafka
+kafka:
+  topics:
+    job-requests: job-requests-topic
+    job-results: job-results-topic

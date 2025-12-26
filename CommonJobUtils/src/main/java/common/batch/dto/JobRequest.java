@@ -108,7 +108,7 @@ public class JobRequest implements Serializable {
         }
         if (parametersJson != null && !parametersJson.isEmpty()) {
             // Aquí podrías usar Jackson ObjectMapper para parsear el JSON
-            // return objectMapper.readValue(parametersJson, Map.class);
+            //return objectMapper.readValue(parametersJson, Map.class);
         }
         return Map.of();
     }

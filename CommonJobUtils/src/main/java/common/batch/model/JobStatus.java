@@ -1,7 +1,9 @@
 package common.batch.model;
 
+import common.batch.dto.JobType;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -12,6 +14,7 @@ import java.util.UUID;
 @Table(name = "job_status")
 @Data
 @NoArgsConstructor
+@Builder
 @AllArgsConstructor
 public class JobStatus {
 
@@ -31,6 +34,7 @@ public class JobStatus {
     private String status;
     private String message;
     private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
     private LocalDateTime finishedAt;
     private String jobType;
     private String parametersJson;
