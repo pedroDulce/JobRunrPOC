@@ -24,7 +24,7 @@ public class JobResult {
     private String jobId;
 
     @Column(nullable = false)
-    private static Boolean success;
+    private Boolean success;
 
     @Column(length = 2000)
     private String message;

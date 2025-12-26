@@ -2,6 +2,7 @@ package com.company.batchscheduler.controller;
 
 import common.batch.dto.JobRequest;
 import common.batch.dto.JobResult;
+import common.batch.dto.JobType;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import lombok.extern.slf4j.Slf4j;
 import org.jobrunr.jobs.annotations.Job;
@@ -24,13 +25,12 @@ public class RemoteJobExecutor {
     }
 
     @Job(name = "Ejecutar job en microservicio")
-    public void executeRemote(String jobId, String jobType,
-                                      String parametersJson) {
+    public void executeRestRemote(String jobId, JobType jobType, String parametersJson) {
 
         String microserviceUrl = getMicroserviceUrl(jobType);
 
         Supplier<JobResult> supplier = () -> {
-            JobRequest request = new JobRequest(jobId, jobId, jobType, parametersJson);
+            JobRequest request = new JobRequest(jobId, jobType, parametersJson);
 
             ResponseEntity<JobResult> response = restTemplate.postForEntity(
                     microserviceUrl + "/api/jobs/execute",
@@ -44,7 +44,7 @@ public class RemoteJobExecutor {
         // Con Circuit Breaker
         JobResult result = circuitBreaker.executeSupplier(supplier);
 
-        if (!result.isSuccess()) {
+        if (!result.getSuccess()) {
             throw new RuntimeException("Microservicio reportó error: " +
                     result.getMessage());
         }
@@ -52,11 +52,10 @@ public class RemoteJobExecutor {
         log.info("Job {} ejecutado en microservicio: {}", jobId, jobType);
     }
 
-    private String getMicroserviceUrl(String jobType) {
+    private String getMicroserviceUrl(JobType jobType) {
         return switch (jobType) {
-            case "customer-summary" -> "http://localhost:8082";
-            case "report-generation" -> "http://localhost:8083";
-            default -> "http://localhost:8082"; // Default
+            case SYNCRONOUS -> "http://localhost:8082";
+            default -> throw new RuntimeException("No se puede invocar de forma síncrona el job remoto"); // Default
         };
     }
 }

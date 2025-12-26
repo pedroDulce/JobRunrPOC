@@ -20,8 +20,10 @@ public class JobRequest implements Serializable {
     // Identificador único del job (generado automáticamente si no se proporciona)
     private String jobId;
 
-    // Tipo de job a ejecutar (ej: "reportGeneration", "dataMigration", "invoiceProcessing")
-    private String jobType;
+    private String cronExpression;
+
+    // Tipo de job a ejecutar (LARGO (solo enfoque asíncrono, SHORT, puede invocarse de forma síncrona o asíncrona)
+    private JobType jobType;
 
     // Parámetros del job en formato JSON
     private String parametersJson;
@@ -48,26 +50,13 @@ public class JobRequest implements Serializable {
     // Metadata adicional
     private Map<String, String> metadata;
 
-    // Constructor simplificado para uso común
-    public JobRequest(String jobType, String parametersJson) {
-        this.jobId = UUID.randomUUID().toString();
+    public JobRequest(String jobId, JobType jobType, String parametersJson) {
+        this.jobId = jobId != null ? jobId : UUID.randomUUID().toString();
         this.jobType = jobType;
         this.parametersJson = parametersJson;
-        this.requestedAt = LocalDateTime.now();
-        this.priority = 2; // Prioridad media por defecto
     }
 
-    // Constructor con parámetros como mapa
-    public JobRequest(String jobType, Map<String, Object> parameters) {
-        this.jobId = UUID.randomUUID().toString();
-        this.jobType = jobType;
-        this.parameters = parameters;
-        this.requestedAt = LocalDateTime.now();
-        this.priority = 2;
-    }
-
-    // Constructor completo
-    public JobRequest(String jobId, String jobType, String parametersJson,
+    public JobRequest(String jobId, JobType jobType, String parametersJson,
                       String requestedBy, Integer priority) {
         this.jobId = jobId != null ? jobId : UUID.randomUUID().toString();
         this.jobType = jobType;
@@ -78,7 +67,7 @@ public class JobRequest implements Serializable {
     }
 
     // Método helper para crear JobRequest con prioridad alta
-    public static JobRequest highPriority(String jobType, String parametersJson, String requestedBy) {
+    public static JobRequest highPriority(JobType jobType, String parametersJson, String requestedBy) {
         return JobRequest.builder()
                 .jobId(UUID.randomUUID().toString())
                 .jobType(jobType)
@@ -90,7 +79,7 @@ public class JobRequest implements Serializable {
     }
 
     // Método helper para crear JobRequest con callback
-    public static JobRequest withCallback(String jobType, String parametersJson,
+    public static JobRequest withCallback(JobType jobType, String parametersJson,
                                           String callbackUrl) {
         return JobRequest.builder()
                 .jobId(UUID.randomUUID().toString())
@@ -126,7 +115,6 @@ public class JobRequest implements Serializable {
 
     // Validación básica del request
     public boolean isValid() {
-        return jobType != null && !jobType.trim().isEmpty()
-                && jobId != null && !jobId.trim().isEmpty();
+        return jobId != null && !jobId.trim().isEmpty();
     }
 }

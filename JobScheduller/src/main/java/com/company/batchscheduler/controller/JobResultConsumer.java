@@ -24,7 +24,7 @@ public class JobResultConsumer {
         JobStatus status = statusRepository.findByJobId(result.getJobId())
                 .orElse(new JobStatus());
 
-        status.setStatus(result.isSuccess() ? "COMPLETED" : "FAILED");
+        status.setStatus(result.getSuccess() ? "COMPLETED" : "FAILED");
         status.setFinishedAt(LocalDateTime.now());
         status.setMessage(result.getMessage());
         statusRepository.save(status);

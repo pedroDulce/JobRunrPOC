@@ -39,8 +39,7 @@ public class JobSchedulerController {
     //@Autowired
     private final RemoteJobExecutor remoteJobExecutor;
 
-
-    @PostMapping("/schedule")
+    @PostMapping("/schedule-recurrent")
     @Operation(summary = "Programar job recurrente")
     public ResponseEntity<Map<String, Object>> scheduleRecurringJob(
             @Valid @RequestBody JobScheduleRequest request) {
@@ -98,7 +97,7 @@ public class JobSchedulerController {
         }
     }
 
-    @PostMapping("/execute-now")
+    /*@PostMapping("/execute-now")
     @Operation(summary = "Ejecutar job inmediatamente")
     public ResponseEntity<Map<String, Object>> executeNow(
             @Valid @RequestBody ImmediateJobRequest request) {
@@ -141,11 +140,11 @@ public class JobSchedulerController {
 
             return ResponseEntity.status(500).body(error);
         }
-    }
+    }*/
 
     @PostMapping("/schedule-once")
     @Operation(summary = "Programar job para ejecución única")
-    public ResponseEntity<Map<String, Object>> scheduleOnce(
+    public ResponseEntity<Map<String, Object>> scheduleSyncRemote(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.TIME) LocalTime time,
             @RequestParam(required = false) String email) {
@@ -195,7 +194,29 @@ public class JobSchedulerController {
         }
     }
 
-    @PostMapping("/execute-remote")
+    @PostMapping("/schedule-remote-sync")
+    public ResponseEntity<?> scheduleRemoteJob(@RequestBody JobRequest request) {
+        String jobId = UUID.randomUUID().toString();
+
+        jobScheduler.scheduleRecurrently(
+                jobId,
+                request.getCronExpression(),
+                () -> remoteJobExecutor.executeRestRemote(
+                        jobId,
+                        JobType.SYNCRONOUS,
+                        request.getParametersJson()
+                )
+        );
+
+        return ResponseEntity.ok(Map.of(
+                "jobId", jobId,
+                "status", "SCHEDULED",
+                "microservice", "job-executor:8082",
+                "jobType", JobType.SYNCRONOUS
+        ));
+    }
+
+    @PostMapping("/execute-remote-async")
     public ResponseEntity<JobResponse> executeRemoteJob(@RequestBody JobRequest request) {
         // 1. Guardar estado "ENQUEUED" en BD
         JobStatus status = new JobStatus();
