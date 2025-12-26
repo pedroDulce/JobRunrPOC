@@ -15,7 +15,7 @@ import org.jobrunr.scheduling.JobScheduler;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.client.RestTemplate;
+
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -34,36 +34,6 @@ public class JobSchedulerController {
 
     private final JobScheduler jobScheduler;
     private final CustomerSummaryJob customerSummaryJob;
-    private final RestTemplate restTemplate;
-
-    @Job(name = "Ejecutar job remoto", retries = 2)
-    public void executeRemoteJob(String jobType, String parametersJson, String microserviceUrl) {
-
-        // RECOMENDACIÓN: colocar la url del microservicio y la expres.cron por variables en el
-        // configMaps del micro de arquitectura
-        log.info("Despachando job {} a: {}", jobType, microserviceUrl);
-        JobRequest request = new JobRequest(jobType, parametersJson);
-        try {
-            ResponseEntity<JobResult> response = restTemplate.postForEntity(
-                    microserviceUrl + "/api/jobs/execute",
-                    request,
-                    JobResult.class
-            );
-
-            if (response.getStatusCode().is2xxSuccessful() &&
-                    response.getBody() != null &&
-                    response.getBody().isSuccess()) {
-                log.info("✅ Job remoto ejecutado exitosamente");
-            } else {
-                throw new RuntimeException("Job remoto falló: " +
-                        (response.getBody() != null ?
-                                response.getBody().getMessage() : "Unknown error"));
-            }
-        } catch (Exception e) {
-            log.error("❌ Error llamando a microservicio: {}", e.getMessage());
-            throw e;
-        }
-    }
 
     @PostMapping("/schedule")
     @Operation(summary = "Programar job recurrente")

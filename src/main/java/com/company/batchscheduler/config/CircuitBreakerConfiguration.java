@@ -3,7 +3,6 @@ package com.company.batchscheduler.config;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import io.github.resilience4j.circuitbreaker.CircuitBreakerConfig;
 import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -12,11 +11,8 @@ import java.time.Duration;
 @Configuration
 public class CircuitBreakerConfiguration {
 
-    @Autowired
-    private CircuitBreakerRegistry circuitBreakerRegistry;
-
     @Bean
-    public CircuitBreaker remoteJobCircuitBreaker() {
+    public CircuitBreaker remoteJobCircuitBreaker(CircuitBreakerRegistry circuitBreakerRegistry) {
         return circuitBreakerRegistry.circuitBreaker("remoteJob");
     }
 
@@ -31,6 +27,4 @@ public class CircuitBreakerConfiguration {
 
         return CircuitBreakerRegistry.of(config);
     }
-
 }
-
