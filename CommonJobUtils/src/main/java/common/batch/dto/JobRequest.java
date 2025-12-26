@@ -1,4 +1,4 @@
-package org.example.batch;
+package common.batch.dto;
 
 import lombok.Data;
 
@@ -7,9 +7,12 @@ import lombok.Data;
 public class JobRequest {
 
     private String jobType;
+    private String jobName;
     private String parametersJson;
+    private String cronExpression;
 
-    public JobRequest(String jobType, String parametersJson) {
+    public JobRequest(String jobName, String jobType, String parametersJson) {
+        this.jobName = jobName;
         this.jobType = jobType;
         this.parametersJson = parametersJson;
     }

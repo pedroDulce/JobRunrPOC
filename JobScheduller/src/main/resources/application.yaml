@@ -18,7 +18,7 @@ spring:
 
   batch:
     jdbc:
-      initialize-schema: always
+      initialize-schema: update
     job:
       enabled: false
 
@@ -32,7 +32,7 @@ jobrunr:
     port: 8000
 
   database:
-    type: sql  # ¡IMPORTANTE!
+    type: sql
 
   job-scheduler:
     enabled: true

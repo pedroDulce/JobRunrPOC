@@ -1,21 +1,20 @@
 package com.company.batchscheduler.controller;
 
 import com.company.batchscheduler.job.CustomerSummaryJob;
-import com.company.batchscheduler.model.dto.ImmediateJobRequest;
-import com.company.batchscheduler.model.dto.JobResult;
-import com.company.batchscheduler.model.dto.JobRequest;
-import com.company.batchscheduler.model.dto.JobScheduleRequest;
+import com.company.batchscheduler.job.RemoteJobExecutor;
+import common.batch.dto.ImmediateJobRequest;
+import common.batch.dto.JobRequest;
+import common.batch.dto.JobScheduleRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.jobrunr.jobs.annotations.Job;
 import org.jobrunr.scheduling.JobScheduler;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -34,6 +33,9 @@ public class JobSchedulerController {
 
     private final JobScheduler jobScheduler;
     private final CustomerSummaryJob customerSummaryJob;
+    //@Autowired
+    private final RemoteJobExecutor remoteJobExecutor;
+
 
     @PostMapping("/schedule")
     @Operation(summary = "Programar job recurrente")
@@ -41,7 +43,7 @@ public class JobSchedulerController {
             @Valid @RequestBody JobScheduleRequest request) {
 
         try {
-            log.info("Recibida solicitud para programar job: {}", request);
+            log.info("Recibida solicitud para programar job recurrente: {}", request);
 
             validateCronExpression(request.getCronExpression());
 
@@ -188,6 +190,28 @@ public class JobSchedulerController {
 
             return ResponseEntity.status(400).body(error);
         }
+    }
+
+    @PostMapping("/schedule-remote")
+    public ResponseEntity<?> scheduleRemoteJob(@RequestBody JobRequest request) {
+        String jobId = UUID.randomUUID().toString();
+
+        jobScheduler.scheduleRecurrently(
+                jobId,
+                request.getCronExpression(),
+                () -> remoteJobExecutor.executeInMicroservice(
+                        jobId,
+                        request.getJobType(),
+                        request.getParametersJson()
+                )
+        );
+
+        return ResponseEntity.ok(Map.of(
+                "jobId", jobId,
+                "status", "SCHEDULED",
+                "microservice", "job-executor:8082",
+                "jobType", request.getJobType()
+        ));
     }
 
 

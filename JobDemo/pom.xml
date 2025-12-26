@@ -18,6 +18,12 @@
 
     <dependencies>
 
+        <dependency>
+            <groupId>com.company.batch</groupId>
+            <artifactId>CommonJobUtils</artifactId>
+            <version>1.0.0</version>
+        </dependency>
+
     </dependencies>
 
     <build>

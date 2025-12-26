@@ -1,4 +1,4 @@
-package com.company.batchscheduler.model.dto;
+package common.batch.dto;
 
 import lombok.Data;
 

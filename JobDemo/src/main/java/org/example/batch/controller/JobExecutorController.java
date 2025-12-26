@@ -1,9 +1,9 @@
 package org.example.batch.controller;
 
+import common.batch.dto.JobRequest;
+import common.batch.dto.JobResult;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.example.batch.JobRequest;
-import org.example.batch.JobResult;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;

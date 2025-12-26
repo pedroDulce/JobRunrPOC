@@ -1,7 +1,7 @@
 package com.company.batchscheduler.job;
 
-import com.company.batchscheduler.model.dto.JobRequest;
-import com.company.batchscheduler.model.dto.JobResult;
+import common.batch.dto.JobRequest;
+import common.batch.dto.JobResult;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jobrunr.jobs.annotations.Job;
@@ -17,13 +17,13 @@ public class RemoteJobDispatcher {
     private final RestTemplate restTemplate;
 
     @Job(name = "Ejecutar job remoto", retries = 2)
-    public void executeRemoteJob(String jobType, String parametersJson,
+    public void executeRemoteJob(String jobname, String jobType, String parametersJson,
                                  String microserviceUrl) {
 
         // RECOMENDACIÓN: colocar la url del microservicio y la expres.cron por variables en el
         // configMaps del micro de arquitectura
         log.info("Despachando job {} a: {}", jobType, microserviceUrl);
-        JobRequest request = new JobRequest(jobType, parametersJson);
+        JobRequest request = new JobRequest(jobname, jobType, parametersJson);
         try {
             ResponseEntity<JobResult> response = restTemplate.postForEntity(
                     microserviceUrl + "/api/jobs/execute",

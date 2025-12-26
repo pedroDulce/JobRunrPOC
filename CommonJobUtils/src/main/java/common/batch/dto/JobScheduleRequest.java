@@ -1,4 +1,4 @@
-package org.example.batch.model.dto;
+package common.batch.dto;
 
 import lombok.Data;
 

@@ -1,4 +1,4 @@
-package com.company.batchscheduler.template;
+package common.batch.template;
 
 import lombok.extern.slf4j.Slf4j;
 import org.jobrunr.jobs.annotations.Job;
