@@ -1,0 +1,15 @@
+server:
+  port: 8082
+
+spring:
+  application:
+    name: job-executor-service
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/batch_scheduler
+    username: postgres
+    password: postgres
+
+  jpa:
+    hibernate:
+      ddl-auto: update
