@@ -46,7 +46,7 @@ public class JobSchedulerController {
     private final JobScheduler jobScheduler;
     private final EmbebbedCustomerSummaryJob embebbedCustomerSummaryJob;
 
-    private final RemoteJobExecutor remoteJobExecutor;
+    private final RemoteJobDispatcher remoteJobDispatcher;
 
     @PostMapping("/execute-remote-async")
     public ResponseEntity<JobResponse> executeRemoteJob(@RequestBody JobRequest request) {
@@ -185,7 +185,7 @@ public class JobSchedulerController {
         }
     }
 
-    /*@PostMapping("/execute-now")
+    @PostMapping("/execute-now")
     @Operation(summary = "Ejecutar job inmediatamente")
     public ResponseEntity<Map<String, Object>> executeNow(
             @Valid @RequestBody ImmediateJobRequest request) {
@@ -228,7 +228,7 @@ public class JobSchedulerController {
 
             return ResponseEntity.status(500).body(error);
         }
-    }*/
+    }
 
     @PostMapping("/schedule-once")
     @Operation(summary = "Programar job para ejecución única")
@@ -289,7 +289,7 @@ public class JobSchedulerController {
         jobScheduler.scheduleRecurrently(
                 jobId,
                 request.getCronExpression(),
-                () -> remoteJobExecutor.executeRestRemote(
+                () -> remoteJobDispatcher.executeRestRemote(
                         jobId,
                         JobType.SYNCRONOUS,
                         request.getParametersJson()

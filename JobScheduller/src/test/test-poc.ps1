@@ -4,6 +4,21 @@ Write-Host "==========================================="
 
 $baseUrl = "http://localhost:8080"
 
+# Eliminar un job específico
+Invoke-RestMethod -X DELETE http://localhost:8080/api/jobs/550e8400-e29b-41d4-a716-446655440000
+
+# Eliminar múltiples jobs
+Invoke-RestMethod -X DELETE http://localhost:8080/api/jobs -H "Content-Type: application/json" -d '["id1", "id2", "id3"]'
+
+# Eliminar todos los jobs de tipo "reportGeneration"
+Invoke-RestMethod -X DELETE http://localhost:8080/api/jobs/type/reportGeneration
+
+# Cancelar un job programado
+Invoke-RestMethod -X POST http://localhost:8080/api/jobs/550e8400-e29b-41d4-a716-446655440000/cancel
+
+# Eliminar jobs fallidos
+Invoke-RestMethod -X DELETE http://localhost:8080/api/jobs/state/FAILED
+
 # 1. Health Check
 Write-Host "`n1. Verificando salud del servicio..." -ForegroundColor Yellow
 try {
@@ -25,7 +40,7 @@ $scheduleBody = @{
 } | ConvertTo-Json
 
 try {
-    $response = Invoke-RestMethod -Uri "$baseUrl/api/v1/jobs/schedule" `
+    $response = Invoke-RestMethod -Uri "$baseUrl/api/v1/jobs/schedule-recurrent" `
         -Method POST `
         -Headers @{"Content-Type" = "application/json"} `
         -Body $scheduleBody
