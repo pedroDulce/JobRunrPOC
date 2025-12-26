@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.LocalDateTime;
 import java.util.Map;
 
 @RestController
@@ -25,10 +26,13 @@ public class JobExecutorController {
         try {
             // Ejecutar
             Object result = processCustomerSummary(request);
-            return ResponseEntity.ok(JobResult.success(result));
+            return ResponseEntity.ok(new JobResult(request.getJobId(), true /*boolean success*/, result.toString(),
+                    LocalDateTime.now()));
         } catch (Exception e) {
             log.error("Job falló: {}", e.getMessage(), e);
-            return ResponseEntity.status(500).body(JobResult.failure(e.getMessage()));
+            return ResponseEntity.status(500).body(new JobResult(request.getJobId(), true /*boolean success*/,
+                    e.getMessage(),
+                    LocalDateTime.now()));
         }
     }
 

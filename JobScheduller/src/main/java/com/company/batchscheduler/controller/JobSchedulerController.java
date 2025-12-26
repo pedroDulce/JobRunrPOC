@@ -1,9 +1,10 @@
 package com.company.batchscheduler.controller;
 
 import com.company.batchscheduler.job.EmbebbedCustomerSummaryJob;
-import common.batch.dto.ImmediateJobRequest;
-import common.batch.dto.JobRequest;
-import common.batch.dto.JobScheduleRequest;
+import common.batch.dto.*;
+import common.batch.model.JobResponse;
+import common.batch.model.JobStatus;
+import common.batch.repository.JobStatusRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -12,6 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.jobrunr.scheduling.JobScheduler;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -28,6 +30,9 @@ import java.util.UUID;
 @RequiredArgsConstructor
 @Slf4j
 public class JobSchedulerController {
+
+    private final KafkaTemplate<String, JobRequest> kafkaTemplate;
+    private final JobStatusRepository statusRepository;
 
     private final JobScheduler jobScheduler;
     private final EmbebbedCustomerSummaryJob embebbedCustomerSummaryJob;
@@ -190,27 +195,31 @@ public class JobSchedulerController {
         }
     }
 
-    @PostMapping("/schedule-remote")
-    public ResponseEntity<?> scheduleRemoteJob(@RequestBody JobRequest request) {
-        String jobId = UUID.randomUUID().toString();
+    @PostMapping("/execute-remote")
+    public ResponseEntity<JobResponse> executeRemoteJob(@RequestBody JobRequest request) {
+        // 1. Guardar estado "ENQUEUED" en BD
+        JobStatus status = new JobStatus();
+        status.setJobId(request.getJobId());
+        status.setStatus("ENQUEUED");
+        status.setCreatedAt(LocalDateTime.now());
+        statusRepository.save(status);
 
-        jobScheduler.scheduleRecurrently(
-                jobId,
-                request.getCronExpression(),
-                () -> remoteJobExecutor.executeInMicroservice(
-                        jobId,
-                        request.getJobType(),
-                        request.getParametersJson()
-                )
+        // 2. Publicar mensaje a Kafka (no bloqueante)
+        kafkaTemplate.send("job-requests", String.valueOf(request.getJobId()), request);
+
+        // 3. Responder inmediatamente
+        return ResponseEntity.accepted().body(
+                new JobResponse(request.getJobId(), "Job enqueued for execution")
         );
-
-        return ResponseEntity.ok(Map.of(
-                "jobId", jobId,
-                "status", "SCHEDULED",
-                "microservice", "job-executor:8082",
-                "jobType", request.getJobType()
-        ));
     }
+
+    @GetMapping("/status/{jobId}")
+    public ResponseEntity<JobStatus> getStatus(@PathVariable String jobId) {
+        return statusRepository.findByJobId(jobId)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
 
 
     // Mantener el método validateCronExpression igual

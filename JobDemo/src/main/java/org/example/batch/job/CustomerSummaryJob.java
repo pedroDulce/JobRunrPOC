@@ -1,18 +1,15 @@
 package org.example.batch.job;
 
 import common.batch.EmailService;
+import common.batch.dto.JobRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.batch.repository.DailySummaryRepository;
 import org.jobrunr.jobs.annotations.Job;
 import org.springframework.stereotype.Component;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.Date;
-import java.util.UUID;
 
 @Component
 @Slf4j
@@ -24,19 +21,19 @@ public class CustomerSummaryJob {
 
     // Método modificado para aceptar Strings
     @Job(name = "Generar resumen diario de clientes", retries = 2)
-    public void generateDailySummary(String jobId, String processDateStr,
-                                     String sendEmailStr, String emailRecipient) {
+    public String generateDailySummary(JobRequest jobRequest) {
 
+        String jobId = jobRequest.getJobId();
         try {
+            String processDateStr = (String) jobRequest.getParameter("date");
+            String emailRecipient = (String) jobRequest.getParameter("emailRecipient");
             log.info("🚀 Iniciando job {} con fecha: {}", jobId, processDateStr);
-            log.info("¿sendEmailStr? " + sendEmailStr);
 
             // Convertir String a LocalDate
             LocalDate processDate = LocalDate.parse(processDateStr);
-            boolean sendEmail = Boolean.parseBoolean(sendEmailStr);
 
             log.info("Procesando resumen para fecha: {}", processDate);
-            if (sendEmail && emailRecipient != null) {
+            if (emailRecipient != null) {
                 log.info("📧 Enviando email a: {}", emailRecipient);
                 sendSummaryEmail(processDate, jobId, emailRecipient);
                 log.info("El job " + jobId + " se ejecutó exitosamente para la fecha " + processDate);
@@ -44,24 +41,11 @@ public class CustomerSummaryJob {
 
             log.info("✅ Job {} completado exitosamente", jobId);
 
+            return "Proceso ha enviado el correo con toda la info solicitada en fecha " + processDateStr;
+
         } catch (Exception e) {
             log.error("❌ Error en job {}: {}", jobId, e.getMessage(), e);
-            throw e; // JobRunr manejará el reintento
-        }
-    }
-
-    // Método para ejecución inmediata (también con Strings)
-    @Job(name = "Ejecución inmediata de resumen")
-    public void executeImmediately(String processDateStr, boolean sendEmail, String emailRecipient) {
-        String jobId = UUID.randomUUID().toString();
-        log.info("Ejecutando job inmediato {} para fecha: {}", jobId, processDateStr);
-
-        // Convertir y procesar
-        LocalDate processDate = LocalDate.parse(processDateStr);
-        log.info("Procesando resumen para fecha: {}", processDate);
-        if (sendEmail && emailRecipient != null) {
-            sendSummaryEmail(processDate, jobId, emailRecipient);
-            log.info("El job " + jobId + " de ejecución inmediata finalizó de forma exitosa en la fecha " + processDate);
+            throw e;
         }
     }
 
@@ -89,15 +73,6 @@ public class CustomerSummaryJob {
 
         } catch (Exception e) {
             log.warn("⚠️ No se pudo enviar email: {}", e.getMessage());
-        }
-    }
-
-    public static Date parseDateStr(String dateString) {
-        SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
-        try {
-            return formatter.parse(dateString);
-        } catch (ParseException e) {
-            throw new RuntimeException(e);
         }
     }
 

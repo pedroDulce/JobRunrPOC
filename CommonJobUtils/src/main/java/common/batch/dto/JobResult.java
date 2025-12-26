@@ -1,32 +1,54 @@
 package common.batch.dto;
 
+import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
-/** TODO: meter esta clase en la infrabackend **/
+import java.time.LocalDateTime;
+
+@Entity
+@Table(name = "job_results")
 @Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class JobResult {
 
-    private boolean success;
-    private Object result;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(name = "job_id", nullable = false, unique = true)
+    private String jobId;
+
+    @Column(nullable = false)
+    private static Boolean success;
+
+    @Column(length = 2000)
     private String message;
 
-    public static JobResult success(Object result) {
-        JobResult res = new JobResult();
-        res.setSuccess(true);
-        res.setResult(result);
-        res.setMessage("Proceso finalizado de forma exitosa");
-        return res;
+    @Column(name = "completed_at")
+    private LocalDateTime completedAt;
+
+    @Column(name = "job_type")
+    private String jobType;
+
+    @Column(name = "execution_time_ms")
+    private Long executionTimeMs;
+
+    public JobResult(String jobId, boolean success, String result, LocalDateTime completedAt) {
+        this.completedAt = completedAt;
+        this.success = success;
+        this.message = result;
+        this.jobId = jobId;
     }
 
-    public static JobResult failure(String message) {
-        JobResult res = new JobResult();
-        res.setSuccess(false);
-        res.setMessage(message);
-        return res;
-    }
-
-    public String getMessage() {
-        return success ? this.message : "Proceso finalizado con errores, motivo: " + this.message;
+    @PrePersist
+    public void prePersist() {
+        if (completedAt == null) {
+            completedAt = LocalDateTime.now();
+        }
     }
 }
-

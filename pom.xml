@@ -59,6 +59,11 @@
       <version>2.1.0</version> <!-- Verifica la versión más reciente -->
     </dependency>
 
+    <dependency>
+      <groupId>org.springframework.kafka</groupId>
+      <artifactId>spring-kafka</artifactId>
+    </dependency>
+
     <!-- https://mvnrepository.com/artifact/org.jobrunr/jobrunr-spring-boot-3-starter -->
     <dependency>
       <groupId>org.jobrunr</groupId>

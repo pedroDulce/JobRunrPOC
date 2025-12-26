@@ -24,13 +24,13 @@ public class RemoteJobExecutor {
     }
 
     @Job(name = "Ejecutar job en microservicio")
-    public void executeInMicroservice(String jobId, String jobType,
+    public void executeRemote(String jobId, String jobType,
                                       String parametersJson) {
 
         String microserviceUrl = getMicroserviceUrl(jobType);
 
         Supplier<JobResult> supplier = () -> {
-            JobRequest request = new JobRequest(jobId, jobType, parametersJson);
+            JobRequest request = new JobRequest(jobId, jobId, jobType, parametersJson);
 
             ResponseEntity<JobResult> response = restTemplate.postForEntity(
                     microserviceUrl + "/api/jobs/execute",
