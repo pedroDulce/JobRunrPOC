@@ -38,7 +38,7 @@ public class CustomerSummaryJob {
             log.info("Procesando resumen para fecha: {}", processDate);
             if (sendEmail && emailRecipient != null) {
                 log.info("📧 Enviando email a: {}", emailRecipient);
-                sendSummaryEmail(parseDateStr(processDateStr), jobId, emailRecipient);
+                sendSummaryEmail(processDate, jobId, emailRecipient);
                 log.info("El job " + jobId + " se ejecutó exitosamente para la fecha " + processDate);
             }
 
@@ -60,12 +60,12 @@ public class CustomerSummaryJob {
         LocalDate processDate = LocalDate.parse(processDateStr);
         log.info("Procesando resumen para fecha: {}", processDate);
         if (sendEmail && emailRecipient != null) {
-            sendSummaryEmail(parseDateStr(processDateStr), jobId, emailRecipient);
+            sendSummaryEmail(processDate, jobId, emailRecipient);
             log.info("El job " + jobId + " de ejecución inmediata finalizó de forma exitosa en la fecha " + processDate);
         }
     }
 
-    private void sendSummaryEmail(Date date, String jobId, String recipient) {
+    private void sendSummaryEmail(LocalDate date, String jobId, String recipient) {
         try {
             long count = dailySummaryRepository.countBySummaryDate(date);
 
