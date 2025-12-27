@@ -88,34 +88,6 @@ try {
 }
 
 
-# 2. Programar job recurrente
-Write-Host "`n2. Programando job recurrente (cada 5 minutos)..." -ForegroundColor Yellow
-$scheduleBody = @{
-    jobName = "ResumenDiarioClientes"
-    cronExpression = "0 */45 * * * *"
-    processDate = "2024-01-15"
-    metadata = @{
-        "emailRecipient" = "admin@company.com"
-        "customerFilter" = "*"
-    }
-} | ConvertTo-Json
-
-try {
-    $response = Invoke-RestMethod -Uri "$baseUrl/api/v1/jobs/schedule-recurrent" `
-        -Method POST `
-        -Headers @{"Content-Type" = "application/json"} `
-        -Body $scheduleBody
-
-    Write-Host "   OK - Job programado: $($response.jobId)" -ForegroundColor Green
-    Write-Host "   Cron: $($response.cronExpression)" -ForegroundColor Green
-
-} catch {
-    Write-Host "   ERROR: $($_.Exception.Message)" -ForegroundColor Red
-    if ($_.ErrorDetails.Message) {
-        Write-Host "   Response: $($_.ErrorDetails.Message)" -ForegroundColor Red
-    }
-}
-
 # 3. Ejecutar job inmediatamente
 Write-Host "`n3. Ejecutando job inmediatamente..." -ForegroundColor Yellow
 $immediateBody = @{
