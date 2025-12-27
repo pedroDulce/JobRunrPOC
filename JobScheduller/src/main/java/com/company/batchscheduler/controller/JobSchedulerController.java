@@ -1,7 +1,7 @@
 package com.company.batchscheduler.controller;
 
 import com.company.batchscheduler.job.EmbebbedCustomerSummaryJob;
-import com.company.batchscheduler.job.KafkaPublisherForJobs;
+import com.company.batchscheduler.producer.KafkaPublisherForJobs;
 import common.batch.dto.JobRequest;
 import common.batch.dto.JobType;
 import io.swagger.v3.oas.annotations.Operation;

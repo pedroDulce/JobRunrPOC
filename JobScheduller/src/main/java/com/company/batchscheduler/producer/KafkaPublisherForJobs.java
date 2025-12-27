@@ -1,4 +1,4 @@
-package com.company.batchscheduler.job;
+package com.company.batchscheduler.producer;
 
 import com.company.batchscheduler.model.JobStatus;
 import com.company.batchscheduler.repository.JobStatusRepository;
@@ -15,7 +15,6 @@ import org.springframework.stereotype.Component;
 import java.time.LocalDateTime;
 import java.util.concurrent.CompletableFuture;
 
-
 @RequiredArgsConstructor
 @Slf4j
 @Component
@@ -26,7 +25,7 @@ public class KafkaPublisherForJobs {
 
     private final JobStatusRepository statusRepository;
 
-    private final KafkaTemplate<String, JobRequest> kafkaTemplate;
+    private final KafkaTemplate<String, Object> kafkaTemplate;
 
     public JobStatus publishEventForRunJob(String jobId, JobRequest request) {
         // Guardar estado inicial en BD
@@ -41,7 +40,7 @@ public class KafkaPublisherForJobs {
 
         // Publicar mensaje a Kafka usando CompletableFuture
         try {
-            CompletableFuture<SendResult<String, JobRequest>> future =
+            CompletableFuture<SendResult<String, Object>> future =
                     kafkaTemplate.send(jobRequestsTopic, jobId, request);
 
             future.whenComplete((result, ex) -> {
