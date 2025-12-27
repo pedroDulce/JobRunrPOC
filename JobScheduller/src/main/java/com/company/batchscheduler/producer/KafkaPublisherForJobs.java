@@ -30,7 +30,7 @@ public class KafkaPublisherForJobs {
     private String jobRequestsTopic;
 
     private final JobStatusService jobStatusService;
-    private final KafkaTemplate<String, Object> kafkaTemplate;
+    private final KafkaTemplate<String, JobRequest> kafkaTemplate;
 
     /**
      * Publica un evento de job con headers de routing para filtrado
@@ -43,7 +43,7 @@ public class KafkaPublisherForJobs {
                 .status("ENQUEUED")
                 .message("Job enqueued for execution")
                 .createdAt(LocalDateTime.now())
-                //.parametersJson(createMetadataForRouting(request))
+                .metadata(request.getMetadata())
                 .build();
         jobStatusService.saveOrUpdate(status);
 
@@ -52,7 +52,7 @@ public class KafkaPublisherForJobs {
             Message<JobRequest> message = buildMessageWithRoutingHeaders(jobId, request);
 
             // Publicar a Kafka
-            CompletableFuture<SendResult<String, Object>> future =
+            CompletableFuture<SendResult<String, JobRequest>> future =
                     kafkaTemplate.send(message);
 
             future.whenComplete((result, ex) -> {
@@ -123,7 +123,7 @@ public class KafkaPublisherForJobs {
     /**
      * Maneja éxito en publicación
      */
-    private void handlePublishSuccess(String jobId, SendResult<String, Object> result) {
+    private void handlePublishSuccess(String jobId, SendResult<String, JobRequest> result) {
         log.info("""
                 Job {} published to Kafka successfully.
                 Topic: {}
@@ -183,7 +183,7 @@ public class KafkaPublisherForJobs {
         JobStatus status = createInitialStatus(jobId, request);
 
         try {
-            CompletableFuture<SendResult<String, Object>> future =
+            CompletableFuture<SendResult<String, JobRequest>> future =
                     kafkaTemplate.send(message);
 
             future.whenComplete((result, ex) -> {

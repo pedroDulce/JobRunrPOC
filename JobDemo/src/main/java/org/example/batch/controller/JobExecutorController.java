@@ -22,11 +22,12 @@ public class JobExecutorController {
 
     @PostMapping("/execute-sync")
     public ResponseEntity<JobResult> executeJob(@RequestBody JobRequest request) {
-        log.info("Recibido job: {}", request.getJobType());
+        log.info("[JOB—DEMO]::JobExecutorController:: Recibido job: {}", request.getJobType());
 
         try {
             // Ejecutar
             Object result = processCustomerSummary(request);
+            log.info("[JOB—DEMO]::JobExecutorController:: Job invocado vìa REST (modo sync) finalizó con éxito");
             return ResponseEntity.ok(new JobResult(request.getJobId(), JobStatusEnum.SUCCESS, result.toString(),
                     LocalDateTime.now()));
         } catch (Exception e) {
