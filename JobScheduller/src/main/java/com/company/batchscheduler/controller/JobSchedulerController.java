@@ -74,6 +74,7 @@ public class JobSchedulerController {
             @Valid @RequestBody JobRequest request) {
 
         try {
+
             String jobId = UUID.randomUUID().toString();
 
             // Preparar parámetros
