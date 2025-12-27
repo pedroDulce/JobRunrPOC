@@ -5,7 +5,7 @@ Write-Host "==========================================="
 $baseUrl = "http://localhost:8080"
 
 # Eliminar un job específico
-Invoke-RestMethod -X DELETE http://localhost:8080/api/jobs/550e8400-e29b-41d4-a716-446655440000
+# Invoke-RestMethod -X DELETE http://localhost:8080/api/jobs/550e8400-e29b-41d4-a716-446655440000
 
 # Eliminar múltiples jobs
 #Invoke-RestMethod -X DELETE http://localhost:8080/api/jobs -H "Content-Type: application/json" -d '["id1", "id2", "id3"]'

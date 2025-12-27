@@ -35,7 +35,7 @@ public class JobSchedulerController {
 
     private final RemoteJobDispatcher remoteJobDispatcher;
 
-    @PostMapping("/execute-remote-async")
+    @PostMapping("/schedule-remote-async")
     public ResponseEntity<Map<String, Object>> executeRemoteJob(@RequestBody JobRequest request) {
         validateCronExpression(request.getCronExpression());
 

@@ -7,7 +7,9 @@ import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Random;
 import java.util.UUID;
+import java.util.random.RandomGenerator;
 
 @Component
 @Slf4j
@@ -58,7 +60,7 @@ public class EmbebbedCustomerSummaryJob {
 
     private void sendSummaryEmail(LocalDate date, String jobId, String recipient) {
         try {
-            long count = UUID.randomUUID().clockSequence();
+            long count = 34L;
 
             String subject = String.format("📊 Resumen diario procesado - %s", date);
             String body = String.format("""
