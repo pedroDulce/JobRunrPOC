@@ -14,6 +14,7 @@ import java.time.LocalDateTime;
 @Slf4j
 @RequiredArgsConstructor
 public class CustomerSummaryJob {
+
     private final DailySummaryRepository dailySummaryRepository;
     private final EmailService emailService;
 

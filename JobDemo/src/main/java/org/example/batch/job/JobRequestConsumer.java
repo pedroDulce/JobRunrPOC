@@ -17,7 +17,7 @@ import java.time.LocalDateTime;
 public class JobRequestConsumer {
 
     private final CustomerSummaryJob jobExecutorService;
-    private final KafkaTemplate<String, JobResult> kafkaTemplate;
+    private final KafkaTemplate<String, Object> kafkaTemplate;
 
     @Value("${kafka.topics.job-results}")
     private String jobResultsTopic;
