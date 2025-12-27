@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import common.batch.dto.JobResult;
 
+import common.batch.dto.JobStatus;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -311,7 +312,7 @@ public class JobResultPublisher {
         } catch (Exception e) {
             log.error("Failed to deserialize JobResult: {}", e.getMessage());
             return JobResult.builder()
-                    .status("ERROR")
+                    .status(JobStatus.FAILED)
                     .message("Deserialization failed")
                     .build();
         }
