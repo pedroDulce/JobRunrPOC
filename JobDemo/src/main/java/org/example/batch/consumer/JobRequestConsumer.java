@@ -3,13 +3,12 @@ package org.example.batch.consumer;
 import common.batch.dto.JobRequest;
 import common.batch.dto.JobResult;
 
-import common.batch.dto.JobStatus;
+import common.batch.dto.JobStatusEnum;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.batch.job.CustomerSummaryJob;
 import org.example.batch.producer.JobResultPublisher;
 import org.example.batch.service.JobMetricsService;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.retry.support.RetryTemplate;
@@ -156,7 +155,7 @@ public class JobRequestConsumer {
             return JobResult.builder()
                     .jobId(jobRequest.getJobId())
                     .jobName(jobRequest.getJobName())
-                    .status(JobStatus.FAILED)
+                    .status(JobStatusEnum.FAILED)
                     .message("Error processing job after retries")
                     .startedAt(LocalDateTime.now())
                     .completedAt(LocalDateTime.now())
@@ -212,7 +211,7 @@ public class JobRequestConsumer {
             return JobResult.builder()
                     .jobId(jobRequest.getJobId())
                     .jobName(jobRequest.getJobName())
-                    .status(JobStatus.FAILED)
+                    .status(JobStatusEnum.FAILED)
                     .message("Timeout processing high priority job")
                     .startedAt(LocalDateTime.now())
                     .completedAt(LocalDateTime.now())
@@ -223,7 +222,7 @@ public class JobRequestConsumer {
             return JobResult.builder()
                     .jobId(jobRequest.getJobId())
                     .jobName(jobRequest.getJobName())
-                    .status(JobStatus.FAILED)
+                    .status(JobStatusEnum.FAILED)
                     .message("Error processing high priority job")
                     .startedAt(LocalDateTime.now())
                     .completedAt(LocalDateTime.now())

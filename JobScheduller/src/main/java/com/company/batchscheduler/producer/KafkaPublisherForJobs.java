@@ -2,6 +2,7 @@ package com.company.batchscheduler.producer;
 
 import com.company.batchscheduler.model.JobStatus;
 import com.company.batchscheduler.repository.JobStatusRepository;
+import com.company.batchscheduler.service.JobStatusService;
 import common.batch.dto.JobRequest;
 import common.batch.dto.JobType;
 import lombok.RequiredArgsConstructor;
@@ -28,7 +29,7 @@ public class KafkaPublisherForJobs {
     @Value("${kafka.topics.job-requests}")
     private String jobRequestsTopic;
 
-    private final JobStatusRepository statusRepository;
+    private final JobStatusService jobStatusService;
     private final KafkaTemplate<String, Object> kafkaTemplate;
 
     /**
@@ -44,7 +45,7 @@ public class KafkaPublisherForJobs {
                 .createdAt(LocalDateTime.now())
                 //.parametersJson(createMetadataForRouting(request))
                 .build();
-        statusRepository.save(status);
+        jobStatusService.saveOrUpdate(status);
 
         try {
             // Crear mensaje con headers de routing
@@ -66,7 +67,7 @@ public class KafkaPublisherForJobs {
             log.error("Error sending to Kafka: {}", e.getMessage());
             status.setStatus("FAILED");
             status.setMessage("Failed to enqueue job: " + e.getMessage());
-            statusRepository.save(status);
+            jobStatusService.saveOrUpdate(status);
         }
         return status;
     }
@@ -98,7 +99,10 @@ public class KafkaPublisherForJobs {
                 .setHeader("source", "batch-scheduler-service")
                 .setHeader("version", "1.0")
                 .setHeader("correlation-id", generateCorrelationId())
-                .setHeader("timestamp", System.currentTimeMillis())
+                .setHeader("producer-timestamp", System.currentTimeMillis())
+                .setHeader("event-created-at", LocalDateTime.now().toString())
+                .setHeader("scheduled-at", request.getScheduledAt() != null ?
+                        request.getScheduledAt().toString() : LocalDateTime.now().toString())
                 .build();
     }
 
@@ -194,7 +198,10 @@ public class KafkaPublisherForJobs {
             log.error("Error sending message to Kafka: {}", e.getMessage());
             status.setStatus("FAILED");
             status.setMessage("Failed to enqueue job: " + e.getMessage());
-            statusRepository.save(status);
+            jobStatusService.saveOrUpdate(status);
+
+
+
         }
 
         return status;
@@ -213,7 +220,7 @@ public class KafkaPublisherForJobs {
                 //.metadata(createMetadataForRouting(request))
                 .build();
 
-        return statusRepository.save(status);
+        return jobStatusService.saveOrUpdate(status);
     }
 
     /**
@@ -229,7 +236,7 @@ public class KafkaPublisherForJobs {
      */
     @Async
     public void updateJobStatus(String jobId, String status, String message) {
-        statusRepository.findByJobId(jobId).ifPresent(jobStatus -> {
+        jobStatusService.findByJobId(jobId).ifPresent(jobStatus -> {
             jobStatus.setStatus(status);
             jobStatus.setMessage(message);
             jobStatus.setUpdatedAt(LocalDateTime.now());
@@ -239,7 +246,7 @@ public class KafkaPublisherForJobs {
                 jobStatus.setCompletedAt(LocalDateTime.now());
             }
 
-            statusRepository.save(jobStatus);
+            jobStatusService.saveOrUpdate(jobStatus);
             log.debug("Job {} status updated to: {} - {}", jobId, status, message);
         });
     }

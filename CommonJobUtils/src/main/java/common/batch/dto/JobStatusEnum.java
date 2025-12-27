@@ -1,5 +1,5 @@
 package common.batch.dto;
 
-public enum JobStatus {
+public enum JobStatusEnum {
     SUCCESS, FAILED, CANCELLED;
 }

@@ -2,7 +2,7 @@ package org.example.batch.job;
 
 import common.batch.dto.JobRequest;
 import common.batch.dto.JobResult;
-import common.batch.dto.JobStatus;
+import common.batch.dto.JobStatusEnum;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.batch.repository.DailySummaryRepository;
@@ -50,7 +50,7 @@ public class CustomerSummaryJob {
 
 
             resultado.setMessage("Proceso ha enviado el correo con toda la info solicitada en fecha " + processDateStr);
-            resultado.setStatus(JobStatus.SUCCESS);
+            resultado.setStatus(JobStatusEnum.SUCCESS);
             resultado.setDurationMs(millsTerminado - mills);
             resultado.setCompletedAt(LocalDateTime.now());
 
@@ -59,7 +59,7 @@ public class CustomerSummaryJob {
         } catch (Exception e) {
             long millsTerminado = Calendar.getInstance().getTimeInMillis();
             log.error("❌ Error en job {}: {}", jobId, e.getMessage(), e);
-            resultado.setStatus(JobStatus.FAILED);
+            resultado.setStatus(JobStatusEnum.FAILED);
             resultado.setDurationMs(millsTerminado - mills);
             resultado.setCompletedAt(LocalDateTime.now());
         }

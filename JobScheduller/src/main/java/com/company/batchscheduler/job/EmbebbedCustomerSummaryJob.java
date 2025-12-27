@@ -54,7 +54,7 @@ public class EmbebbedCustomerSummaryJob {
         log.info("Procesando resumen para fecha: {}", processDate);
         if (emailRecipient != null) {
             sendSummaryEmail(processDate, jobId, emailRecipient);
-            log.info("El job " + jobId + " de ejecución inmediata finalizó de forma exitosa en la fecha " + processDate);
+            log.info("✅ El job " + jobId + " de ejecución inmediata finalizó de forma exitosa en la fecha " + processDate);
         }
     }
 

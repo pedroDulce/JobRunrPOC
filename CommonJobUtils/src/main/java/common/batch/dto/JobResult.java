@@ -18,7 +18,7 @@ public class JobResult {
 
     private String jobId;
     private String jobName;
-    private JobStatus status; // SUCCESS, FAILED, CANCELLED
+    private JobStatusEnum status; // SUCCESS, FAILED, CANCELLED
     private String message;
     private Object resultData;
     private LocalDateTime startedAt;
@@ -28,7 +28,7 @@ public class JobResult {
     private Map<String, Object> metadata;
     private String correlationId;
 
-    public JobResult(String jobId, JobStatus status, String result, LocalDateTime completedAt) {
+    public JobResult(String jobId, JobStatusEnum status, String result, LocalDateTime completedAt) {
         this.completedAt = completedAt;
         this.status = status;
         this.message = result;
