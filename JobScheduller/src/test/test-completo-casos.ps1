@@ -1,5 +1,5 @@
 # test-poc-fixed.ps1
-Write-Host "PRUEBAS CORREGIDAS - Batch Scheduler POC" -ForegroundColor Cyan
+Write-Host "PRUEBAS EN LOS DOS MODOS (SYNC y ASYNC) y n modo inmediato - Batch Scheduler POC" -ForegroundColor Cyan
 Write-Host "==========================================="
 
 $baseUrl = "http://localhost:8080"
