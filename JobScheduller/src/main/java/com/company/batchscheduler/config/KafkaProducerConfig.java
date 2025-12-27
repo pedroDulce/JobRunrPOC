@@ -1,4 +1,4 @@
-package common.batch.config;
+package com.company.batchscheduler.config;
 
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringSerializer;

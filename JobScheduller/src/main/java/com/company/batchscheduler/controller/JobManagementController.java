@@ -1,8 +1,8 @@
 package com.company.batchscheduler.controller;
 
+import com.company.batchscheduler.model.JobStatus;
+import com.company.batchscheduler.repository.JobStatusRepository;
 import com.company.batchscheduler.service.JobService;
-import common.batch.model.JobStatus;
-import common.batch.repository.JobStatusRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

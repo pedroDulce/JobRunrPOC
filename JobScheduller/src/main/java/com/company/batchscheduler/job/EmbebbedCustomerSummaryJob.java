@@ -45,14 +45,14 @@ public class EmbebbedCustomerSummaryJob {
 
     // Método para ejecución inmediata (también con Strings)
     @Job(name = "Ejecución inmediata de resumen")
-    public void executeImmediately(String processDateStr, boolean sendEmail, String emailRecipient) {
+    public void executeImmediately(String processDateStr, String emailRecipient) {
         String jobId = UUID.randomUUID().toString();
         log.info("Ejecutando job inmediato {} para fecha: {}", jobId, processDateStr);
 
         // Convertir y procesar
         LocalDate processDate = LocalDate.parse(processDateStr);
         log.info("Procesando resumen para fecha: {}", processDate);
-        if (sendEmail && emailRecipient != null) {
+        if (emailRecipient != null) {
             sendSummaryEmail(processDate, jobId, emailRecipient);
             log.info("El job " + jobId + " de ejecución inmediata finalizó de forma exitosa en la fecha " + processDate);
         }

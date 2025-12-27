@@ -27,12 +27,6 @@ public class JobRequest implements Serializable {
     // Tipo de job a ejecutar (LARGO (solo enfoque asíncrono, SHORT, puede invocarse de forma síncrona o asíncrona)
     private JobType jobType;
 
-    // Parámetros del job en formato JSON
-    private String parametersJson;
-
-    // Parámetros del job como mapa (alternativa a JSON)
-    private Map<String, Object> parameters;
-
     // Fecha y hora de solicitud
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime processDate;
@@ -50,19 +44,17 @@ public class JobRequest implements Serializable {
     private Integer timeoutMinutes;
 
     // Metadata adicional
-    private Map<String, String> metadata;
+    private Map<String, String> parameters;
 
-    public JobRequest(String jobId, JobType jobType, String parametersJson) {
+    public JobRequest(String jobId, JobType jobType, Map<String, String> parameters) {
         this.jobId = jobId != null ? jobId : UUID.randomUUID().toString();
         this.jobType = jobType;
-        this.parametersJson = parametersJson;
+        this.parameters = parameters;
     }
 
-    public JobRequest(String jobId, JobType jobType, String parametersJson,
-                      String requestedBy, Integer priority) {
+    public JobRequest(String jobId, JobType jobType, String requestedBy, Integer priority) {
         this.jobId = jobId != null ? jobId : UUID.randomUUID().toString();
         this.jobType = jobType;
-        this.parametersJson = parametersJson;
         this.requestedBy = requestedBy;
         this.priority = priority != null ? priority : 2;
         this.processDate = LocalDateTime.now();
@@ -73,7 +65,6 @@ public class JobRequest implements Serializable {
         return JobRequest.builder()
                 .jobId(UUID.randomUUID().toString())
                 .jobType(jobType)
-                .parametersJson(parametersJson)
                 .requestedBy(requestedBy)
                 .priority(1)
                 .processDate(LocalDateTime.now())
@@ -86,7 +77,6 @@ public class JobRequest implements Serializable {
         return JobRequest.builder()
                 .jobId(UUID.randomUUID().toString())
                 .jobType(jobType)
-                .parametersJson(parametersJson)
                 .callbackUrl(callbackUrl)
                 .processDate(LocalDateTime.now())
                 .priority(2)
@@ -94,25 +84,13 @@ public class JobRequest implements Serializable {
     }
 
     // Método para obtener parámetro específico del mapa
-    public Object getParameter(String key) {
+    public String getParameter(String key) {
         return parameters != null ? parameters.get(key) : null;
     }
 
     // Método para obtener parámetro específico con valor por defecto
-    public Object getParameter(String key, Object defaultValue) {
+    public String getParameter(String key, String defaultValue) {
         return parameters != null ? parameters.getOrDefault(key, defaultValue) : defaultValue;
-    }
-
-    // Método para convertir JSON a mapa si es necesario
-    public Map<String, Object> getParametersAsMap() {
-        if (parameters != null) {
-            return parameters;
-        }
-        if (parametersJson != null && !parametersJson.isEmpty()) {
-            // Aquí podrías usar Jackson ObjectMapper para parsear el JSON
-            //return objectMapper.readValue(parametersJson, Map.class);
-        }
-        return Map.of();
     }
 
     // Validación básica del request

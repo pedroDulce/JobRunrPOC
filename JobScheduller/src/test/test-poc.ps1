@@ -35,7 +35,7 @@ $scheduleBody = @{
     jobName = "ResumenDiarioClientesSync"
     cronExpression = "0 */8 * * * *"
     processDate = "2024-01-15"
-    metadata = @{
+    parameters = @{
         "emailRecipient" = "admin@company.com"
         "customerFilter" = "*"
         "url" = "http://localhost:8082/api/jobs/execute-sync"
@@ -65,7 +65,7 @@ $scheduleBody = @{
     jobName = "ResumenDiarioClientesAsync"
     cronExpression = "0 */5 * * * *"
     processDate = "2024-01-15"
-    metadata = @{
+    parameters = @{
         "emailRecipient" = "admin@company.com"
         "customerFilter" = "*"
     }
@@ -93,7 +93,7 @@ Write-Host "`n3. Ejecutando job inmediatamente..." -ForegroundColor Yellow
 $immediateBody = @{
     jobName = "ResumenInmediato"
     processDate = "2024-01-15"
-    metadata = @{
+    parameters = @{
         "emailRecipient" = "admin@company.com"
         "customerFilter" = "*"
     }

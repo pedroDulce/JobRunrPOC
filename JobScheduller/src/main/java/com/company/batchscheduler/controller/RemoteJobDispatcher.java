@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.Map;
 import java.util.function.Supplier;
 
 @Component
@@ -27,10 +28,10 @@ public class RemoteJobDispatcher {
     }
 
     @org.jobrunr.jobs.annotations.Job(name = "Ejecutar job en microservicio de forma síncrona")
-    public void executeRestRemote(String jobId, JobType jobType, String microserviceUrl, String parametersJson) {
+    public void executeRestRemote(String jobId, JobType jobType, String microserviceUrl, Map<String, String> parameters) {
 
         Supplier<JobResult> supplier = () -> {
-            JobRequest request = new JobRequest(jobId, jobType, parametersJson);
+            JobRequest request = new JobRequest(jobId, jobType, parameters);
             ResponseEntity<JobResult> response = restTemplate.postForEntity(
                     microserviceUrl,
                     request,

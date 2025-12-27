@@ -2,11 +2,8 @@ package com.company.batchscheduler.controller;
 
 import com.company.batchscheduler.job.EmbebbedCustomerSummaryJob;
 import com.company.batchscheduler.job.KafkaPublisherForJobs;
-import common.batch.dto.ImmediateJobRequest;
 import common.batch.dto.JobRequest;
 import common.batch.dto.JobType;
-import common.batch.model.JobStatus;
-import common.batch.repository.JobStatusRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -74,7 +71,7 @@ public class JobSchedulerController {
     @PostMapping("/execute-now")
     @Operation(summary = "Ejecutar job inmediatamente")
     public ResponseEntity<Map<String, Object>> executeNow(
-            @Valid @RequestBody ImmediateJobRequest request) {
+            @Valid @RequestBody JobRequest request) {
 
         try {
             String jobId = UUID.randomUUID().toString();
@@ -84,14 +81,11 @@ public class JobSchedulerController {
                     ? request.getProcessDate().toString()
                     : LocalDate.now().minusDays(1).toString();
 
-            String emailRecipient = request.getEmailRecipient() != null
-                    ? request.getEmailRecipient()
-                    : "default@company.com";
+            String emailRecipient = request.getParameter("emailRecipient");
 
             jobScheduler.enqueue(() ->
                     embebbedCustomerSummaryJob.executeImmediately(
                             processDateStr,
-                            request.isSendEmail(),
                             emailRecipient
                     )
             );
@@ -128,7 +122,7 @@ public class JobSchedulerController {
                         jobId,
                         JobType.SYNCRONOUS,
                         microUrl,
-                        request.getParametersJson()
+                        request.getParameters()
                 )
         );
 

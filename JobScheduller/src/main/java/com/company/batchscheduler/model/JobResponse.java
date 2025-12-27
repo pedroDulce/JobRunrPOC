@@ -1,4 +1,4 @@
-package common.batch.model;
+package com.company.batchscheduler.model;
 
 import lombok.Builder;
 import lombok.Data;

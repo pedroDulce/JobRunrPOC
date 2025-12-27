@@ -18,7 +18,7 @@ spring:
 
   batch:
     jdbc:
-      initialize-schema: update
+      initialize-schema: always
     job:
       enabled: false
 

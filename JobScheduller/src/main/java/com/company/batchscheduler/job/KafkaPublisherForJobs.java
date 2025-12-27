@@ -1,9 +1,9 @@
 package com.company.batchscheduler.job;
 
+import com.company.batchscheduler.model.JobStatus;
+import com.company.batchscheduler.repository.JobStatusRepository;
 import common.batch.dto.JobRequest;
 import common.batch.dto.JobType;
-import common.batch.model.JobStatus;
-import common.batch.repository.JobStatusRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;

@@ -1,6 +1,5 @@
-package common.batch.model;
+package com.company.batchscheduler.model;
 
-import common.batch.dto.JobType;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;

@@ -1,6 +1,6 @@
-package common.batch.repository;
+package com.company.batchscheduler.repository;
 
-import common.batch.model.JobStatus;
+import com.company.batchscheduler.model.JobStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
