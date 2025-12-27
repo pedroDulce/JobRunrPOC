@@ -18,6 +18,8 @@ public class JobRequest implements Serializable {
     private String jobId;
     private String jobName;
     private String cronExpression;
+    private String correlationId;
+    private String source;
     private Map<String, String> parameters;
     private LocalDateTime scheduledAt;
 
@@ -35,6 +37,8 @@ public class JobRequest implements Serializable {
     private Map<String, String> labels;        // Labels para filtrado avanzado
     private Integer maxRetries;
     private Integer timeoutSeconds;
+
+    private Map<String, Object> metadata;
 
     public JobRequest(String jobId, String jobType, Map<String, String> parameters) {
         this.jobId = jobId;

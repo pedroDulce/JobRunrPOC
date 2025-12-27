@@ -1,6 +1,8 @@
 package org.example.batch.job;
 
 import common.batch.dto.JobRequest;
+import common.batch.dto.JobResult;
+import common.batch.dto.JobStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.batch.repository.DailySummaryRepository;
@@ -9,6 +11,8 @@ import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Calendar;
+import java.util.Map;
 
 @Component
 @Slf4j
@@ -19,9 +23,12 @@ public class CustomerSummaryJob {
     private final EmailService emailService;
 
     @Job(name = "Generar resumen diario de clientes", retries = 2)
-    public String generateDailySummary(JobRequest jobRequest) {
+    public JobResult executeJob(JobRequest jobRequest, Map<String, String> headers) {
 
+        long mills = Calendar.getInstance().getTimeInMillis();
+        JobResult resultado = new JobResult();
         String jobId = jobRequest.getJobId();
+        resultado.setJobId(jobId);
         try {
             String processDateStr = (String) jobRequest.getParameters().get("date");
             String emailRecipient = (String) jobRequest.getParameters().get("emailRecipient");
@@ -38,15 +45,26 @@ public class CustomerSummaryJob {
                 sendSummaryEmail(processDate, jobId, emailRecipient);
                 log.info("El job " + jobId + " se ejecutó exitosamente para la fecha " + processDate);
             }
+            long millsTerminado = Calendar.getInstance().getTimeInMillis();
 
             log.info("✅ Job {} completado exitosamente", jobId);
 
-            return "Proceso ha enviado el correo con toda la info solicitada en fecha " + processDateStr;
+
+            resultado.setMessage("Proceso ha enviado el correo con toda la info solicitada en fecha " + processDateStr);
+            resultado.setStatus(JobStatus.SUCCESS);
+            resultado.setDurationMs(millsTerminado - mills);
+            resultado.setCompletedAt(LocalDateTime.now());
+
+            return resultado;
 
         } catch (Exception e) {
+            long millsTerminado = Calendar.getInstance().getTimeInMillis();
             log.error("❌ Error en job {}: {}", jobId, e.getMessage(), e);
-            throw new IllegalArgumentException("Unknown job type: " + jobRequest.getJobType());
+            resultado.setStatus(JobStatus.FAILED);
+            resultado.setDurationMs(millsTerminado - mills);
+            resultado.setCompletedAt(LocalDateTime.now());
         }
+        return resultado;
     }
 
     private void sendSummaryEmail(LocalDate date, String jobId, String recipient) {

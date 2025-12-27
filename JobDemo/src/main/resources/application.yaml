@@ -2,6 +2,7 @@ server:
   port: 8082
 
 spring:
+
   application:
     name: job-executor-service
 
@@ -15,30 +16,108 @@ spring:
       ddl-auto: update
     show-sql: true
 
-
   kafka:
     bootstrap-servers: localhost:9092
+
     consumer:
-      group-id: ${spring.application.name}-group
+      group-id: ${spring.application.name}-job-consumer  # customer-service-job-consumer
       auto-offset-reset: earliest
-      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      enable-auto-commit: false
+      fetch-min-size: 1024
+      fetch-max-wait: 500
+
       properties:
+        session.timeout.ms: 45000
+        max.poll.interval.ms: 300000
+        max.poll.records: 10
+        heartbeat.interval.ms: 3000
+        isolation.level: read_committed
+
+        # Deserialización
         spring.json.trusted.packages: "*"
         spring.json.value.default.type: common.batch.dto.JobRequest
-    producer:
-      key-serializer: org.apache.kafka.common.serialization.StringSerializer
-      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
-      properties:
-        spring.json.add.type.headers: false
+        spring.json.use.type.headers: false
 
-# Topics de Kafka
+        # Para el RecordInterceptor
+        interceptor.classes: org.apache.kafka.clients.consumer.ConsumerInterceptor
+        # Configuración de filtrado
+        filter:
+          enabled: true
+          supported-categories: ${KAFKA_SUPPORTED_CATEGORIES:CUSTOMER,REPORTING}
+          supported-domains: ${KAFKA_SUPPORTED_DOMAINS:SALES,OPERATIONS}
+          supported-job-types: ${KAFKA_SUPPORTED_JOB_TYPES:CUSTOMER_SUMMARY,CUSTOMER_EXPORT}
+
+        # Configuración de interceptor
+        interceptor:
+          log-level: DEBUG
+          enable-timing: true
+          enable-headers-logging: false  # Por privacidad
+
+    listener:
+      ack-mode: manual_immediate
+      concurrency: 3
+      poll-timeout: 5000
+      missing-topics-fatal: false
+
+# Configuración específica de Kafka para este servicio
 kafka:
   topics:
     job-requests: job-requests-topic
     job-results: job-results-topic
+    dead-letter-queue: job-requests-dlq
+    retry-topic: job-requests-retry
+    retry-suffix: "-retry"
+    dlq-suffix: "-dlq"
+  interceptor:
+    job-record-interceptor:
+      enabled: true
+      log-filtered-records: false
+      metrics-enabled: true
+  consumer:
+    concurrency: 3
+    poll-timeout: 5000
+
+    # Filtrado por headers
+    filter:
+      enabled: true
+      target-service: ${spring.application.name}  # Solo procesa jobs para este servicio
+      supported-categories: "CUSTOMER,REPORTING"  # Categorías soportadas
+      supported-domains: "SALES,OPERATIONS"       # Dominios soportados
+
+    # Política de reintentos
+    retry:
+      max-attempts: 3
+      backoff-delay: 1000
+      max-delay: 10000
+
+    # Dead Letter Queue
+    dlq:
+      enabled: true
+      max-retries: 3
+
+# Métricas y monitoreo
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,metrics,kafka
+  metrics:
+    export:
+      kafka:
+        enabled: true
+  kafka:
+    metrics:
+      enabled: true
+
 
 # Configuración del job
 job:
   max-retries: 3
   retry-delay-ms: 5000
+
+# Logging específico para Kafka
+logging:
+  level:
+    org.springframework.kafka: INFO
+    org.apache.kafka: WARN
+    com.company.jobexecutor.kafka: DEBUG

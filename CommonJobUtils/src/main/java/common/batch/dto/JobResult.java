@@ -1,55 +1,50 @@
 package common.batch.dto;
 
-import jakarta.persistence.*;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.io.Serializable;
 import java.time.LocalDateTime;
+import java.util.Map;
 
-@Entity
-@Table(name = "job_results")
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class JobResult implements Serializable {
+@JsonInclude(JsonInclude.Include.NON_NULL)
+public class JobResult {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-    @Column(name = "job_id", nullable = false, unique = true)
     private String jobId;
-
-    @Column(nullable = false)
-    private Boolean success;
-
-    @Column(length = 2000)
+    private String jobName;
+    private JobStatus status; // SUCCESS, FAILED, CANCELLED
     private String message;
-
-    @Column(name = "completed_at")
+    private Object resultData;
+    private LocalDateTime startedAt;
     private LocalDateTime completedAt;
+    private Long durationMs;
+    private String errorDetails;
+    private Map<String, Object> metadata;
+    private String correlationId;
 
-    @Column(name = "job_type")
-    private String jobType;
-
-    @Column(name = "execution_time_ms")
-    private Long executionTimeMs;
-
-    public JobResult(String jobId, boolean success, String result, LocalDateTime completedAt) {
+    public JobResult(String jobId, JobStatus status, String result, LocalDateTime completedAt) {
         this.completedAt = completedAt;
-        this.success = success;
+        this.status = status;
         this.message = result;
         this.jobId = jobId;
     }
 
-    @PrePersist
-    public void prePersist() {
-        if (completedAt == null) {
-            completedAt = LocalDateTime.now();
-        }
+    public boolean isSuccess() {
+        return "SUCCESS".equals(status);
     }
+
+    public boolean isFailed() {
+        return "FAILED".equals(status);
+    }
+
+
 }
+
+
+
