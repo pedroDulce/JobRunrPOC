@@ -6,7 +6,6 @@ import common.batch.dto.JobStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.batch.repository.DailySummaryRepository;
-import org.jobrunr.jobs.annotations.Job;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
@@ -22,7 +21,6 @@ public class CustomerSummaryJob {
     private final DailySummaryRepository dailySummaryRepository;
     private final EmailService emailService;
 
-    @Job(name = "Generar resumen diario de clientes", retries = 2)
     public JobResult executeJob(JobRequest jobRequest, Map<String, String> headers) {
 
         long mills = Calendar.getInstance().getTimeInMillis();

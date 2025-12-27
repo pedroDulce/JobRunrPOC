@@ -6,10 +6,15 @@ spring:
   application:
     name: job-executor-service
 
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.jobrunr.JobRunrAutoConfiguration
+
   datasource:
     url: jdbc:postgresql://localhost:5432/job_demo_database
     username: postgres
     password: postgres
+
 
   jpa:
     hibernate:
@@ -99,6 +104,14 @@ kafka:
 job:
   max-retries: 3
   retry-delay-ms: 5000
+
+org:
+  jobrunr:
+    enabled: false
+
+jobrunr:
+  background-job-server:
+    enabled: false
 
 # Actuator y métricas
 management:
