@@ -1,8 +1,10 @@
 package com.company.batchscheduler.controller;
 
 import com.company.batchscheduler.job.EmbebbedCustomerSummaryJob;
-import common.batch.dto.*;
-import common.batch.model.JobResponse;
+import com.company.batchscheduler.job.KafkaPublisherJob;
+import common.batch.dto.ImmediateJobRequest;
+import common.batch.dto.JobRequest;
+import common.batch.dto.JobType;
 import common.batch.model.JobStatus;
 import common.batch.repository.JobStatusRepository;
 import io.swagger.v3.oas.annotations.Operation;
@@ -11,13 +13,8 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jobrunr.scheduling.JobScheduler;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.kafka.core.KafkaTemplate;
-import org.springframework.kafka.support.SendResult;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -26,7 +23,6 @@ import java.time.LocalTime;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
 
 
 @Tag(name = "Job Scheduling", description = "API para programación de trabajos batch")
@@ -36,12 +32,9 @@ import java.util.concurrent.CompletableFuture;
 @Slf4j
 public class JobSchedulerController {
 
-    @Value("${kafka.topics.job-requests}")
-    private String jobRequestsTopic;
-
-    private final KafkaTemplate<String, JobRequest> kafkaTemplate;
-
     private final JobStatusRepository statusRepository;
+
+    private final KafkaPublisherJob kafkaPublisherJob;
 
     private final JobScheduler jobScheduler;
     private final EmbebbedCustomerSummaryJob embebbedCustomerSummaryJob;
@@ -49,76 +42,37 @@ public class JobSchedulerController {
     private final RemoteJobDispatcher remoteJobDispatcher;
 
     @PostMapping("/execute-remote-async")
-    public ResponseEntity<JobResponse> executeRemoteJob(@RequestBody JobRequest request) {
-        // Generar jobId si no viene
-        if (request.getJobId() == null) {
-            request.setJobId(UUID.randomUUID().toString());
-        }
+    public ResponseEntity<Map<String, Object>> executeRemoteJob(@RequestBody JobRequest request) {
+        validateCronExpression(request.getCronExpression());
 
-        // Guardar estado inicial en BD
-        JobStatus status = JobStatus.builder()
-                .jobId(request.getJobId())
-                .jobType(request.getJobType().toString())
-                .status("ENQUEUED")
-                .message("Job enqueued for execution")
-                .createdAt(LocalDateTime.now())
-                .build();
-        statusRepository.save(status);
+        String jobId = UUID.randomUUID().toString();
 
-        // Publicar mensaje a Kafka usando CompletableFuture
-        try {
-            CompletableFuture<SendResult<String, JobRequest>> future =
-                    kafkaTemplate.send(jobRequestsTopic, request.getJobId(), request);
+        // Preparar parámetros como Strings
+        String processDateStr = (request.getProcessDate() != null)
+                ? request.getProcessDate().toString()
+                : LocalDate.now().toString();
 
-            future.whenComplete((result, ex) -> {
-                if (ex != null) {
-                    log.error("Failed to publish job {} to Kafka: {}",
-                            request.getJobId(), ex.getMessage());
-                    // Actualizar estado a FAILED de forma asíncrona
-                    updateJobStatus(request.getJobId(), "FAILED",
-                            "Failed to enqueue job: " + ex.getMessage());
-                } else {
-                    log.info("Job {} published to Kafka successfully. Offset: {}",
-                            request.getJobId(), result.getRecordMetadata().offset());
-                }
-            });
-
-        } catch (Exception e) {
-            log.error("Error sending to Kafka: {}", e.getMessage());
-            status.setStatus("FAILED");
-            status.setMessage("Failed to enqueue job: " + e.getMessage());
-            statusRepository.save(status);
-
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(JobResponse.builder()
-                            .jobId(request.getJobId())
-                            .status("ERROR")
-                            .message("Failed to enqueue job")
-                            .timestamp(LocalDateTime.now())
-                            .build());
-        }
-
-        // Responder inmediatamente
-        return ResponseEntity.accepted().body(
-                JobResponse.builder()
-                        .jobId(request.getJobId())
-                        .status("ACCEPTED")
-                        .message("Job enqueued for asynchronous execution")
-                        .timestamp(LocalDateTime.now())
-                        .build()
+        // JobRunr puede serializar estos parámetros String correctamente
+        jobScheduler.scheduleRecurrently(
+                jobId,
+                request.getCronExpression(),
+                () -> kafkaPublisherJob.publishEventForRunJob(jobId, request)
         );
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("jobId", jobId);
+        response.put("status", "SCHEDULED");
+        response.put("cronExpression", request.getCronExpression());
+        response.put("processDate", processDateStr);
+        response.put("message", "Job programado exitosamente");
+        response.put("dashboardUrl", "http://localhost:8000");
+
+        log.info("✅ Job programado: {} con cron: {}", jobId, request.getCronExpression());
+
+        return ResponseEntity.ok(response);
+
     }
 
-    // Método helper para actualizar estado de forma asíncrona
-    @Async
-    public void updateJobStatus(String jobId, String status, String message) {
-        statusRepository.findByJobId(jobId).ifPresent(jobStatus -> {
-            jobStatus.setStatus(status);
-            jobStatus.setMessage(message);
-            jobStatus.setUpdatedAt(LocalDateTime.now());
-            statusRepository.save(jobStatus);
-        });
-    }
 
     @GetMapping("/status/{jobId}")
     public ResponseEntity<JobStatus> getStatus(@PathVariable String jobId) {
@@ -130,7 +84,7 @@ public class JobSchedulerController {
     @PostMapping("/schedule-recurrent")
     @Operation(summary = "Programar job recurrente")
     public ResponseEntity<Map<String, Object>> scheduleRecurringJob(
-            @Valid @RequestBody JobScheduleRequest request) {
+            @Valid @RequestBody JobRequest request) {
 
         try {
             log.info("Recibida solicitud para programar job recurrente: {}", request);
@@ -144,9 +98,8 @@ public class JobSchedulerController {
                     ? request.getProcessDate().toString()
                     : LocalDate.now().toString();
 
-            String sendEmailStr = String.valueOf(request.isSendEmail());
-            String emailRecipient = request.getEmailRecipient() != null
-                    ? request.getEmailRecipient()
+            String emailRecipient = request.getMetadata().get("emailRecipient") != null
+                    ? request.getMetadata().get("emailRecipient")
                     : "default@company.com";
 
             // JobRunr puede serializar estos parámetros String correctamente
@@ -156,7 +109,6 @@ public class JobSchedulerController {
                     () -> embebbedCustomerSummaryJob.generateDailySummary(
                             jobId,           // String
                             processDateStr,  // String
-                            sendEmailStr,    // String
                             emailRecipient   // String
                     )
             );
@@ -257,7 +209,6 @@ public class JobSchedulerController {
                     () -> embebbedCustomerSummaryJob.generateDailySummary(
                             jobId,
                             processDateStr,
-                            "true",  // sendEmail
                             emailRecipient
                     )
             );

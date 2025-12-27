@@ -8,16 +8,16 @@ $baseUrl = "http://localhost:8080"
 Invoke-RestMethod -X DELETE http://localhost:8080/api/jobs/550e8400-e29b-41d4-a716-446655440000
 
 # Eliminar múltiples jobs
-Invoke-RestMethod -X DELETE http://localhost:8080/api/jobs -H "Content-Type: application/json" -d '["id1", "id2", "id3"]'
+#Invoke-RestMethod -X DELETE http://localhost:8080/api/jobs -H "Content-Type: application/json" -d '["id1", "id2", "id3"]'
 
 # Eliminar todos los jobs de tipo "reportGeneration"
-Invoke-RestMethod -X DELETE http://localhost:8080/api/jobs/type/reportGeneration
+#Invoke-RestMethod -X DELETE http://localhost:8080/api/jobs/type/reportGeneration
 
 # Cancelar un job programado
-Invoke-RestMethod -X POST http://localhost:8080/api/jobs/550e8400-e29b-41d4-a716-446655440000/cancel
+#Invoke-RestMethod -X POST http://localhost:8080/api/jobs/550e8400-e29b-41d4-a716-446655440000/cancel
 
 # Eliminar jobs fallidos
-Invoke-RestMethod -X DELETE http://localhost:8080/api/jobs/state/FAILED
+#Invoke-RestMethod -X DELETE http://localhost:8080/api/jobs/state/FAILED
 
 # 1. Health Check
 Write-Host "`n1. Verificando salud del servicio..." -ForegroundColor Yellow
@@ -29,14 +29,44 @@ try {
     exit 1
 }
 
+Write-Host "`n2. Programando job con enfoque asincrono en su ejecucion..." -ForegroundColor Yellow
+$scheduleBody = @{
+    jobName = "ResumenDiarioClientesAsync"
+    cronExpression = "0 */5 * * * *"
+    processDate = "2024-01-15"
+    metadata = @{
+        "emailRecipient" = "admin@company.com"
+        "customerFilter" = "*"
+    }
+} | ConvertTo-Json
+
+try {
+    $response = Invoke-RestMethod -Uri "$baseUrl/api/v1/jobs/schedule-remote-async" `
+        -Method POST `
+        -Headers @{"Content-Type" = "application/json"} `
+        -Body $scheduleBody
+
+    Write-Host "   OK - Job programado: $($response.jobId)" -ForegroundColor Green
+    Write-Host "   Cron: $($response.cronExpression)" -ForegroundColor Green
+
+} catch {
+    Write-Host "   ERROR: $($_.Exception.Message)" -ForegroundColor Red
+    if ($_.ErrorDetails.Message) {
+        Write-Host "   Response: $($_.ErrorDetails.Message)" -ForegroundColor Red
+    }
+}
+
+
 # 2. Programar job recurrente
 Write-Host "`n2. Programando job recurrente (cada 5 minutos)..." -ForegroundColor Yellow
 $scheduleBody = @{
     jobName = "ResumenDiarioClientes"
-    cronExpression = "0 */5 * * * *"
+    cronExpression = "0 */45 * * * *"
     processDate = "2024-01-15"
-    sendEmail = $true
-    emailRecipient = "admin@company.com"
+    metadata = @{
+        "emailRecipient" = "admin@company.com"
+        "customerFilter" = "*"
+    }
 } | ConvertTo-Json
 
 try {
@@ -58,9 +88,12 @@ try {
 # 3. Ejecutar job inmediatamente
 Write-Host "`n3. Ejecutando job inmediatamente..." -ForegroundColor Yellow
 $immediateBody = @{
+    jobName = "ResumenInmediato"
     processDate = "2024-01-15"
-    sendEmail = $true
-    emailRecipient = "team@company.com"
+    metadata = @{
+        "emailRecipient" = "admin@company.com"
+        "customerFilter" = "*"
+    }
 } | ConvertTo-Json
 
 try {

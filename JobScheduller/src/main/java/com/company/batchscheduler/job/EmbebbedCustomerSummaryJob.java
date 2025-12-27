@@ -21,19 +21,16 @@ public class EmbebbedCustomerSummaryJob {
 
     // Método modificado para aceptar Strings
     @Job(name = "Generar resumen diario de clientes", retries = 2)
-    public void generateDailySummary(String jobId, String processDateStr,
-                                     String sendEmailStr, String emailRecipient) {
+    public void generateDailySummary(String jobId, String processDateStr, String emailRecipient) {
 
         try {
             log.info("🚀 Iniciando job {} con fecha: {}", jobId, processDateStr);
-            log.info("¿sendEmailStr? " + sendEmailStr);
 
             // Convertir String a LocalDate
             LocalDate processDate = LocalDate.parse(processDateStr);
-            boolean sendEmail = Boolean.parseBoolean(sendEmailStr);
 
             log.info("Procesando resumen para fecha: {}", processDate);
-            if (sendEmail && emailRecipient != null) {
+            if (emailRecipient != null) {
                 log.info("📧 Enviando email a: {}", emailRecipient);
                 sendSummaryEmail(processDate, jobId, emailRecipient);
                 log.info("El job " + jobId + " se ejecutó exitosamente para la fecha " + processDate);

@@ -20,6 +20,8 @@ public class JobRequest implements Serializable {
     // Identificador único del job (generado automáticamente si no se proporciona)
     private String jobId;
 
+    private String jobName;
+
     private String cronExpression;
 
     // Tipo de job a ejecutar (LARGO (solo enfoque asíncrono, SHORT, puede invocarse de forma síncrona o asíncrona)
@@ -33,7 +35,7 @@ public class JobRequest implements Serializable {
 
     // Fecha y hora de solicitud
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    private LocalDateTime requestedAt;
+    private LocalDateTime processDate;
 
     // Prioridad del job (1-alta, 2-media, 3-baja)
     private Integer priority;
@@ -63,7 +65,7 @@ public class JobRequest implements Serializable {
         this.parametersJson = parametersJson;
         this.requestedBy = requestedBy;
         this.priority = priority != null ? priority : 2;
-        this.requestedAt = LocalDateTime.now();
+        this.processDate = LocalDateTime.now();
     }
 
     // Método helper para crear JobRequest con prioridad alta
@@ -74,7 +76,7 @@ public class JobRequest implements Serializable {
                 .parametersJson(parametersJson)
                 .requestedBy(requestedBy)
                 .priority(1)
-                .requestedAt(LocalDateTime.now())
+                .processDate(LocalDateTime.now())
                 .build();
     }
 
@@ -86,7 +88,7 @@ public class JobRequest implements Serializable {
                 .jobType(jobType)
                 .parametersJson(parametersJson)
                 .callbackUrl(callbackUrl)
-                .requestedAt(LocalDateTime.now())
+                .processDate(LocalDateTime.now())
                 .priority(2)
                 .build();
     }
