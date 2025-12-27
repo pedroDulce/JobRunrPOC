@@ -136,7 +136,7 @@ public class JobRequestConsumer {
      */
     @KafkaListener(
             topics = "${kafka.topics.job-requests}",
-            containerFactory = "highPriorityListenerContainerFactory",
+            containerFactory = "jobRequestListenerContainerFactory",
             groupId = "${spring.kafka.consumer.group-id}-high-priority",
             id = "high-priority-consumer"
     )
@@ -381,7 +381,7 @@ public class JobRequestConsumer {
      */
     @KafkaListener(
             topics = "${kafka.topics.job-requests}-dlq",
-            containerFactory = "dlqListenerContainerFactory",
+            containerFactory = "jobRequestListenerContainerFactory",
             groupId = "${spring.kafka.consumer.group-id}-dlq",
             id = "dlq-consumer"
     )
