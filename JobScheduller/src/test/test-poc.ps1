@@ -100,7 +100,7 @@ $immediateBody = @{
 } | ConvertTo-Json
 
 try {
-    $response = Invoke-RestMethod -Uri "$baseUrl/api/v1/jobs/execute-now" `
+    $response = Invoke-RestMethod -Uri "$baseUrl/api/v1/jobs/execute-now-and-once" `
         -Method POST `
         -Headers @{"Content-Type" = "application/json"} `
         -Body $immediateBody

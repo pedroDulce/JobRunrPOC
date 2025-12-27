@@ -68,7 +68,7 @@ public class JobSchedulerController {
     }
 
 
-    @PostMapping("/execute-now")
+    @PostMapping("/execute-now-and-once")
     @Operation(summary = "Ejecutar job inmediatamente")
     public ResponseEntity<Map<String, Object>> executeNow(
             @Valid @RequestBody JobRequest request) {
