@@ -35,6 +35,7 @@ public class KafkaPublisherForJobs {
      * Publica un evento de job con headers de routing para filtrado
      */
     public JobStatus publishEventForRunJob(String jobId, JobRequest request) {
+        request.setScheduledAt(LocalDateTime.now());
         // Guardar estado inicial en BD
         JobStatus status = JobStatus.builder()
                 .jobId(jobId)
