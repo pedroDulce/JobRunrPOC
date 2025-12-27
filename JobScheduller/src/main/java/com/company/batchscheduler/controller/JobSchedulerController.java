@@ -236,6 +236,7 @@ public class JobSchedulerController {
     @PostMapping("/schedule-remote-sync")
     public ResponseEntity<?> scheduleRemoteJob(@RequestBody JobRequest request) {
         String jobId = UUID.randomUUID().toString();
+        String microUrl = (String) request.getParameter("url");
 
         jobScheduler.scheduleRecurrently(
                 jobId,
@@ -243,6 +244,7 @@ public class JobSchedulerController {
                 () -> remoteJobDispatcher.executeRestRemote(
                         jobId,
                         JobType.SYNCRONOUS,
+                        microUrl,
                         request.getParametersJson()
                 )
         );
@@ -250,7 +252,7 @@ public class JobSchedulerController {
         return ResponseEntity.ok(Map.of(
                 "jobId", jobId,
                 "status", "SCHEDULED",
-                "microservice", "job-executor:8082",
+                "microservice", "job-executor:" + microUrl,
                 "jobType", JobType.SYNCRONOUS
         ));
     }

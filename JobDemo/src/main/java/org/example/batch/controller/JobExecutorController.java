@@ -19,7 +19,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class JobExecutorController {
 
-    @PostMapping("/execute")
+    @PostMapping("/execute-sync")
     public ResponseEntity<JobResult> executeJob(@RequestBody JobRequest request) {
         log.info("Recibido job: {}", request.getJobType());
 

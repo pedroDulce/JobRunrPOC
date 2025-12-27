@@ -20,7 +20,7 @@ Invoke-RestMethod -X DELETE http://localhost:8080/api/jobs/550e8400-e29b-41d4-a7
 #Invoke-RestMethod -X DELETE http://localhost:8080/api/jobs/state/FAILED
 
 # 1. Health Check
-Write-Host "`n1. Verificando salud del servicio..." -ForegroundColor Yellow
+Write-Host "`n0. Verificando salud del servicio..." -ForegroundColor Yellow
 try {
     $health = Invoke-RestMethod -Uri "$baseUrl/api/v1/health" -Method GET
     Write-Host "   OK - $($health.status) - $($health.service)" -ForegroundColor Green
@@ -28,6 +28,37 @@ try {
     Write-Host "   ERROR: $($_.Exception.Message)" -ForegroundColor Red
     exit 1
 }
+
+
+Write-Host "`n1. Programando job con enfoque sincrono en su ejecucion..." -ForegroundColor Yellow
+$scheduleBody = @{
+    jobName = "ResumenDiarioClientesSync"
+    cronExpression = "0 */8 * * * *"
+    processDate = "2024-01-15"
+    metadata = @{
+        "emailRecipient" = "admin@company.com"
+        "customerFilter" = "*"
+        "url" = "http://localhost:8082/api/jobs/execute-sync"
+    }
+} | ConvertTo-Json
+
+try {
+    $response = Invoke-RestMethod -Uri "$baseUrl/api/v1/jobs/schedule-remote-sync" `
+        -Method POST `
+        -Headers @{"Content-Type" = "application/json"} `
+        -Body $scheduleBody
+
+    Write-Host "   OK - Job programado: $($response.jobId)" -ForegroundColor Green
+    Write-Host "   Cron: $($response.cronExpression)" -ForegroundColor Green
+
+} catch {
+    Write-Host "   ERROR: $($_.Exception.Message)" -ForegroundColor Red
+    if ($_.ErrorDetails.Message) {
+        Write-Host "   Response: $($_.ErrorDetails.Message)" -ForegroundColor Red
+    }
+}
+
+
 
 Write-Host "`n2. Programando job con enfoque asincrono en su ejecucion..." -ForegroundColor Yellow
 $scheduleBody = @{
