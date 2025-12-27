@@ -66,9 +66,6 @@ public class JobRequestDeserializer extends JsonDeserializer<JobRequest> {
                 case "correlation-id":
                     jobRequest.setCorrelationId(value);
                     break;
-                case "source":
-                    jobRequest.setSource(value);
-                    break;
             }
         });
 
