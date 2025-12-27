@@ -7,6 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.Map;
 import java.util.UUID;
 
 @Entity
@@ -34,7 +35,7 @@ public class JobStatus {
     private String message;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
-    private LocalDateTime finishedAt;
+    private LocalDateTime completedAt;
     private String jobType;
-    private String parametersJson;
+    private Map<String, Object> metadata;
 }

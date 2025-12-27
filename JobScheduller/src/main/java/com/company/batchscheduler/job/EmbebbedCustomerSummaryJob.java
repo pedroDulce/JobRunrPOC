@@ -1,6 +1,5 @@
 package com.company.batchscheduler.job;
 
-import com.company.batchscheduler.repository.negocio.DailySummaryRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jobrunr.jobs.annotations.Job;
@@ -15,7 +14,6 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class EmbebbedCustomerSummaryJob {
 
-    private final DailySummaryRepository dailySummaryRepository;
     private final EmailService emailService;
 
     // Método modificado para aceptar Strings
@@ -60,7 +58,7 @@ public class EmbebbedCustomerSummaryJob {
 
     private void sendSummaryEmail(LocalDate date, String jobId, String recipient) {
         try {
-            long count = dailySummaryRepository.countBySummaryDate(date);
+            long count = UUID.randomUUID().clockSequence();
 
             String subject = String.format("📊 Resumen diario procesado - %s", date);
             String body = String.format("""

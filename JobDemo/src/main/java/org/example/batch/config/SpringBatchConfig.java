@@ -1,8 +1,8 @@
-package com.company.batchscheduler.config;
+package org.example.batch.config;
 
-import com.company.batchscheduler.model.negocio.CustomerTransaction;
-import com.company.batchscheduler.model.negocio.DailySummary;
 import lombok.RequiredArgsConstructor;
+import org.example.batch.model.CustomerTransaction;
+import org.example.batch.model.DailySummary;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.configuration.annotation.EnableBatchProcessing;
@@ -28,7 +28,7 @@ import java.util.Map;
 @Configuration
 @EnableBatchProcessing
 @RequiredArgsConstructor
-public class BatchConfig {
+public class SpringBatchConfig {
 
     private final DataSource dataSource;
     private final JobRepository jobRepository;

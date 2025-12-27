@@ -23,8 +23,8 @@ public class CustomerSummaryJob {
 
         String jobId = jobRequest.getJobId();
         try {
-            String processDateStr = (String) jobRequest.getParameter("date");
-            String emailRecipient = (String) jobRequest.getParameter("emailRecipient");
+            String processDateStr = (String) jobRequest.getParameters().get("date");
+            String emailRecipient = (String) jobRequest.getParameters().get("emailRecipient");
             log.info("🚀 Iniciando job {} con fecha: {} y tipo: {}", jobId, processDateStr, jobRequest.getJobType());
 
             // Convertir String a LocalDate

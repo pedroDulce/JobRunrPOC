@@ -6,7 +6,7 @@ spring:
     name: job-executor-service
 
   datasource:
-    url: jdbc:postgresql://localhost:5432/batch_scheduler
+    url: jdbc:postgresql://localhost:5432/job_demo_database
     username: postgres
     password: postgres
 

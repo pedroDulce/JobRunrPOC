@@ -27,7 +27,7 @@ import java.util.UUID;
 @Slf4j
 public class JobSchedulerController {
 
-    private final KafkaPublisherForJobs kafkaPublisherForJobs;
+    private final KafkaPublisherForJobs kafkaPublisherWithoutHeadersInMessagesForJobs;
 
     private final JobScheduler jobScheduler;
 
@@ -42,15 +42,15 @@ public class JobSchedulerController {
         String jobId = UUID.randomUUID().toString();
 
         // Preparar parámetros como Strings
-        String processDateStr = (request.getProcessDate() != null)
-                ? request.getProcessDate().toString()
+        String processDateStr = (request.getScheduledAt() != null)
+                ? request.getScheduledAt().toString()
                 : LocalDate.now().toString();
 
         // JobRunr puede serializar estos parámetros String correctamente
         jobScheduler.scheduleRecurrently(
                 jobId,
                 request.getCronExpression(),
-                () -> kafkaPublisherForJobs.publishEventForRunJob(jobId, request)
+                () -> kafkaPublisherWithoutHeadersInMessagesForJobs.publishEventForRunJob(jobId, request)
         );
 
         Map<String, Object> response = new HashMap<>();
@@ -77,11 +77,11 @@ public class JobSchedulerController {
             String jobId = UUID.randomUUID().toString();
 
             // Preparar parámetros
-            String processDateStr = (request.getProcessDate() != null)
-                    ? request.getProcessDate().toString()
+            String processDateStr = (request.getScheduledAt() != null)
+                    ? request.getScheduledAt().toString()
                     : LocalDate.now().minusDays(1).toString();
 
-            String emailRecipient = request.getParameter("emailRecipient");
+            String emailRecipient = request.getParameters().get("emailRecipient");
 
             jobScheduler.enqueue(() ->
                     embebbedCustomerSummaryJob.executeImmediately(
@@ -113,14 +113,14 @@ public class JobSchedulerController {
     @PostMapping("/schedule-remote-sync")
     public ResponseEntity<?> scheduleRemoteJob(@RequestBody JobRequest request) {
         String jobId = UUID.randomUUID().toString();
-        String microUrl = (String) request.getParameter("url");
+        String microUrl = request.getParameters().get("url");
 
         jobScheduler.scheduleRecurrently(
                 jobId,
                 request.getCronExpression(),
                 () -> remoteJobDispatcher.executeRestRemote(
                         jobId,
-                        JobType.SYNCRONOUS,
+                        JobType.SYNCRONOUS.toString(),
                         microUrl,
                         request.getParameters()
                 )

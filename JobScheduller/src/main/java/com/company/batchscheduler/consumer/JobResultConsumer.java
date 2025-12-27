@@ -23,7 +23,7 @@ public class JobResultConsumer {
                 status -> {
                     status.setStatus(result.getSuccess() ? "COMPLETED" : "FAILED");
                     status.setMessage(result.getMessage());
-                    status.setFinishedAt(result.getCompletedAt());
+                    status.setCompletedAt(result.getCompletedAt());
                     statusRepository.save(status);
                     log.info("Updated status for job {} to {}", result.getJobId(), status.getStatus());
                 },

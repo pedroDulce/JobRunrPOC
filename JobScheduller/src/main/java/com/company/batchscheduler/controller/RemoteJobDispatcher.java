@@ -28,7 +28,7 @@ public class RemoteJobDispatcher {
     }
 
     @org.jobrunr.jobs.annotations.Job(name = "Ejecutar job en microservicio de forma síncrona")
-    public void executeRestRemote(String jobId, JobType jobType, String microserviceUrl, Map<String, String> parameters) {
+    public void executeRestRemote(String jobId, String jobType, String microserviceUrl, Map<String, String> parameters) {
 
         Supplier<JobResult> supplier = () -> {
             JobRequest request = new JobRequest(jobId, jobType, parameters);
