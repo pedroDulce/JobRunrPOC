@@ -22,27 +22,6 @@ spring:
     job:
       enabled: false
 
-jobrunr:
-  background-job-server:
-    enabled: true
-    worker-count: 3
-
-  dashboard:
-    enabled: true
-    port: 8000
-
-  database:
-    type: sql
-
-  job-scheduler:
-    enabled: true
-
-  job:
-    default-number-of-retries: 3
-
-  miscellaneous:
-    allow-anonymous-data-usage: false
-
   kafka:
     bootstrap-servers: localhost:9092
     consumer:
@@ -64,6 +43,27 @@ kafka:
   topics:
     job-requests: job-requests-topic
     job-results: job-results-topic
+
+jobrunr:
+  background-job-server:
+    enabled: true
+    worker-count: 3
+
+  dashboard:
+    enabled: true
+    port: 8000
+
+  database:
+    type: sql
+
+  job-scheduler:
+    enabled: true
+
+  job:
+    default-number-of-retries: 3
+
+  miscellaneous:
+    allow-anonymous-data-usage: false
 
 
 resilience4j.circuitbreaker:
