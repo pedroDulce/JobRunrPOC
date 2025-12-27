@@ -25,22 +25,19 @@
             <version>1.0.0</version>
         </dependency>
 
+        <!-- https://mvnrepository.com/artifact/org.jobrunr/jobrunr-spring-boot-3-starter -->
         <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-batch</artifactId>
+            <groupId>org.jobrunr</groupId>
+            <artifactId>jobrunr-spring-boot-3-starter</artifactId>
+            <version>${jobrunr.version}</version>
         </dependency>
+
 
         <!-- Maven -->
         <dependency>
             <groupId>io.github.resilience4j</groupId>
             <artifactId>resilience4j-spring-boot2</artifactId>
             <version>2.1.0</version> <!-- Verifica la versión más reciente -->
-        </dependency>
-
-        <dependency>
-            <groupId>org.jobrunr</groupId>
-            <artifactId>jobrunr-spring-boot-3-starter</artifactId>
-            <version>${jobrunr.version}</version>
         </dependency>
 
         <!-- Para manejar tipos JSON en Hibernate -->
