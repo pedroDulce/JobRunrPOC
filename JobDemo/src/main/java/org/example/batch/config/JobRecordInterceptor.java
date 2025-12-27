@@ -1,5 +1,6 @@
 package org.example.batch.config;
 
+import common.batch.dto.JobRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -11,7 +12,7 @@ import java.time.Instant;
 
 @Slf4j
 @Component
-public class JobRecordInterceptor implements RecordInterceptor<String, Object> {
+public class JobRecordInterceptor implements RecordInterceptor<String, JobRequest> {
 
     private Instant lastProcessedTime;
     private int totalRecordsProcessed = 0;
@@ -22,7 +23,7 @@ public class JobRecordInterceptor implements RecordInterceptor<String, Object> {
      * Método 1: Interceptar antes de procesar el record
      * Este es el método requerido por la interfaz
      */
-    public ConsumerRecord<String, Object> intercept(ConsumerRecord<String, Object> record) {
+    public ConsumerRecord<String, JobRequest> intercept(ConsumerRecord<String, JobRequest> record) {
         Instant start = Instant.now();
 
         // Log tiempo desde último procesamiento
@@ -56,8 +57,8 @@ public class JobRecordInterceptor implements RecordInterceptor<String, Object> {
      * Método 2: Interceptar con acceso al Consumer (opcional)
      */
     @Override
-    public ConsumerRecord<String, Object> intercept(ConsumerRecord<String, Object> record,
-                                                    Consumer<String, Object> consumer) {
+    public ConsumerRecord<String, JobRequest> intercept(ConsumerRecord<String, JobRequest> record,
+                                                    Consumer<String, JobRequest> consumer) {
         // Por defecto, delegamos al método sin Consumer
         return intercept(record);
     }
@@ -65,7 +66,7 @@ public class JobRecordInterceptor implements RecordInterceptor<String, Object> {
     /**
      * Método 3: Llamado cuando el procesamiento es exitoso
      */
-    public void success(ConsumerRecord<String, Object> record, Object result) {
+    public void success(ConsumerRecord<String, JobRequest> record, Object result) {
         totalRecordsProcessed++;
 
         log.debug("✅ Successfully processed record - Key: {}, Offset: {}",
@@ -91,7 +92,7 @@ public class JobRecordInterceptor implements RecordInterceptor<String, Object> {
     /**
      * Método 5: Llamado después del record (opcional)
      */
-    public void afterRecord(ConsumerRecord<String, Object> record, Object result) {
+    public void afterRecord(ConsumerRecord<String, JobRequest> record, JobRequest result) {
         // Cleanup o post-processing opcional
         // Por ejemplo, limpiar recursos temporales
     }
@@ -99,7 +100,7 @@ public class JobRecordInterceptor implements RecordInterceptor<String, Object> {
     /**
      * Método 6: Llamado cuando un record es filtrado (no es parte de la interfaz estándar)
      */
-    public void onFiltered(ConsumerRecord<String, Object> record, String reason) {
+    public void onFiltered(ConsumerRecord<String, JobRequest> record, String reason) {
         totalRecordsFiltered++;
 
         log.debug("🚫 Record filtered - Key: {}, Reason: {}", record.key(), reason);
