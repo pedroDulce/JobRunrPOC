@@ -1,4 +1,4 @@
-package com.company.batchscheduler.model;
+package com.company.batchscheduler.model.negocio;
 
 import jakarta.persistence.*;
 import lombok.Data;

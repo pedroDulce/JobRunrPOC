@@ -1,7 +1,7 @@
 package com.company.batchscheduler.config;
 
-import com.company.batchscheduler.model.CustomerTransaction;
-import com.company.batchscheduler.model.DailySummary;
+import com.company.batchscheduler.model.negocio.CustomerTransaction;
+import com.company.batchscheduler.model.negocio.DailySummary;
 import lombok.RequiredArgsConstructor;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;

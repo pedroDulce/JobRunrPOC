@@ -1,6 +1,6 @@
-package com.company.batchscheduler.repository;
+package com.company.batchscheduler.repository.negocio;
 
-import com.company.batchscheduler.model.DailySummary;
+import com.company.batchscheduler.model.negocio.DailySummary;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
