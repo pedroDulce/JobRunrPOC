@@ -10,13 +10,6 @@ import org.springframework.scheduling.annotation.EnableAsync;
 
 @SpringBootApplication
 @EnableAsync
-@EntityScan(basePackages = {
-        "com.company.batchscheduler.model",
-        "com.company.batchscheduler.entity"
-})  // <-- Escanea entidades en estos paquetes
-@EnableJpaRepositories(basePackages = {
-        "com.company.batchscheduler.repository"
-})  // <-- Escanea repositorios
 @OpenAPIDefinition(
         info = @Info(
                 title = "Batch Scheduler API",

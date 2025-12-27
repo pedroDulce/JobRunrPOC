@@ -43,18 +43,6 @@ jobrunr:
   miscellaneous:
     allow-anonymous-data-usage: false
 
-resilience4j.circuitbreaker:
-  instances:
-    remoteJob:
-      register-health-indicator: true
-      sliding-window-size: 10
-      minimum-number-of-calls: 5
-      permitted-number-of-calls-in-half-open-state: 3
-      automatic-transition-from-open-to-half-open-enabled: true
-      wait-duration-in-open-state: 5s
-      failure-rate-threshold: 50
-      event-consumer-buffer-size: 10
-
   kafka:
     bootstrap-servers: localhost:9092
     consumer:
@@ -64,7 +52,7 @@ resilience4j.circuitbreaker:
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
       properties:
         spring.json.trusted.packages: "*"
-        spring.json.value.default.type: common.batch.dto.JobRequest
+        spring.json.value.default.type: common.batch.dto.JobResult
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
@@ -76,3 +64,16 @@ kafka:
   topics:
     job-requests: job-requests-topic
     job-results: job-results-topic
+
+
+resilience4j.circuitbreaker:
+  instances:
+    remoteJob:
+      register-health-indicator: true
+      sliding-window-size: 10
+      minimum-number-of-calls: 5
+      permitted-number-of-calls-in-half-open-state: 3
+      automatic-transition-from-open-to-half-open-enabled: true
+      wait-duration-in-open-state: 5s
+      failure-rate-threshold: 50
+      event-consumer-buffer-size: 10
