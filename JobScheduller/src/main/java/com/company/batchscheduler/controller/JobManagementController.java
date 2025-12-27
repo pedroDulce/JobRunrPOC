@@ -1,12 +1,11 @@
 package com.company.batchscheduler.controller;
 
 import com.company.batchscheduler.service.JobService;
+import common.batch.model.JobStatus;
+import common.batch.repository.JobStatusRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
@@ -16,6 +15,15 @@ import java.util.Map;
 public class JobManagementController {
 
     private final JobService jobService;
+
+    private final JobStatusRepository statusRepository;
+
+    @GetMapping("/status/{jobId}")
+    public ResponseEntity<JobStatus> getStatus(@PathVariable String jobId) {
+        return statusRepository.findByJobId(jobId)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
 
     /**
      * DELETE /api/jobs/{jobId}

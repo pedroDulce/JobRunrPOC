@@ -30,11 +30,10 @@ import java.util.UUID;
 @Slf4j
 public class JobSchedulerController {
 
-    private final JobStatusRepository statusRepository;
-
     private final KafkaPublisherForJobs kafkaPublisherForJobs;
 
     private final JobScheduler jobScheduler;
+
     private final EmbebbedCustomerSummaryJob embebbedCustomerSummaryJob;
 
     private final RemoteJobDispatcher remoteJobDispatcher;
@@ -71,13 +70,6 @@ public class JobSchedulerController {
 
     }
 
-
-    @GetMapping("/status/{jobId}")
-    public ResponseEntity<JobStatus> getStatus(@PathVariable String jobId) {
-        return statusRepository.findByJobId(jobId)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
-    }
 
     @PostMapping("/execute-now")
     @Operation(summary = "Ejecutar job inmediatamente")
