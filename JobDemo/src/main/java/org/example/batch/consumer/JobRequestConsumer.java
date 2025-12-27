@@ -1,9 +1,10 @@
-package org.example.batch.job;
+package org.example.batch.consumer;
 
 import common.batch.dto.JobRequest;
 import common.batch.dto.JobResult;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.example.batch.job.CustomerSummaryJob;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.core.KafkaTemplate;
