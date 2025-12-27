@@ -2,6 +2,7 @@ package com.company.batchscheduler.consumer;
 
 import com.company.batchscheduler.repository.JobStatusRepository;
 import common.batch.dto.JobResult;
+import common.batch.dto.JobStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -21,7 +22,7 @@ public class JobResultConsumer {
 
         statusRepository.findByJobId(result.getJobId()).ifPresentOrElse(
                 status -> {
-                    status.setStatus(result.getSuccess() ? "COMPLETED" : "FAILED");
+                    status.setStatus(result.getStatus().compareTo(JobStatus.SUCCESS) == 0 ? "COMPLETED" : "FAILED");
                     status.setMessage(result.getMessage());
                     status.setCompletedAt(result.getCompletedAt());
                     statusRepository.save(status);

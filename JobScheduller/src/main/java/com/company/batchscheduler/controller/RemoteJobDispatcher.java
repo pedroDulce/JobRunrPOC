@@ -2,6 +2,7 @@ package com.company.batchscheduler.controller;
 
 import common.batch.dto.JobRequest;
 import common.batch.dto.JobResult;
+import common.batch.dto.JobStatus;
 import common.batch.dto.JobType;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import lombok.RequiredArgsConstructor;
@@ -44,7 +45,7 @@ public class RemoteJobDispatcher {
         // Con Circuit Breaker
         JobResult result = circuitBreaker.executeSupplier(supplier);
 
-        if (!result.getSuccess()) {
+        if (result.getStatus().compareTo(JobStatus.SUCCESS) != 0) {
             throw new RuntimeException("Microservicio reportó error: " +
                     result.getMessage());
         }
