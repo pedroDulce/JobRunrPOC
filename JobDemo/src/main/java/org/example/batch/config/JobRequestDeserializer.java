@@ -60,6 +60,9 @@ public class JobRequestDeserializer extends JsonDeserializer<JobRequest> {
                 case "job-type":
                     jobRequest.setJobType(value);
                     break;
+                case "business-domain":
+                    jobRequest.setJobName(value);
+                    break;
                 case "priority":
                     jobRequest.setPriority(value);
                     break;
@@ -96,8 +99,5 @@ public class JobRequestDeserializer extends JsonDeserializer<JobRequest> {
     @Override
     public void configure(Map<String, ?> configs, boolean isKey) {
         super.configure(configs, isKey);
-        // Configuración adicional si es necesaria
-        this.addTrustedPackages("com.company.batchscheduler.model",
-                "com.company.jobexecutor.model");
     }
 }

@@ -48,7 +48,7 @@ spring:
         # Configuración de filtrado
         filter:
           enabled: true
-          supported-domains: ${KAFKA_SUPPORTED_DOMAINS:ResumenDiarioClientesAsync}
+          supported-business-domains: ${KAFKA_SUPPORTED_DOMAINS:ResumenDiarioClientesAsync}
           supported-job-types: ${KAFKA_SUPPORTED_JOB_TYPES:ASYNCRONOUS}
 
         # Configuración de interceptor
