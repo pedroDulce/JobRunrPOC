@@ -1,7 +1,7 @@
 package com.company.batchscheduler.controller;
 
 import com.company.batchscheduler.job.EmbebbedCustomerSummaryJob;
-import com.company.batchscheduler.job.KafkaPublisherJob;
+import com.company.batchscheduler.job.KafkaPublisherForJobs;
 import common.batch.dto.ImmediateJobRequest;
 import common.batch.dto.JobRequest;
 import common.batch.dto.JobType;
@@ -34,7 +34,7 @@ public class JobSchedulerController {
 
     private final JobStatusRepository statusRepository;
 
-    private final KafkaPublisherJob kafkaPublisherJob;
+    private final KafkaPublisherForJobs kafkaPublisherForJobs;
 
     private final JobScheduler jobScheduler;
     private final EmbebbedCustomerSummaryJob embebbedCustomerSummaryJob;
@@ -56,7 +56,7 @@ public class JobSchedulerController {
         jobScheduler.scheduleRecurrently(
                 jobId,
                 request.getCronExpression(),
-                () -> kafkaPublisherJob.publishEventForRunJob(jobId, request)
+                () -> kafkaPublisherForJobs.publishEventForRunJob(jobId, request)
         );
 
         Map<String, Object> response = new HashMap<>();

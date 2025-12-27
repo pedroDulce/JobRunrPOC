@@ -1,6 +1,5 @@
 package org.example.batch.job;
 
-import common.batch.EmailService;
 import common.batch.dto.JobRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -15,7 +14,6 @@ import java.time.LocalDateTime;
 @Slf4j
 @RequiredArgsConstructor
 public class CustomerSummaryJob {
-
     private final DailySummaryRepository dailySummaryRepository;
     private final EmailService emailService;
 

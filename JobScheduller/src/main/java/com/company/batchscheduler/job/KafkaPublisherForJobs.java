@@ -19,7 +19,7 @@ import java.util.concurrent.CompletableFuture;
 @RequiredArgsConstructor
 @Slf4j
 @Component
-public class KafkaPublisherJob {
+public class KafkaPublisherForJobs {
 
     @Value("${kafka.topics.job-requests}")
     private String jobRequestsTopic;
