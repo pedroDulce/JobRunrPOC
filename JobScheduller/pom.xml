@@ -25,6 +25,24 @@
             <version>1.0.0</version>
         </dependency>
 
+        <!-- Para manejar tipos JSON en Hibernate -->
+        <dependency>
+            <groupId>io.hypersistence</groupId>
+            <artifactId>hypersistence-utils-hibernate-62</artifactId>
+            <version>3.5.0</version>
+        </dependency>
+
+        <!-- O si prefieres la solución de Spring -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-jsr310</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.fasterxml.jackson.module</groupId>
+            <artifactId>jackson-module-jakarta-xmlbind-annotations</artifactId>
+        </dependency>
+
     </dependencies>
 
 </project>

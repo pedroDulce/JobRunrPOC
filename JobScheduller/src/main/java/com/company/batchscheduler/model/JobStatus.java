@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.Type;
 
 import java.time.LocalDateTime;
 import java.util.Map;
@@ -37,5 +38,11 @@ public class JobStatus {
     private LocalDateTime updatedAt;
     private LocalDateTime completedAt;
     private String jobType;
+
+    @Column(name = "metadata", columnDefinition = "jsonb")
+    @Type(io.hypersistence.utils.hibernate.type.json.JsonBinaryType.class) // Usar JsonBinaryType
+    // O alternativamente:
+    // @Type(org.hibernate.type.JsonType.class)
+    // @JdbcTypeCode(SqlTypes.JSON)
     private Map<String, Object> metadata;
 }
