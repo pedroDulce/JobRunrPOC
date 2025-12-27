@@ -40,6 +40,7 @@ public class JobSchedulerController {
         validateCronExpression(request.getCronExpression());
 
         String jobId = UUID.randomUUID().toString();
+        request.setJobId(jobId);
 
         // Preparar parámetros como Strings
         String processDateStr = (request.getScheduledAt() != null)
@@ -76,6 +77,7 @@ public class JobSchedulerController {
         try {
 
             String jobId = UUID.randomUUID().toString();
+            request.setJobId(jobId);
 
             // Preparar parámetros
             String processDateStr = (request.getScheduledAt() != null)
@@ -114,6 +116,7 @@ public class JobSchedulerController {
     @PostMapping("/schedule-remote-sync")
     public ResponseEntity<?> scheduleRemoteJob(@RequestBody JobRequest request) {
         String jobId = UUID.randomUUID().toString();
+        request.setJobId(jobId);
         String microUrl = request.getParameters().get("url");
 
         jobScheduler.scheduleRecurrently(

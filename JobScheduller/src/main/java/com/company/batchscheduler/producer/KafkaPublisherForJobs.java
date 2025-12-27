@@ -1,7 +1,6 @@
 package com.company.batchscheduler.producer;
 
 import com.company.batchscheduler.model.JobStatus;
-import com.company.batchscheduler.repository.JobStatusRepository;
 import com.company.batchscheduler.service.JobStatusService;
 import common.batch.dto.JobRequest;
 import common.batch.dto.JobType;
@@ -84,10 +83,8 @@ public class KafkaPublisherForJobs {
                 .setHeader("job-id", jobId)
 
                 // Headers de routing/filtrado
-                .setHeader("job-type", request.getJobType())          // Ej: "CUSTOMER_SUMMARY"
-                .setHeader("job-category", request.getCategory())     // Ej: "REPORTING"
-                .setHeader("target-service", request.getTargetService()) // Ej: "customer-service"
-                .setHeader("business-domain", request.getBusinessDomain()) // Ej: "SALES"
+                .setHeader("job-type", request.getJobType())          // "ASYNCRONOUS"
+                .setHeader("business-domain", request.getJobName()) // Ej: "ResumenDiarioClientesAsync"
 
                 // Headers de procesamiento
                 .setHeader("priority", request.getPriority())         // Ej: "HIGH", "MEDIUM", "LOW"
@@ -112,9 +109,7 @@ public class KafkaPublisherForJobs {
     private Map<String, Object> createMetadataForRouting(JobRequest request) {
         Map<String, Object> metadata = new HashMap<>();
         metadata.put("jobType", request.getJobType());
-        metadata.put("category", request.getCategory());
-        metadata.put("targetService", request.getTargetService());
-        metadata.put("businessDomain", request.getBusinessDomain());
+        metadata.put("businessDomain", request.getJobName());
         metadata.put("priority", request.getPriority());
         metadata.put("requiredCapabilities", request.getRequiredCapabilities());
         return metadata;
@@ -261,20 +256,12 @@ public class KafkaPublisherForJobs {
             headers.put("job-type", request.getJobType().toString());
         }
 
-        if (request.getCategory() != null) {
-            headers.put("job-category", request.getCategory());
-        }
-
-        if (request.getTargetService() != null) {
-            headers.put("target-service", request.getTargetService());
-        }
-
-        if (request.getBusinessDomain() != null) {
-            headers.put("business-domain", request.getBusinessDomain());
+        if (request.getJobName() != null) {
+            headers.put("business-domain", request.getJobName());
         }
 
         if (request.getPriority() != null) {
-            headers.put("priority", String.valueOf(request.getPriority()));
+            headers.put("priority", request.getPriority());
         }
 
         return headers;

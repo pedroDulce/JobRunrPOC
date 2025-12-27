@@ -19,15 +19,11 @@ public class JobRequest implements Serializable {
     private String jobName;
     private String cronExpression;
     private String correlationId;
-    private String source;
     private Map<String, String> parameters;
     private LocalDateTime scheduledAt;
 
     // Campos para routing/filtrado
-    private String jobType;           // Ej: "CUSTOMER_SUMMARY", "BILLING_PROCESS"
-    private String category;          // Ej: "REPORTING", "MAINTENANCE", "SYNC"
-    private String targetService;     // Ej: "customer-service", "billing-service"
-    private String businessDomain;    // Ej: "SALES", "FINANCE", "INVENTORY"
+    private String jobType;           // Ej: "SYNCRONOUS" o "ASYNCRONOUS"
     private String priority;          // Ej: "HIGH", "MEDIUM", "LOW"
     private LocalDateTime ttl;        // Time To Live (expiración)
 
