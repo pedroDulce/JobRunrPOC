@@ -122,7 +122,7 @@ public class JobRequestConsumer {
             log.info("✅ Job {} processed successfully in {} ms. Status: {}",
                     jobRequest.getJobId(), processingTime, result.getStatus());
 
-            metricsService.recordJobCompleted(jobRequest.getJobId(), result.getStatus());
+            metricsService.recordJobCompleted(jobRequest.getJobId(), result.getStatus().toString());
 
         } catch (Exception e) {
             log.error("❌ Error processing job request: {}", e.getMessage(), e);

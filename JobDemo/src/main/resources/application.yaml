@@ -95,25 +95,54 @@ kafka:
       enabled: true
       max-retries: 3
 
-# Métricas y monitoreo
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health,metrics,kafka
-  metrics:
-    export:
-      kafka:
-        enabled: true
-  kafka:
-    metrics:
-      enabled: true
-
-
 # Configuración del job
 job:
   max-retries: 3
   retry-delay-ms: 5000
+
+# Actuator y métricas
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+      base-path: /actuator
+    enabled-by-default: true
+
+  endpoint:
+    health:
+      show-details: always
+      probes:
+        enabled: true
+    metrics:
+      enabled: true
+    prometheus:
+      enabled: true
+
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+        step: 30s  # Frecuencia de exportación
+    enable:
+      kafka: true
+      jvm: true
+      system: true
+      logback: true
+      processor: true
+
+    tags:
+      application: ${spring.application.name}
+      environment: ${spring.profiles.active:local}
+      region: local
+
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
+        kafka.consumer.fetch.manager.records.consumed: true
+      sla:
+        http.server.requests: 10ms, 50ms, 100ms, 200ms, 500ms, 1s, 5s
+
 
 # Logging específico para Kafka
 logging:
