@@ -16,7 +16,9 @@ import org.springframework.stereotype.Component;
 import org.jobrunr.jobs.context.JobContext;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
@@ -34,8 +36,8 @@ public class KafkaPublisherForJobs {
     /**
      * Publica un evento de job con headers de routing para filtrado
      */
-    @Job(name = "Job remoto con invocación asíncrona")
-    public JobStatusEnum publishEventForRunJob(JobRequest request, JobContext jobContext) {
+    @Job(name = "Simple Job remoto con invocación asíncrona")
+    public JobStatusEnum publishEventForRunRemoteJobs(JobRequest request, JobContext jobContext) {
 
         UUID jobExecutionId = jobContext.getJobId();
         jobContext.saveMetadata("remote", "true");
@@ -66,6 +68,7 @@ public class KafkaPublisherForJobs {
             return JobStatusEnum.FAILED;
         }
     }
+
 
     /**
      * Construye mensaje con headers de routing para filtrado

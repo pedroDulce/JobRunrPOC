@@ -1,5 +1,5 @@
 package common.batch.dto;
 
 public enum JobType {
-    SYNCRONOUS, ASYNCRONOUS;
+    SYNCRONOUS, ASYNCRONOUS, BATCH_PROCESSING;
 }

@@ -44,22 +44,22 @@ public class JobSchedulerController {
         jobScheduler.scheduleRecurrently(
                 request.getJobName(),
                 request.getCronExpression(),
-                () -> publisherForJobs.publishEventForRunJob(request, null)
+                () -> publisherForJobs.publishEventForRunRemoteJobs(request, null)
         );
         Map<String, Object> response = new HashMap<>();
         response.put("jobId", jobId);
         response.put("jobName", request.getJobName());
+        response.put("jobType", request.getJobType());
         response.put("business-domain", request.getBusinessDomain());
         response.put("status", "SCHEDULED");
         response.put("cronExpression", request.getCronExpression());
         response.put("processDate", request.getParameters().get("processDate"));
-        response.put("message", "Job programado exitosamente");
+        response.put("message", "Job programado con éxito.");
         response.put("dashboardUrl", "http://localhost:8000");
 
         log.info("✅ Job programado: {} con cron: {}", jobId, request.getCronExpression());
 
         return ResponseEntity.ok(response);
-
     }
 
 
