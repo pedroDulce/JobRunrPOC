@@ -6,6 +6,7 @@ import common.batch.dto.JobStatusEnum;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jobrunr.jobs.annotations.Job;
+import org.jobrunr.jobs.context.JobContext;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.KafkaHeaders;
@@ -13,12 +14,8 @@ import org.springframework.kafka.support.SendResult;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.stereotype.Component;
-import org.jobrunr.jobs.context.JobContext;
 
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
@@ -36,7 +33,7 @@ public class KafkaPublisherForJobs {
     /**
      * Publica un evento de job con headers de routing para filtrado
      */
-    @Job(name = "Simple Job remoto con invocación asíncrona")
+    @Job(name = "Job remoto con invocación asíncrona")
     public JobStatusEnum publishEventForRunRemoteJobs(JobRequest request, JobContext jobContext) {
 
         UUID jobExecutionId = jobContext.getJobId();
