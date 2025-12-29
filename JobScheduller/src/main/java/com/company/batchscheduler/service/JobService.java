@@ -17,13 +17,14 @@ import java.util.*;
 @Slf4j
 @Service
 public class JobService {
-
+    private final JobRunrAdminRepository jobRunrAdminRepository;
     private final StorageProvider storageProvider;
     private Class<?> jobClass;
     private Map<String, Method> jobMethods = new HashMap<>();
 
-    public JobService(StorageProvider storageProvider) {
+    public JobService(StorageProvider storageProvider, JobRunrAdminRepository jobRunrAdminRepository) {
         this.storageProvider = storageProvider;
+        this.jobRunrAdminRepository = jobRunrAdminRepository;
         initializeJobClass();
         cacheJobMethods();
     }
@@ -182,6 +183,13 @@ public class JobService {
 
     /**
      * Método principal para actualizar estado y fecha de finalización
+     * newStatus permitidos:
+     * ENQUEUED
+     * SCHEDULED
+     * PROCESSING
+     * SUCCEEDED
+     * FAILED
+     * DELETED
      */
     public boolean updateJobStatus(String jobId, String newStatus, Date completionDate) {
         try {
@@ -195,19 +203,7 @@ public class JobService {
                 return false;
             }
 
-            // 2. Actualizar el estado usando setStatus()
-            invokeSetStatus(job, newStatus);
-
-            // 3. Actualizar fecha de finalización si se proporciona
-            if (completionDate != null) {
-                invokeSetCompletionDate(job, completionDate);
-            }
-
-            // 4. Actualizar fecha de modificación
-            invokeSetLastModified(job, new Date());
-
-            // 5. Guardar usando storageProvider.save()
-            storageProvider.save((Job) job);
+            jobRunrAdminRepository.updateJobState(job.getId(), newStatus);
 
             log.info("Job actualizado exitosamente");
             return true;
