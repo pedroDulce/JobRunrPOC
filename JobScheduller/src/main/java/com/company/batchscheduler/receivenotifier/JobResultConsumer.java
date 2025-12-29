@@ -30,16 +30,17 @@ public class JobResultConsumer {
     public void consumeJobResult(
             JobResult result,
             @Header(KafkaHeaders.RECEIVED_KEY) String executorJobId,
-            @Header(value = "jobrunr-job-id", required = false) String jobrunrJobIdHeader,
-            @Header(value = "correlation-id", required = false) String correlationIdHeader) {
+            @Header(value = "jobrunr-job-id", required = false) String jobrunrJobIdHeader) {
 
         try {
             // Usar jobrunrJobId del header o del objeto
             String jobrunrJobIdStr = jobrunrJobIdHeader != null ?
                     jobrunrJobIdHeader : result.getJobrunrJobId();
 
-            log.info("📨 Received job {} result: {} for JobRunr Job: {}, Status: {}",
-                    result.getJobName(), executorJobId, jobrunrJobIdStr, result.getStatus());
+            log.info("📨 Received job {} for JobRunr Job ID: {}, result: {}, Status: {}",
+                    result.getJobName(), executorJobId,
+                    result.getStatus().toString().contentEquals(JobStatusEnum.FAILED.toString()) ? result.getErrorDetails() : result.getMessage(),
+                    result.getStatus());
 
             if (jobrunrJobIdStr != null && !jobrunrJobIdStr.isEmpty()) {
                 updateJobRunrStatus(jobrunrJobIdStr, result);
@@ -60,7 +61,6 @@ public class JobResultConsumer {
             UUID uuid = UUID.fromString(jobrunrJobIdStr);
             JobId jobId = new JobId(uuid);
 
-            // ⚠️ EN JobRunr 8.3.1: getJobById() devuelve Job o null, NO Optional
             Job job = storageProvider.getJobById(jobId);
 
             if (job != null) {
@@ -92,8 +92,6 @@ public class JobResultConsumer {
                 }
             } else {
                 log.warn("JobRunr job {} not found in storage", jobId);
-                // Podrías crear un job de tracking retrospectivo si es necesario
-                createRetrospectiveJob(jobId, result);
             }
 
         } catch (IllegalArgumentException e) {
@@ -253,29 +251,5 @@ public class JobResultConsumer {
         }
     }
 
-    /**
-     * Crear job retrospectivo si no existe
-     */
-    private void createRetrospectiveJob(JobId jobId, JobResult result) {
-        try {
-            log.info("Creating retrospective job for {}", jobId);
-
-            // Crear un job que refleje el estado real
-            if (result.getStatus() == JobStatusEnum.COMPLETED) {
-                jobScheduler.enqueue(() -> {
-                    log.info("Retrospective: Job {} completed at {}",
-                            result.getJobId(), result.getCompletedAt());
-                });
-            } else if (result.getStatus() == JobStatusEnum.FAILED) {
-                jobScheduler.enqueue(() -> {
-                    throw new RuntimeException("Retrospective failure: " +
-                            result.getErrorDetails());
-                });
-            }
-
-        } catch (Exception e) {
-            log.error("Failed to create retrospective job: {}", e.getMessage());
-        }
-    }
 
 }
