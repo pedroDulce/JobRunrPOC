@@ -77,8 +77,8 @@ public class KafkaPublisherForJobs {
                 .withPayload(request)
                 // Headers principales para routing
                 .setHeader(KafkaHeaders.TOPIC, jobRequestsTopic)
-                .setHeader(KafkaHeaders.KEY, jobExecutionId)
-                .setHeader("job-id", jobExecutionId)
+                .setHeader(KafkaHeaders.KEY, jobRunrJobId)
+                .setHeader("job-id", request.getJobId())
                 .setHeader("jobrunr-job-id", jobRunrJobId)
                 // Headers de routing/filtrado
                 .setHeader("job-type", request.getJobType())          // "ASYNCRONOUS"
