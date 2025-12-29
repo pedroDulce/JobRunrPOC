@@ -41,14 +41,9 @@ public class JobRecordInterceptor implements RecordInterceptor<String, JobReques
         log.trace("📥 Intercepting record - Key: {}, Topic: {}, Partition: {}, Offset: {}",
                 record.key(), record.topic(), record.partition(), record.offset());
 
-        // Extraer y log headers importantes
+        // Extraemos y logging de headers
         record.headers().forEach(header -> {
-            /*if (header.key().equals("job-type") ||
-                    header.key().equals("priority") ||
-                    header.key().equals("correlation-id") ||
-                    header.key().equals("business-domain")) {*/
-                log.debug("   Header {}: {}", header.key(), new String(header.value()));
-                //}
+            log.debug("   Header {}: {}", header.key(), new String(header.value()));
         });
 
         return record;

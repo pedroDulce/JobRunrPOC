@@ -44,7 +44,7 @@ public class JobRequestConsumer {
             @Header(value = "business-domain", required = false) String businessDomain,
             @Header(value = "target-batch", required = false) String targetBatch,
             @Header(value = "job-type", required = false) String jobType,
-            //@Header(value = "priority", defaultValue = "MEDIUM") String priority,
+            @Header(value = "priority", defaultValue = "MEDIUM") String priority,
             @Header(value = "correlation-id", required = false) String correlationId,
             Acknowledgment acknowledgment) {
 
@@ -69,17 +69,8 @@ public class JobRequestConsumer {
                     key,
                     partition,
                     jobType,
-                    JobPriority.HIGH /*priority*/
+                    priority /*JobPriority.HIGH*/
             );
-
-            // Verificar que los headers coinciden con lo esperado
-            if (!"ReportingService".equals(businessDomain)) {
-                log.warn("Unexpected business-domain: {}. Expected: ReportingService", businessDomain);
-            }
-
-            if (!"batch-process-1".equals(targetBatch)) {
-                log.warn("Unexpected target-batch: {}. Expected: batch-process-1", targetBatch);
-            }
 
             // Ejecutar el job
             log.info("Executing job: {} for business-domain: {}",
