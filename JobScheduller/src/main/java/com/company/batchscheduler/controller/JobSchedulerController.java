@@ -1,20 +1,19 @@
 package com.company.batchscheduler.controller;
 
-import com.company.batchscheduler.job.EmbebbedCustomerSummaryJob;
 import com.company.batchscheduler.sendnotifier.KafkaPublisherForJobs;
 import common.batch.dto.JobRequest;
 import common.batch.dto.JobType;
-import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jobrunr.scheduling.JobScheduler;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -30,8 +29,6 @@ public class JobSchedulerController {
     private final KafkaPublisherForJobs kafkaPublisherWithoutHeadersInMessagesForJobs;
 
     private final JobScheduler jobScheduler;
-
-    private final EmbebbedCustomerSummaryJob embebbedCustomerSummaryJob;
 
     private final RemoteJobDispatcher remoteJobDispatcher;
 
@@ -70,50 +67,6 @@ public class JobSchedulerController {
 
     }
 
-
-    @PostMapping("/execute-now-and-once")
-    @Operation(summary = "Ejecutar job inmediatamente")
-    public ResponseEntity<Map<String, Object>> executeNow(
-            @Valid @RequestBody JobRequest request) {
-
-        try {
-
-            String jobId = UUID.randomUUID().toString();
-            request.setJobId(jobId);
-
-            // Preparar parámetros
-            String processDateStr = (request.getScheduledAt() != null)
-                    ? request.getScheduledAt().toString()
-                    : LocalDate.now().minusDays(1).toString();
-
-            String emailRecipient = request.getParameters().get("emailRecipient");
-
-            jobScheduler.enqueue(() ->
-                    embebbedCustomerSummaryJob.executeImmediately(
-                            processDateStr,
-                            emailRecipient
-                    )
-            );
-
-            Map<String, Object> response = new HashMap<>();
-            response.put("jobId", jobId);
-            response.put("status", "ENQUEUED");
-            response.put("executionTime", LocalDateTime.now());
-            response.put("dashboardUrl", "http://localhost:8000");
-            response.put("message", "Job encolado para ejecución inmediata");
-
-            return ResponseEntity.ok(response);
-
-        } catch (Exception e) {
-            log.error("Error ejecutando job inmediato: {}", e.getMessage(), e);
-
-            Map<String, Object> error = new HashMap<>();
-            error.put("status", "ERROR");
-            error.put("message", e.getMessage());
-
-            return ResponseEntity.status(500).body(error);
-        }
-    }
 
     @PostMapping("/schedule-remote-sync")
     public ResponseEntity<?> scheduleRemoteJob(@RequestBody JobRequest request) {
