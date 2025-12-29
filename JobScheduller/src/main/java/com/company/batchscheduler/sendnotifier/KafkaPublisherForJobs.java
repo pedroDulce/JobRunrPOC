@@ -1,4 +1,4 @@
-package com.company.batchscheduler.producer;
+package com.company.batchscheduler.sendnotifier;
 
 import common.batch.dto.JobRequest;
 import common.batch.dto.JobStatusEnum;

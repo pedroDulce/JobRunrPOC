@@ -1,7 +1,7 @@
 package com.company.batchscheduler.controller;
 
 import com.company.batchscheduler.job.EmbebbedCustomerSummaryJob;
-import com.company.batchscheduler.producer.KafkaPublisherForJobs;
+import com.company.batchscheduler.sendnotifier.KafkaPublisherForJobs;
 import common.batch.dto.JobRequest;
 import common.batch.dto.JobType;
 import io.swagger.v3.oas.annotations.Operation;
@@ -10,7 +10,6 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jobrunr.scheduling.JobScheduler;
-import org.springframework.cglib.core.Local;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
