@@ -24,15 +24,17 @@ spring:
 
   kafka:
     bootstrap-servers: localhost:9092
+
     consumer:
       group-id: ${spring.application.name}-job-consumer
-      auto-offset-reset: earliest
       enable-auto-commit: false
+      auto-offset-reset: earliest
       fetch-min-size: 1024
       fetch-max-wait: 500
       properties:
         session.timeout.ms: 45000
-        max.poll.interval.ms: 300000
+        session-timeout-ms: 180000      # 3 minutos
+        max.poll.interval.ms: 28800000  # 8 horas para jobs largos
         max.poll.records: 10
         heartbeat.interval.ms: 3000
         isolation.level: read_committed

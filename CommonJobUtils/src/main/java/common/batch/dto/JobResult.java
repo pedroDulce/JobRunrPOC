@@ -18,7 +18,7 @@ public class JobResult {
 
     private String jobId;
     private String jobName;
-    private JobStatusEnum status; // SUCCESS, FAILED, CANCELLED
+    private JobStatusEnum status;
     private String message;
     private Object resultData;
     private LocalDateTime startedAt;
@@ -27,6 +27,9 @@ public class JobResult {
     private String errorDetails;
     private Map<String, Object> metadata;
     private String correlationId;
+    private String jobrunrJobId;
+    private Boolean asyncJob;
+    private Integer estimatedCompletionMinutes;
 
     public JobResult(String jobId, JobStatusEnum status, String result, LocalDateTime completedAt) {
         this.completedAt = completedAt;
@@ -43,6 +46,13 @@ public class JobResult {
         return "FAILED".equals(status);
     }
 
+
+    // Método helper
+    public boolean isFinalState() {
+        return status == JobStatusEnum.SUCCESS ||
+                status == JobStatusEnum.FAILED ||
+                status == JobStatusEnum.CANCELLED;
+    }
 
 }
 

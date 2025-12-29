@@ -1,6 +1,8 @@
 package org.example.batch.consumer;
 
-import common.batch.dto.*;
+import common.batch.dto.JobRequest;
+import common.batch.dto.JobResult;
+import common.batch.dto.JobStatusEnum;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -9,16 +11,15 @@ import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.kafka.support.KafkaHeaders;
+import org.springframework.kafka.support.SendResult;
 import org.springframework.messaging.handler.annotation.Header;
-import org.springframework.retry.support.RetryTemplate;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 @Component
 @RequiredArgsConstructor
@@ -26,10 +27,7 @@ import java.util.concurrent.Executors;
 public class JobRequestConsumer {
 
     private final CustomerSummaryJob jobExecutionService;
-    private final RetryTemplate retryTemplate;
-    private final KafkaTemplate<String, Object> kafkaTemplate;
-    private final ExecutorService highPriorityExecutor = Executors.newFixedThreadPool(2);
-    private final ExecutorService normalPriorityExecutor = Executors.newFixedThreadPool(5);
+    private final KafkaTemplate<String, JobResult> kafkaTemplate;
 
     @KafkaListener(
             topics = "${kafka.topics.job-requests}",
@@ -37,101 +35,150 @@ public class JobRequestConsumer {
             groupId = "${spring.kafka.consumer.group-id}",
             id = "job-request-consumer"
     )
+    @Transactional
     public void consumeJobRequest(
             ConsumerRecord<String, JobRequest> record,
             @Header(KafkaHeaders.RECEIVED_KEY) String key,
             @Header(KafkaHeaders.RECEIVED_PARTITION) Integer partition,
+            @Header(KafkaHeaders.RECEIVED_TOPIC) String topic,
             @Header(value = "business-domain", required = false) String businessDomain,
             @Header(value = "target-batch", required = false) String targetBatch,
-            @Header(value = "job-type", required = false) String jobType,
             @Header(value = "priority", defaultValue = "MEDIUM") String priority,
             @Header(value = "correlation-id", required = false) String correlationId,
+            @Header(value = "jobrunr-job-id", required = false) String jobrunrJobId,
             Acknowledgment acknowledgment) {
+
+        JobResult result = null;
 
         try {
             JobRequest jobRequest = record.value();
 
             log.info("""
-                📥 Received Job Request (Filtered):
-                Job ID: {}
-                Business Domain: {}
-                Target Batch: {}
-                Job Name: {}
-                Key: {}
-                Partition: {}
-                Job Type: {}
-                Priority: {}
-                """,
+                    📥 Received Job Request:
+                    Job ID: {}
+                    JobRunr Job ID: {}
+                    Business Domain: {}
+                    Target Batch: {}
+                    Priority: {}
+                    Correlation ID: {}
+                    """,
                     jobRequest.getJobId(),
+                    jobrunrJobId,
                     businessDomain,
                     targetBatch,
-                    jobRequest.getJobName(),
-                    key,
-                    partition,
-                    jobType,
-                    priority /*JobPriority.HIGH*/
+                    priority,
+                    correlationId
             );
 
-            // Ejecutar el job
-            log.info("Executing job: {} for business-domain: {}",
-                    jobRequest.getJobName(), businessDomain);
+            // 1. Publicar estado IN_PROGRESS
+            publishJobStatus(jobRequest, JobStatusEnum.IN_PROGRESS, null,
+                    correlationId, jobrunrJobId, "Job execution started");
 
-            processWithHighPriority(jobRequest, extractHeaders(record), correlationId);
+            // 2. Ejecutar el job
+            result = jobExecutionService.executeJob(jobRequest, extractHeaders(record));
 
-            // Confirmar procesamiento
+            // 3. Publicar resultado final
+            publishJobResult(result, correlationId, jobrunrJobId);
+
+            // 4. Confirmar offset
             acknowledgment.acknowledge();
+
             log.info("✅ Job {} executed successfully", jobRequest.getJobId());
 
         } catch (Exception e) {
             log.error("❌ Error processing job request: {}", e.getMessage(), e);
-            shutdown();
+
+            // Publicar estado FAILED si hay jobRequest
+            if (record != null && record.value() != null) {
+                JobRequest jobRequest = record.value();
+                publishJobStatus(jobRequest, JobStatusEnum.FAILED, e,
+                        correlationId, jobrunrJobId, "Job execution failed: " + e.getMessage());
+            }
+
+            // No confirmar para que se reintente
         }
     }
 
     /**
-     * Procesar job con alta prioridad
+     * Publicar estado del job al scheduler
      */
-    private JobResult processWithHighPriority(JobRequest jobRequest,
-                                              Map<String, String> headers,
-                                              String correlationId) {
-        log.info("⚡ Processing HIGH priority job: {}, with correlationId: {}", jobRequest.getJobId(), correlationId);
+    private void publishJobStatus(JobRequest jobRequest,
+                                  JobStatusEnum status,
+                                  Exception error,
+                                  String correlationId,
+                                  String jobrunrJobId,
+                                  String message) {
 
         try {
-            // Ejecutar en thread separado para no bloquear el consumer
-            CompletableFuture<JobResult> future = CompletableFuture.supplyAsync(() -> {
-                return jobExecutionService.executeJob(jobRequest, headers);
-            }, highPriorityExecutor);
-
-            // Timeout para alta prioridad: 30 segundos
-            return future.get(30, java.util.concurrent.TimeUnit.SECONDS);
-
-        } catch (java.util.concurrent.TimeoutException e) {
-            log.error("Timeout processing high priority job: {}", jobRequest.getJobId());
-            return JobResult.builder()
+            JobResult statusResult = JobResult.builder()
                     .jobId(jobRequest.getJobId())
                     .jobName(jobRequest.getJobName())
-                    .status(JobStatusEnum.FAILED)
-                    .message("Timeout processing high priority job")
+                    .status(status)
+                    .message(message)
                     .startedAt(LocalDateTime.now())
-                    .completedAt(LocalDateTime.now())
-                    .errorDetails("Timeout after 30 seconds")
+                    .completedAt(status.compareTo(JobStatusEnum.SUCCESS) == 0 || status.compareTo(JobStatusEnum.FAILED) == 0
+                            ? LocalDateTime.now() : null)
+                    .errorDetails(error != null ? error.getMessage() : null)
+                    .correlationId(correlationId)
+                    .jobrunrJobId(jobrunrJobId)  // IMPORTANTE: ID de JobRunr
                     .build();
+
+            publishToResultsTopic(statusResult);
+
+            log.debug("📤 Published job status: {} for job {}", status, jobRequest.getJobId());
+
         } catch (Exception e) {
-            log.error("Error processing high priority job: {}", jobRequest.getJobId(), e);
-            return JobResult.builder()
-                    .jobId(jobRequest.getJobId())
-                    .jobName(jobRequest.getJobName())
-                    .status(JobStatusEnum.FAILED)
-                    .message("Error processing high priority job")
-                    .startedAt(LocalDateTime.now())
-                    .completedAt(LocalDateTime.now())
-                    .errorDetails(e.getMessage())
-                    .build();
+            log.error("Failed to publish job status for {}: {}",
+                    jobRequest.getJobId(), e.getMessage());
         }
     }
 
     /**
-     * Extraer headers del record
+     * Publicar resultado final
+     */
+    private void publishJobResult(JobResult result,
+                                  String correlationId,
+                                  String jobrunrJobId) {
+
+        // Asegurar que tiene el jobrunrJobId
+        if (jobrunrJobId != null) {
+            result.setJobrunrJobId(jobrunrJobId);
+        }
+        if (correlationId != null) {
+            result.setCorrelationId(correlationId);
+        }
+
+        publishToResultsTopic(result);
+
+        log.info("📤 Published final result for job {} with status {}",
+                result.getJobId(), result.getStatus());
+    }
+
+    /**
+     * Publicar al topic de resultados
+     */
+    private void publishToResultsTopic(JobResult result) {
+        String topic = "job-results-topic";
+        String key = result.getJobId();
+
+        CompletableFuture<SendResult<String, JobResult>> future =
+                kafkaTemplate.send(topic, key, result);
+
+        future.whenComplete((sendResult, throwable) -> {
+            if (throwable != null) {
+                log.error("Failed to publish to {} for job {}: {}",
+                        topic, key, throwable.getMessage());
+            } else {
+                log.debug("Published to {} for job {}: partition {}, offset {}",
+                        topic, key,
+                        sendResult.getRecordMetadata().partition(),
+                        sendResult.getRecordMetadata().offset());
+            }
+        });
+    }
+
+    /**
+     * Extraer headers
      */
     private Map<String, String> extractHeaders(ConsumerRecord<String, JobRequest> record) {
         Map<String, String> headers = new HashMap<>();
@@ -140,65 +187,4 @@ public class JobRequestConsumer {
         });
         return headers;
     }
-
-
-    /**
-     * Listener para reprocesar mensajes de DLQ
-     */
-    @KafkaListener(
-            topics = "${kafka.topics.job-requests}-dlq",
-            containerFactory = "jobRequestListenerContainerFactory",
-            groupId = "${spring.kafka.consumer.group-id}-dlq",
-            id = "dlq-consumer"
-    )
-    public void consumeDlqMessage(
-            ConsumerRecord<String, Map<String, Object>> record,
-            Acknowledgment acknowledgment) {
-
-        log.warn("Processing DLQ message: {}", record.key());
-
-        try {
-            Map<String, Object> dlqPayload = record.value();
-
-            // Extraer información del error
-            String error = (String) dlqPayload.get("error");
-            String errorType = (String) dlqPayload.get("errorType");
-
-            log.error("DLQ Error for job {}: {} - {}", record.key(), errorType, error);
-
-            // Aquí podrías:
-            // 1. Notificar a un administrador
-            // 2. Intentar reparar y reprocesar
-            // 3. Guardar en base de datos para análisis
-
-            // Por ahora, solo loggear y confirmar
-            acknowledgment.acknowledge();
-
-        } catch (Exception e) {
-            log.error("Error processing DLQ message: {}", e.getMessage());
-            acknowledgment.acknowledge(); // Acknowledge para no bloquear
-        }
-    }
-
-    /**
-     * Método para limpiar recursos
-     */
-    public void shutdown() {
-        highPriorityExecutor.shutdown();
-        normalPriorityExecutor.shutdown();
-
-        try {
-            if (!highPriorityExecutor.awaitTermination(30, java.util.concurrent.TimeUnit.SECONDS)) {
-                highPriorityExecutor.shutdownNow();
-            }
-            if (!normalPriorityExecutor.awaitTermination(30, java.util.concurrent.TimeUnit.SECONDS)) {
-                normalPriorityExecutor.shutdownNow();
-            }
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            highPriorityExecutor.shutdownNow();
-            normalPriorityExecutor.shutdownNow();
-        }
-    }
-
 }
