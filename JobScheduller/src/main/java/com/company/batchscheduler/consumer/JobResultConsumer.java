@@ -33,8 +33,8 @@ public class JobResultConsumer {
             String jobrunrJobId = jobrunrJobIdHeader != null ?
                     jobrunrJobIdHeader : result.getJobrunrJobId();
 
-            log.info("📨 Received job result: {} for JobRunr Job: {}, Status: {}",
-                    jobId, jobrunrJobId, result.getStatus());
+            log.info("📨 Resultado recibido del jobId: {}, Nombre: {}, JobRunr-JobId: {}, Estado: {}",
+                    jobId, result.getJobName(), jobrunrJobId, result.getStatus());
 
             if (jobrunrJobId != null) {
                 updateJobRunrStatus(jobrunrJobId, result);

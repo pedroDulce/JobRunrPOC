@@ -41,14 +41,19 @@ public class JobRequestConsumer {
             @Header(KafkaHeaders.RECEIVED_KEY) String key,
             @Header(KafkaHeaders.RECEIVED_PARTITION) Integer partition,
             @Header(KafkaHeaders.RECEIVED_TOPIC) String topic,
-            @Header(value = "business-domain", required = false) String businessDomain,
-            @Header(value = "target-batch", required = false) String targetBatch,
+            @Header(value = "business-domain", required = true) String businessDomain,
+            @Header(value = "target-batch", required = true) String targetBatch,
             @Header(value = "priority", defaultValue = "MEDIUM") String priority,
-            @Header(value = "correlation-id", required = false) String correlationId,
-            @Header(value = "jobrunr-job-id", required = false) String jobrunrJobId,
+            @Header(value = "correlation-id", required = true) String correlationId,
+            @Header(value = "jobrunr-job-id", required = true) String jobrunrJobId,
             Acknowledgment acknowledgment) {
 
-        JobResult result = null;
+        JobResult result;
+        /*if (jobrunrJobId == null || "".contentEquals(jobrunrJobId)) {
+            // Confirmar offset para que descarte este mensaje a futuro
+            acknowledgment.acknowledge();
+            return;
+        }*/
 
         try {
             JobRequest jobRequest = record.value();

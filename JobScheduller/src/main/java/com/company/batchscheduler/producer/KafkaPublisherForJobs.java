@@ -7,6 +7,8 @@ import common.batch.dto.JobStatusEnum;
 import common.batch.dto.JobType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.jobrunr.jobs.JobId;
+import org.jobrunr.scheduling.JobScheduler;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.KafkaHeaders;
@@ -27,6 +29,7 @@ public class KafkaPublisherForJobs {
     @Value("${kafka.topics.job-requests}")
     private String jobRequestsTopic;
 
+    private final JobScheduler jobScheduler;
     private final JobStatusService jobStatusService;
     private final KafkaTemplate<String, JobRequest> kafkaTemplate;
 
@@ -75,13 +78,18 @@ public class KafkaPublisherForJobs {
      * Construye mensaje con headers de routing para filtrado
      */
     private Message<JobRequest> buildMessageWithRoutingHeaders(String jobId, JobRequest request) {
+        String correlationId = generateCorrelationId();
+        JobId jobRunrJobId = jobScheduler.enqueue(() ->
+                trackJobInJobRunr(request.getJobId(), correlationId)
+        );
+        String jobrunrJobId = jobRunrJobId.toString();
         return MessageBuilder
                 .withPayload(request)
                 // Headers principales para routing
                 .setHeader(KafkaHeaders.TOPIC, jobRequestsTopic)
                 .setHeader(KafkaHeaders.KEY, jobId)
                 .setHeader("job-id", jobId)
-
+                .setHeader("jobrunr-job-id", jobrunrJobId)  //
                 // Headers de routing/filtrado
                 .setHeader("job-type", request.getJobType())          // "ASYNCRONOUS"
                 .setHeader("business-domain", request.getBusinessDomain()) // Ej: "application-job-demo"
@@ -96,12 +104,25 @@ public class KafkaPublisherForJobs {
                 // Headers técnicos
                 .setHeader("source", "batch-scheduler-service")
                 .setHeader("version", "1.0")
-                .setHeader("correlation-id", generateCorrelationId())
+                .setHeader("correlation-id", correlationId)
                 .setHeader("producer-timestamp", System.currentTimeMillis())
                 .setHeader("event-created-at", LocalDateTime.now().toString())
                 .setHeader("scheduled-at", request.getScheduledAt() != null ?
                         request.getScheduledAt().toString() : LocalDateTime.now().toString())
                 .build();
+    }
+
+    public void trackJobInJobRunr(String executorJobId, String correlationId) {
+        // ⚠️ Este método es SIMBÓLICO
+        // JobRunr necesita un método para invocar, pero la lógica real
+        // se ejecuta en el Job Executor Service
+        log.trace("JobRunr tracking - Executor Job ID: {}, Correlation: {}",
+                executorJobId, correlationId);
+
+        // No hacemos nada aquí, porque:
+        // 1. JobRunr actualiza el estado automáticamente (ENQUEUED → PROCESSING → SUCCEEDED/FAILED)
+        // 2. El procesamiento real lo hace otro microservicio
+        // 3. Solo usamos JobRunr para el dashboard y gestión de estados
     }
 
     /**
