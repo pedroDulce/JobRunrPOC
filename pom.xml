@@ -70,13 +70,6 @@
       <version>2.5.0</version>
     </dependency>
 
-    <!-- PostgreSQL -->
-    <dependency>
-      <groupId>org.postgresql</groupId>
-      <artifactId>postgresql</artifactId>
-      <scope>runtime</scope>
-    </dependency>
-
     <!-- Utils -->
     <dependency>
       <groupId>org.apache.commons</groupId>

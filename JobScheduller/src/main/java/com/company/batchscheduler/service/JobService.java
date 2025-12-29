@@ -246,7 +246,7 @@ public class JobService {
     private void invokeSetterMethod(Object job, String fieldName, Object value, Class<?> paramType)
             throws Exception {
 
-        String setterName = "set" + fieldName;
+        String setterName = "set" + capitalize(fieldName);
 
         // Buscar en cache primero
         Method setter = jobMethods.get(setterName);
@@ -642,6 +642,15 @@ public class JobService {
             log.error("Error deleting recurring job {}: {}", jobName, e.getMessage());
             return false;
         }
+    }
+
+
+    /**
+     * Capitaliza la primera letra de un string
+     */
+    private String capitalize(String str) {
+        if (str == null || str.isEmpty()) return str;
+        return str.substring(0, 1).toUpperCase() + str.substring(1);
     }
 
 

@@ -5,23 +5,6 @@ spring:
   server:
     port: 8080
 
-  datasource:
-    url: jdbc:postgresql://localhost:5432/batch_scheduler
-    username: postgres
-    password: postgres
-    driver-class-name: org.postgresql.Driver
-
-  jpa:
-    hibernate:
-      ddl-auto: update
-    show-sql: true
-
-  batch:
-    jdbc:
-      initialize-schema: always
-    job:
-      enabled: false
-
   kafka:
     bootstrap-servers: localhost:9092
     consumer:
@@ -38,16 +21,21 @@ spring:
       properties:
         spring.json.add.type.headers: false
 
-# Topics de Kafka
-kafka:
-  topics:
-    job-requests: job-requests-topic
-    job-results: job-results-topic
+  datasource:
+    url: jdbc:postgresql://localhost:5432/batch-scheduler
+    username: batch_user
+    password: batch_password
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: false
 
 jobrunr:
   background-job-server:
     enabled: true
-    worker-count: 3
+    worker-count: 10
 
   dashboard:
     enabled: true
@@ -55,6 +43,8 @@ jobrunr:
 
   database:
     type: sql
+    table-prefix: jobrunr_
+    skip-create: false
 
   job-scheduler:
     enabled: true
@@ -64,6 +54,14 @@ jobrunr:
 
   miscellaneous:
     allow-anonymous-data-usage: false
+
+
+
+# Topics de Kafka
+kafka:
+  topics:
+    job-requests: job-requests-topic
+    job-results: job-results-topic
 
 
 resilience4j.circuitbreaker:
