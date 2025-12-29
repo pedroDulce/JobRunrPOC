@@ -34,11 +34,13 @@ public class KafkaPublisherForJobs {
     /**
      * Publica un evento de job con headers de routing para filtrado
      */
-    @Job(name = "Ejecutar job en microservicio de forma remota con invocación asíncrona")
+    @Job(name = "Job remoto con invocación asíncrona")
     public JobStatusEnum publishEventForRunJob(JobRequest request, JobContext jobContext) {
 
         UUID jobExecutionId = jobContext.getJobId();
+        jobContext.getMetadata().put("jobName", request.getJobName());
         jobContext.saveMetadata("remote", "true");
+        jobContext.saveMetadata("nombre-Job", request.getJobName());
 
         request.setScheduledAt(LocalDateTime.now());
 

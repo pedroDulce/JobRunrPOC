@@ -78,7 +78,7 @@ public class JobSchedulerController {
         return ResponseEntity.ok(Map.of(
                 "jobId", jobId,
                 "status", "SCHEDULED",
-                "microservice", "job-executor:" + microUrl,
+                "microservice", "job-remote-executor:" + microUrl,
                 "jobType", JobType.SYNCRONOUS
         ));
     }

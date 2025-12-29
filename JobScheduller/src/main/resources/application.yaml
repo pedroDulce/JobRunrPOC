@@ -80,5 +80,6 @@ logging:
   level:
     org.jobrunr.storage.ConcurrentJobModificationException: OFF
     org.jobrunr.storage.sql.commondb.ConcurrentSqlModificationException: OFF
+    org.jobrunr.server.BackgroundJobPerformer: OFF
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{40} - %msg%n%ex{0}" # Sin stack trace
