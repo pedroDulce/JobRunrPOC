@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jobrunr.jobs.Job;
 import org.jobrunr.jobs.JobId;
+import org.jobrunr.jobs.states.StateName;
 import org.jobrunr.scheduling.JobScheduler;
 import org.jobrunr.storage.StorageProvider;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -117,14 +118,9 @@ public class JobResultConsumer {
         if (job.getState() == org.jobrunr.jobs.states.StateName.PROCESSING) {
             log.debug("Job {} is already PROCESSING in JobRunr", jobId);
         } else {
-            log.info("Job {} is IN_PROGRESS but JobRunr state is: {}",
-                    jobId, job.getState());
+            log.info("Job {} is IN_PROGRESS but JobRunr state is: {}", jobId, job.getState());
+            jobService.continueJob(job.getId());
         }
-        jobService.continueJob(job.getId());
-
-        // Actualizar metadata si es necesario
-        updateJobMetadata(job, "executorStatus", "IN_PROGRESS");
-        updateJobMetadata(job, "executorMessage", result.getMessage());
     }
 
     /**
@@ -135,23 +131,12 @@ public class JobResultConsumer {
         UUID jobUuid = job.getId();
         JobId jobId = new JobId(jobUuid);
 
-        jobService.completeSuccessJob(job.getId());
-
         log.info("✅ Job {} completed successfully - {}", jobId, result.getMessage());
-
-        // En JobRunr, el job dummy ya terminó (SUCCEEDED)
-        // Podemos actualizar metadata con el resultado real
-        updateJobMetadata(job, "executorStatus", "COMPLETED");
-        updateJobMetadata(job, "executorResult", result);
-        updateJobMetadata(job, "completedAt", result.getCompletedAt());
-        updateJobMetadata(job, "processingTime", result.getDurationMs());
 
         // Si el job en JobRunr aún está en PROCESSING (no debería), forzar éxito
         if (job.getState() == org.jobrunr.jobs.states.StateName.PROCESSING) {
             log.warn("Job {} is still PROCESSING in JobRunr, marking as succeeded", jobId);
-            // JobRunr no permite cambiar estado manualmente fácilmente
-            // Una opción es re-encolar y hacer que termine exitosamente
-            requeueAsSucceeded(jobId, result);
+            jobService.completeSuccessJob(job.getId());
         }
     }
 
@@ -163,22 +148,14 @@ public class JobResultConsumer {
         UUID jobUuid = job.getId();
         JobId jobId = new JobId(jobUuid);
 
-        jobService.failJob(job.getId(), result.getErrorDetails());
-
         log.error("❌ Job {} failed: {}", jobId, result.getErrorDetails());
-
-        // Actualizar metadata
-        updateJobMetadata(job, "executorStatus", "FAILED");
-        updateJobMetadata(job, "executorError", "fatal error");
-        updateJobMetadata(job, "errorDetails", result.getErrorDetails());
 
         // Si el job en JobRunr muestra SUCCEEDED (porque el dummy terminó bien),
         // necesitamos marcarlo como fallido
         if (job.getState() == org.jobrunr.jobs.states.StateName.PROCESSING ||
                 job.getState() == org.jobrunr.jobs.states.StateName.SUCCEEDED) {
             log.warn("Job {} is SUCCEEDED or PROCESSING in JobRunr but failed in executor", jobId);
-            // Re-encolar y hacer que falle
-            requeueAsFailed(jobId, result);
+            jobService.failJob(job.getId(), result.getErrorDetails());
         }
     }
 
@@ -194,69 +171,7 @@ public class JobResultConsumer {
         }
     }
 
-    /**
-     * Actualizar metadata del job en JobRunr
-     */
-    private void updateJobMetadata(Job job, String key, Object value) {
-        try {
-            // En JobRunr 8.3.1, puedes usar JobDetails para metadata
-            log.debug("Would update metadata for job {}: {}={}",
-                    job.getId(), key, value);
 
-        } catch (Exception e) {
-            log.warn("Could not update metadata for job {}: {}",
-                    job.getId(), e.getMessage());
-        }
-    }
-
-    /**
-     * Re-encolar job como exitoso
-     */
-    private void requeueAsSucceeded(JobId jobId, JobResult result) {
-        try {
-            // Eliminar el job actual
-            jobScheduler.delete(jobId);
-
-            // Crear nuevo job que termine exitosamente
-            JobId newJobId = jobScheduler.enqueue(() -> {
-                log.info("Job {} completed successfully in executor",
-                        result.getJobId());
-                // No hacer nada, solo terminar exitosamente
-            });
-
-            log.info("Re-queued job {} as {} with SUCCEEDED state",
-                    jobId, newJobId);
-
-        } catch (Exception e) {
-            log.error("Failed to requeue job {} as succeeded: {}",
-                    jobId, e.getMessage());
-        }
-    }
-
-    /**
-     * Re-encolar job como fallido
-     */
-    private void requeueAsFailed(JobId jobId, JobResult result) {
-        try {
-            // Eliminar el job actual
-            jobScheduler.delete(jobId);
-
-            // Crear nuevo job que falle explícitamente
-            JobId newJobId = jobScheduler.enqueue(() -> {
-                log.error("Job {} failed in executor: {}",
-                        result.getJobId(), result.getErrorDetails());
-                throw new RuntimeException("Job failed in executor: " +
-                        result.getErrorDetails());
-            });
-
-            log.info("Re-queued job {} as {} with FAILED state",
-                    jobId, newJobId);
-
-        } catch (Exception e) {
-            log.error("Failed to requeue job {} as failed: {}",
-                    jobId, e.getMessage());
-        }
-    }
 
 
 }

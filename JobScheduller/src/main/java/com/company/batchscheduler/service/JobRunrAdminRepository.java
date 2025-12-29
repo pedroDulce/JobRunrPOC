@@ -40,7 +40,9 @@ public class JobRunrAdminRepository {
             } else {
                 log.info("Job {} actualizado a estado {}", jobId, newState);
             }
+            return updated;
+        } else {
+            throw new RuntimeException("Estado: " + newState + " no permitido. Solo estados: " + STATUS_POSIBLES.toArray());
         }
-        throw new RuntimeException("Estado: " + newState + " no permitido. Solo estados: " + STATUS_POSIBLES.toArray());
     }
 }
