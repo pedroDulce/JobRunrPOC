@@ -1,9 +1,7 @@
 package com.company.batchscheduler.producer;
 
-import com.company.batchscheduler.model.JobStatus;
-import com.company.batchscheduler.service.JobStatusService;
 import common.batch.dto.JobRequest;
-import common.batch.dto.JobType;
+import common.batch.dto.JobStatusEnum;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jobrunr.jobs.JobId;
@@ -14,7 +12,6 @@ import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.kafka.support.SendResult;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
@@ -29,24 +26,13 @@ public class KafkaPublisherForJobs {
     private String jobRequestsTopic;
 
     private final JobScheduler jobScheduler;
-    private final JobStatusService jobStatusService;
     private final KafkaTemplate<String, JobRequest> kafkaTemplate;
 
     /**
      * Publica un evento de job con headers de routing para filtrado
      */
-    public JobStatus publishEventForRunJob(String jobId, JobRequest request) {
+    public JobStatusEnum publishEventForRunJob(String jobId, JobRequest request) {
         request.setScheduledAt(LocalDateTime.now());
-        // Guardar estado inicial en BD
-        JobStatus status = JobStatus.builder()
-                .jobId(jobId)
-                .jobType(JobType.ASYNCRONOUS.toString())
-                .status(JobStatusEnum.ENQUEUED.toString())
-                .message("Job enqueued for execution")
-                .createdAt(LocalDateTime.now())
-                .metadata(request.getMetadata())
-                .build();
-        jobStatusService.saveOrUpdate(status);
 
         try {
             // Crear mensaje con headers de routing
@@ -63,14 +49,12 @@ public class KafkaPublisherForJobs {
                     handlePublishSuccess(jobId, result);
                 }
             });
+            return JobStatusEnum.IN_PROGRESS;
 
         } catch (Exception e) {
             log.error("Error sending to Kafka: {}", e.getMessage());
-            status.setStatus(JobStatusEnum.FAILED.toString());
-            status.setMessage("Failed to enqueue job: " + e.getMessage());
-            jobStatusService.saveOrUpdate(status);
+            return JobStatusEnum.FAILED;
         }
-        return status;
     }
 
     /**
@@ -117,16 +101,8 @@ public class KafkaPublisherForJobs {
     }
 
     public void trackJobInJobRunr(String executorJobId, String correlationId) {
-        // ⚠️ Este método es SIMBÓLICO
-        // JobRunr necesita un método para invocar, pero la lógica real
-        // se ejecuta en el Job Executor Service
         log.trace("JobRunr tracking - Executor Job ID: {}, Correlation: {}",
                 executorJobId, correlationId);
-
-        // No hacemos nada aquí, porque:
-        // 1. JobRunr actualiza el estado automáticamente (ENQUEUED → PROCESSING → SUCCEEDED/FAILED)
-        // 2. El procesamiento real lo hace otro microservicio
-        // 3. Solo usamos JobRunr para el dashboard y gestión de estados
     }
 
     /**
@@ -146,12 +122,6 @@ public class KafkaPublisherForJobs {
                 result.getRecordMetadata().offset(),
                 result.getProducerRecord().headers()
         );
-
-        // Actualizar estado con información de Kafka
-        updateJobStatus(jobId, JobStatusEnum.PUBLISHED.toString(),
-                String.format("Published to Kafka. Offset: %d, Partition: %d",
-                        result.getRecordMetadata().offset(),
-                        result.getRecordMetadata().partition()));
     }
 
     /**
@@ -159,9 +129,6 @@ public class KafkaPublisherForJobs {
      */
     private void handlePublishFailure(String jobId, Throwable ex) {
         log.error("Failed to publish job {} to Kafka: {}", jobId, ex.getMessage());
-
-        updateJobStatus(jobId, JobStatusEnum.FAILED.toString(),
-                String.format("Failed to publish to Kafka: %s", ex.getMessage()));
     }
 
     /**
@@ -172,25 +139,5 @@ public class KafkaPublisherForJobs {
                 java.util.UUID.randomUUID().toString().substring(0, 8);
     }
 
-    /**
-     * Método helper para actualizar estado de forma asíncrona
-     */
-    @Async
-    public void updateJobStatus(String jobId, String status, String message) {
-        jobStatusService.findByJobId(jobId).ifPresent(jobStatus -> {
-            jobStatus.setStatus(status);
-            jobStatus.setMessage(message);
-            jobStatus.setUpdatedAt(LocalDateTime.now());
-
-            // Si es estado final, registrar timestamp de finalización
-            if (JobStatusEnum.COMPLETED.toString().equals(status) || JobStatusEnum.FAILED.toString().equals(status)
-                    || JobStatusEnum.CANCELLED.toString().equals(status)) {
-                jobStatus.setCompletedAt(LocalDateTime.now());
-            }
-
-            jobStatusService.saveOrUpdate(jobStatus);
-            log.debug("Job {} status updated to: {} - {}", jobId, status, message);
-        });
-    }
 
 }

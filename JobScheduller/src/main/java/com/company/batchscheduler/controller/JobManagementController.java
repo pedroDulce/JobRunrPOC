@@ -1,7 +1,5 @@
 package com.company.batchscheduler.controller;
 
-import com.company.batchscheduler.model.JobStatus;
-import com.company.batchscheduler.repository.JobStatusRepository;
 import com.company.batchscheduler.service.JobService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,14 +15,6 @@ import java.util.Map;
 public class JobManagementController {
 
     private final JobService jobService;
-    private final JobStatusRepository statusRepository;
-
-    @GetMapping("/status/{jobId}")
-    public ResponseEntity<JobStatus> getStatus(@PathVariable String jobId) {
-        return statusRepository.findByJobId(jobId)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
-    }
 
     /**
      * DELETE /api/jobs/{jobId}

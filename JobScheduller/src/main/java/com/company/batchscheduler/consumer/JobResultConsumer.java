@@ -198,9 +198,6 @@ public class JobResultConsumer {
             log.debug("Would update metadata for job {}: {}={}",
                     job.getId(), key, value);
 
-            // Guardar en tu propia tabla de tracking
-            saveToCustomTrackingTable(job.getId().toString(), key, value);
-
         } catch (Exception e) {
             log.warn("Could not update metadata for job {}: {}",
                     job.getId(), e.getMessage());
@@ -281,15 +278,4 @@ public class JobResultConsumer {
         }
     }
 
-    /**
-     * Guardar en tabla personalizada de tracking
-     */
-    private void saveToCustomTrackingTable(String jobrunrJobId, String key, Object value) {
-        // Implementar según tu base de datos
-        // Ejemplo con JPA:
-        // JobTracking tracking = jobTrackingRepository.findByJobrunrJobId(jobrunrJobId)
-        //     .orElse(new JobTracking(jobrunrJobId));
-        // tracking.getMetadata().put(key, value);
-        // jobTrackingRepository.save(tracking);
-    }
 }
