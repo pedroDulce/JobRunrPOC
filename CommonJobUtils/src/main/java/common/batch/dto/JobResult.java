@@ -49,7 +49,7 @@ public class JobResult {
 
     // Método helper
     public boolean isFinalState() {
-        return status == JobStatusEnum.SUCCESS ||
+        return status == JobStatusEnum.COMPLETED ||
                 status == JobStatusEnum.FAILED ||
                 status == JobStatusEnum.CANCELLED;
     }

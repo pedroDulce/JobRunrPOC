@@ -3,6 +3,7 @@ package com.company.batchscheduler.producer;
 import com.company.batchscheduler.model.JobStatus;
 import com.company.batchscheduler.service.JobStatusService;
 import common.batch.dto.JobRequest;
+import common.batch.dto.JobStatusEnum;
 import common.batch.dto.JobType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -38,7 +39,7 @@ public class KafkaPublisherForJobs {
         JobStatus status = JobStatus.builder()
                 .jobId(jobId)
                 .jobType(JobType.ASYNCRONOUS.toString())
-                .status("ENQUEUED")
+                .status(JobStatusEnum.ENQUEUED.toString())
                 .message("Job enqueued for execution")
                 .createdAt(LocalDateTime.now())
                 .metadata(request.getMetadata())
@@ -63,7 +64,7 @@ public class KafkaPublisherForJobs {
 
         } catch (Exception e) {
             log.error("Error sending to Kafka: {}", e.getMessage());
-            status.setStatus("FAILED");
+            status.setStatus(JobStatusEnum.FAILED.toString());
             status.setMessage("Failed to enqueue job: " + e.getMessage());
             jobStatusService.saveOrUpdate(status);
         }
@@ -122,7 +123,7 @@ public class KafkaPublisherForJobs {
         );
 
         // Actualizar estado con información de Kafka
-        updateJobStatus(jobId, "PUBLISHED",
+        updateJobStatus(jobId, JobStatusEnum.PUBLISHED.toString(),
                 String.format("Published to Kafka. Offset: %d, Partition: %d",
                         result.getRecordMetadata().offset(),
                         result.getRecordMetadata().partition()));
@@ -134,7 +135,7 @@ public class KafkaPublisherForJobs {
     private void handlePublishFailure(String jobId, Throwable ex) {
         log.error("Failed to publish job {} to Kafka: {}", jobId, ex.getMessage());
 
-        updateJobStatus(jobId, "FAILED",
+        updateJobStatus(jobId, JobStatusEnum.FAILED.toString(),
                 String.format("Failed to publish to Kafka: %s", ex.getMessage()));
     }
 
@@ -157,7 +158,8 @@ public class KafkaPublisherForJobs {
             jobStatus.setUpdatedAt(LocalDateTime.now());
 
             // Si es estado final, registrar timestamp de finalización
-            if ("COMPLETED".equals(status) || "FAILED".equals(status) || "CANCELLED".equals(status)) {
+            if (JobStatusEnum.COMPLETED.toString().equals(status) || JobStatusEnum.FAILED.toString().equals(status)
+                    || JobStatusEnum.CANCELLED.toString().equals(status)) {
                 jobStatus.setCompletedAt(LocalDateTime.now());
             }
 

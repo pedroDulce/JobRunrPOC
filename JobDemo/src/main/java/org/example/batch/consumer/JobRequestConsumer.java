@@ -116,7 +116,7 @@ public class JobRequestConsumer {
                     .status(status)
                     .message(message)
                     .startedAt(LocalDateTime.now())
-                    .completedAt(status.compareTo(JobStatusEnum.SUCCESS) == 0 || status.compareTo(JobStatusEnum.FAILED) == 0
+                    .completedAt(status.compareTo(JobStatusEnum.COMPLETED) == 0 || status.compareTo(JobStatusEnum.FAILED) == 0
                             ? LocalDateTime.now() : null)
                     .errorDetails(error != null ? error.getMessage() : null)
                     .correlationId(correlationId)

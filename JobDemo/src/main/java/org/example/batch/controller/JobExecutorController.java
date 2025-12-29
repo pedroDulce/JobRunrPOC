@@ -28,7 +28,7 @@ public class JobExecutorController {
             // Ejecutar
             Object result = processCustomerSummary(request);
             log.info("[JOB—DEMO]::JobExecutorController:: Job invocado vìa REST (modo sync) finalizó con éxito");
-            return ResponseEntity.ok(new JobResult(request.getJobId(), JobStatusEnum.SUCCESS, result.toString(),
+            return ResponseEntity.ok(new JobResult(request.getJobId(), JobStatusEnum.COMPLETED, result.toString(),
                     LocalDateTime.now()));
         } catch (Exception e) {
             log.error("Job falló: {}", e.getMessage(), e);

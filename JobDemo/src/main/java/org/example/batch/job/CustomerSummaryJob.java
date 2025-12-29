@@ -50,7 +50,7 @@ public class CustomerSummaryJob {
 
 
             resultado.setMessage("Proceso ha enviado el correo con toda la info solicitada en fecha " + processDate);
-            resultado.setStatus(JobStatusEnum.SUCCESS);
+            resultado.setStatus(JobStatusEnum.COMPLETED);
             resultado.setDurationMs(millsTerminado - mills);
             resultado.setCompletedAt(LocalDateTime.now());
 

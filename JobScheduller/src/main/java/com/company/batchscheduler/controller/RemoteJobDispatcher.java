@@ -45,7 +45,7 @@ public class RemoteJobDispatcher {
         // Con Circuit Breaker
         JobResult result = circuitBreaker.executeSupplier(supplier);
 
-        if (result.getStatus().compareTo(JobStatusEnum.SUCCESS) != 0) {
+        if (result.getStatus().compareTo(JobStatusEnum.COMPLETED) != 0) {
             throw new RuntimeException("Microservicio reportó error: " +
                     result.getMessage());
         }

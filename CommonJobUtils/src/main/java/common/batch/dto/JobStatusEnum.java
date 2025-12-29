@@ -1,5 +1,5 @@
 package common.batch.dto;
 
 public enum JobStatusEnum {
-    IN_PROGRESS, SUCCESS, FAILED, ACCEPTED, CANCELLED;
+    ENQUEUED, PUBLISHED, IN_PROGRESS, COMPLETED, FAILED, CANCELLED;
 }
