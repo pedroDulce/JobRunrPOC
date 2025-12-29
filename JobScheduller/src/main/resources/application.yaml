@@ -78,5 +78,7 @@ resilience4j.circuitbreaker:
 
 logging:
   level:
-    org.jobrunr.storage.ConcurrentJobModificationException: FATAL
-    org.jobrunr.storage.sql.commondb.ConcurrentSqlModificationException: FATAL
+    org.jobrunr.storage.ConcurrentJobModificationException: OFF
+    org.jobrunr.storage.sql.commondb.ConcurrentSqlModificationException: OFF
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{40} - %msg%n%ex{0}" # Sin stack trace
