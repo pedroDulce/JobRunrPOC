@@ -57,7 +57,7 @@ public class JobNotifier {
             JobRequest jobRequest = record.value();
 
             log.info("""
-                    📥 Received Job Request:
+                    📥 JobExecutor: Received Job Request:
                     Job ID: {}
                     JobRunr Job ID: {}
                     Business Domain: {}
@@ -86,10 +86,10 @@ public class JobNotifier {
             // 4. Confirmar offset
             acknowledgment.acknowledge();
 
-            log.info("✅ Job {} executed successfully", jobRequest.getJobId());
+            log.info("✅ JobExecutor: Job {} executed successfully", jobRequest.getJobId());
 
         } catch (Exception e) {
-            log.error("❌ Error processing job request: {}", e.getMessage(), e);
+            log.error("❌ JobExecutor: Error processing job request: {}", e.getMessage(), e);
 
             // Publicar estado FAILED si hay jobRequest
             if (record != null && record.value() != null) {
@@ -128,10 +128,10 @@ public class JobNotifier {
 
             publishToResultsTopic(statusResult);
 
-            log.debug("📤 Published job status: {} for job {}", status, jobRequest.getJobId());
+            log.debug("📤 JobExecutor: Published job status: {} for job {}", status, jobRequest.getJobId());
 
         } catch (Exception e) {
-            log.error("Failed to publish job status for {}: {}",
+            log.error("JobExecutor: Failed to publish job status for {}: {}",
                     jobRequest.getJobId(), e.getMessage());
         }
     }
@@ -153,7 +153,7 @@ public class JobNotifier {
 
         publishToResultsTopic(result);
 
-        log.info("📤 Published final result for job {} with status {}",
+        log.info("📤 JobExecutor: Published final result for job {} with status {}",
                 result.getJobId(), result.getStatus());
     }
 
@@ -168,10 +168,10 @@ public class JobNotifier {
 
         future.whenComplete((sendResult, throwable) -> {
             if (throwable != null) {
-                log.error("Failed to publish to {} for job {}: {}",
+                log.error("JobExecutor: Failed to publish to {} for job {}: {}",
                         jobResultsTopic, key, throwable.getMessage());
             } else {
-                log.debug("Published to {} for job {}: partition {}, offset {}",
+                log.debug("JobExecutor: Published to {} for job {}: partition {}, offset {}",
                         jobResultsTopic, key,
                         sendResult.getRecordMetadata().partition(),
                         sendResult.getRecordMetadata().offset());
