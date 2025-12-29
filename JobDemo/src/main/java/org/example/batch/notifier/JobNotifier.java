@@ -1,4 +1,4 @@
-package org.example.batch.consumer;
+package org.example.batch.notifier;
 
 import common.batch.dto.JobRequest;
 import common.batch.dto.JobResult;
@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.example.batch.job.CustomerSummaryJob;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.Acknowledgment;
@@ -24,7 +25,10 @@ import java.util.concurrent.CompletableFuture;
 @Component
 @RequiredArgsConstructor
 @Slf4j
-public class JobRequestConsumer {
+public class JobNotifier {
+
+    @Value("${kafka.topics.job-results}")
+    private String jobResultsTopic;
 
     private final CustomerSummaryJob jobExecutionService;
     private final KafkaTemplate<String, JobResult> kafkaTemplate;
@@ -157,19 +161,18 @@ public class JobRequestConsumer {
      * Publicar al topic de resultados
      */
     private void publishToResultsTopic(JobResult result) {
-        String topic = "job-results-topic";
         String key = result.getJobId();
 
         CompletableFuture<SendResult<String, JobResult>> future =
-                kafkaTemplate.send(topic, key, result);
+                kafkaTemplate.send(jobResultsTopic, key, result);
 
         future.whenComplete((sendResult, throwable) -> {
             if (throwable != null) {
                 log.error("Failed to publish to {} for job {}: {}",
-                        topic, key, throwable.getMessage());
+                        jobResultsTopic, key, throwable.getMessage());
             } else {
                 log.debug("Published to {} for job {}: partition {}, offset {}",
-                        topic, key,
+                        jobResultsTopic, key,
                         sendResult.getRecordMetadata().partition(),
                         sendResult.getRecordMetadata().offset());
             }
