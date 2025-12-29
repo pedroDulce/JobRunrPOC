@@ -21,7 +21,7 @@ public class JobRunrAdminRepository {
     public int updateJobState(UUID jobId, String newState) {
         if (STATUS_POSIBLES.contains(newState)) {
             String sql = """
-                        UPDATE jobrunr_jobs
+                        UPDATE jobrunr_jobrunr_jobs
                         SET
                             state = ?,
                             updated_at = now(),

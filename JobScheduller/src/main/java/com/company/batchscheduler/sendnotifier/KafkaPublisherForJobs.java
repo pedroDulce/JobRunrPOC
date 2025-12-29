@@ -102,11 +102,6 @@ public class KafkaPublisherForJobs {
                 .build();
     }
 
-    public void trackJobInJobRunr(String executorJobId, String correlationId) {
-        log.trace("JobRunr tracking - Executor Job ID: {}, Correlation: {}",
-                executorJobId, correlationId);
-    }
-
     /**
      * Maneja éxito en publicación
      */
