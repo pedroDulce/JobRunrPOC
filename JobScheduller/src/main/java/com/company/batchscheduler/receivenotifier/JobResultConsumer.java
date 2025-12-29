@@ -135,6 +135,8 @@ public class JobResultConsumer {
         UUID jobUuid = job.getId();
         JobId jobId = new JobId(jobUuid);
 
+        jobService.completeSuccessJob(job.getId());
+
         log.info("✅ Job {} completed successfully - {}", jobId, result.getMessage());
 
         // En JobRunr, el job dummy ya terminó (SUCCEEDED)
@@ -160,6 +162,8 @@ public class JobResultConsumer {
 
         UUID jobUuid = job.getId();
         JobId jobId = new JobId(jobUuid);
+
+        jobService.failJob(job.getId(), result.getErrorDetails());
 
         log.error("❌ Job {} failed: {}", jobId, result.getErrorDetails());
 

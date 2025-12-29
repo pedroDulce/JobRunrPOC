@@ -188,7 +188,7 @@ public class JobService {
             log.info("Actualizando job " + jobId + " a estado: " + newStatus);
 
             // 1. Obtener el job existente
-            Job job = storageProvider.getJobById(UUID.fromString(jobId));
+            Job job = getById(jobId);
 
             if (job == null) {
                 log.error("Job no encontrado: " + jobId);
@@ -389,13 +389,13 @@ public class JobService {
     /**
      * Métodos de conveniencia
      */
-    public boolean completeSuccessJob(String jobId) {
-        return updateJobStatus(jobId, StateName.SUCCEEDED.toString(), new Date());
+    public boolean completeSuccessJob(UUID jobId) {
+        return updateJobStatus(jobId.toString(), StateName.SUCCEEDED.toString(), new Date());
     }
 
-    public boolean failJob(String jobId, String errorMessage) {
+    public boolean failJob(UUID jobId, String errorMessage) {
         try {
-            Job job = getById(jobId);
+            Job job = getById(jobId.toString());
             if (job == null) {
                 log.info("Job no encontrado: " + jobId);
                 return false;
@@ -421,9 +421,9 @@ public class JobService {
         }
     }
 
-    public boolean startJob(UUID jobId) {
+    public boolean startJob(String jobId) {
         try {
-            Job job = storageProvider.getJobById(jobId);
+            Job job = getById(jobId);
             if (job == null) return false;
 
             invokeSetStatus(job, StateName.PROCESSING.toString());
@@ -447,7 +447,7 @@ public class JobService {
 
     public boolean continueJob(UUID jobId) {
         try {
-            Job job = storageProvider.getJobById(jobId);
+            Job job = getById(jobId.toString());
             if (job == null) return false;
 
             invokeSetStatus(job, StateName.PROCESSING.toString());

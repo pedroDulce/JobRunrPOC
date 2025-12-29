@@ -49,7 +49,7 @@ public class KafkaPublisherForJobs {
                 }
             });
 
-            jobService.startJob(UUID.fromString(jobId));
+            jobService.startJob(jobId);
 
             return JobStatusEnum.IN_PROGRESS;
 
