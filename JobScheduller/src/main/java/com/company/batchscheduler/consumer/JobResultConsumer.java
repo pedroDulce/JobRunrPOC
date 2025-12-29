@@ -1,15 +1,20 @@
 package com.company.batchscheduler.consumer;
 
+import com.company.batchscheduler.service.JobTrackingService;
 import common.batch.dto.JobResult;
+import common.batch.dto.JobStatusEnum;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.jobrunr.jobs.Job;
 import org.jobrunr.jobs.JobId;
 import org.jobrunr.scheduling.JobScheduler;
+import org.jobrunr.storage.StorageProvider;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Slf4j
@@ -17,7 +22,9 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class JobResultConsumer {
 
+    private final StorageProvider storageProvider;
     private final JobScheduler jobScheduler;
+    private final JobTrackingService jobTrackingService;
 
     @KafkaListener(
             topics = "${kafka.topics.job-results}",
@@ -25,92 +32,282 @@ public class JobResultConsumer {
     )
     public void consumeJobResult(
             JobResult result,
-            @Header(KafkaHeaders.RECEIVED_KEY) String jobId,
-            @Header(value = "jobrunr-job-id", required = false) String jobrunrJobIdHeader) {
+            @Header(KafkaHeaders.RECEIVED_KEY) String executorJobId,
+            @Header(value = "jobrunr-job-id", required = false) String jobrunrJobIdHeader,
+            @Header(value = "correlation-id", required = false) String correlationIdHeader) {
 
         try {
             // Usar jobrunrJobId del header o del objeto
-            String jobrunrJobId = jobrunrJobIdHeader != null ?
+            String jobrunrJobIdStr = jobrunrJobIdHeader != null ?
                     jobrunrJobIdHeader : result.getJobrunrJobId();
 
-            log.info("📨 Resultado recibido del jobId: {}, Nombre: {}, JobRunr-JobId: {}, Estado: {}",
-                    jobId, result.getJobName(), jobrunrJobId, result.getStatus());
+            String correlationId = correlationIdHeader != null ?
+                    correlationIdHeader : result.getCorrelationId();
 
-            if (jobrunrJobId != null) {
-                updateJobRunrStatus(jobrunrJobId, result);
+            log.info("📨 Received job {} result: {} for JobRunr Job: {}, Status: {}",
+                    result.getJobName(), executorJobId, jobrunrJobIdStr, result.getStatus());
+
+            if (jobrunrJobIdStr != null && !jobrunrJobIdStr.isEmpty()) {
+                updateJobRunrStatus(jobrunrJobIdStr, result);
+                // Actualizar tracking
+                jobTrackingService.updateFromExecutorResult(
+                        jobrunrJobIdStr,
+                        result.getJobId(),
+                        correlationId,
+                        result.getStatus().name(),
+                        result.getMessage(),
+                        result.getErrorDetails(),
+                        result.getStartedAt(),
+                        result.getCompletedAt()
+                );
+
             } else {
-                log.warn("No JobRunr Job ID found for job {}", jobId);
+                log.warn("No JobRunr Job ID found for job {}", jobrunrJobIdStr);
             }
 
         } catch (Exception e) {
-            log.error("Error processing job result for {}: {}", jobId, e.getMessage(), e);
+            log.error("Error processing job result for {}: {}", jobrunrJobIdHeader, e.getMessage(), e);
         }
     }
 
     /**
-     * Actualizar estado en JobRunr
+     * Actualizar estado en JobRunr según tu JobResult
      */
-    private void updateJobRunrStatus(String jobrunrJobId, JobResult result) {
+    private void updateJobRunrStatus(String jobrunrJobIdStr, JobResult result) {
         try {
-            // Convertir String a UUID y luego a JobId
-            UUID uuid = UUID.fromString(jobrunrJobId);
+            UUID uuid = UUID.fromString(jobrunrJobIdStr);
             JobId jobId = new JobId(uuid);
 
-            switch (result.getStatus()) {
+            // ⚠️ EN JobRunr 8.3.1: getJobById() devuelve Job o null, NO Optional
+            Job job = storageProvider.getJobById(jobId);
 
-                case ENQUEUED:
-                    // JobRunr ya marca jobs como PROCESSING automáticamente
-                    log.debug("Job {} is enqueued", jobrunrJobId);
-                    break;
+            if (job != null) {
+                log.debug("Found JobRunr job {} with state: {}", jobId, job.getState());
 
-                case PUBLISHED:
-                    // JobRunr ya marca jobs como PROCESSING automáticamente
-                    log.debug("Job {} is published", jobrunrJobId);
-                    break;
+                switch (result.getStatus()) {
+                    case IN_PROGRESS:
+                        // JobRunr ya debería estar en PROCESSING
+                        handleInProgress(job, result);
+                        break;
 
-                case IN_PROGRESS:
-                    // JobRunr ya marca jobs como PROCESSING automáticamente
-                    log.debug("Job {} is in progress", jobrunrJobId);
-                    break;
+                    case COMPLETED:
+                        // Marcar como exitoso
+                        handleCompleted(job, result);
+                        break;
 
-                case COMPLETED:
-                    // JobRunr marca como SUCCEEDED automáticamente al terminar sin excepción
-                    log.info("Job {} completed successfully", jobrunrJobId);
-                    break;
+                    case FAILED:
+                        // Marcar como fallido
+                        handleFailed(job, result);
+                        break;
 
-                case FAILED:
-                    // Para fallos, necesitaríamos reintentar o marcar como fallado
-                    handleFailedJob(jobId, result);
-                    break;
+                    case CANCELLED:
+                        // Eliminar de JobRunr
+                        handleCancelled(jobId);
+                        break;
 
-                case CANCELLED:
-                    jobScheduler.delete(jobId);
-                    log.info("Job {} cancelled", jobrunrJobId);
-                    break;
-
-                default:
-                    log.warn("Unknown status {} for job {}", result.getStatus(), jobrunrJobId);
+                    default:
+                        log.warn("Unknown status {} for job {}", result.getStatus(), jobId);
+                }
+            } else {
+                log.warn("JobRunr job {} not found in storage", jobId);
+                // Podrías crear un job de tracking retrospectivo si es necesario
+                createRetrospectiveJob(jobId, result);
             }
 
+        } catch (IllegalArgumentException e) {
+            log.error("Invalid JobRunr Job ID format: {} - {}", jobrunrJobIdStr, e.getMessage());
         } catch (Exception e) {
             log.error("Failed to update JobRunr status for {}: {}",
-                    jobrunrJobId, e.getMessage());
+                    jobrunrJobIdStr, e.getMessage(), e);
         }
     }
 
     /**
-     * Manejar job fallido
+     * Manejar estado IN_PROGRESS
      */
-    private void handleFailedJob(JobId jobId, JobResult result) {
-        log.error("Job {} failed: {}", jobId, result.getErrorDetails());
+    private void handleInProgress(Job job, JobResult result) {
 
-        // Podrías:
-        // 1. Reintentar el job
-        // 2. Notificar administradores
-        // 3. Registrar en log de errores
+        UUID jobUuid = job.getId();
+        JobId jobId = new JobId(jobUuid);
 
-        // Ejemplo: Si no hay más reintentos, dejar que JobRunr lo marque como FAILED
-        // JobRunr maneja reintentos automáticamente basado en su configuración
+        // En JobRunr, un job pasa automáticamente a PROCESSING cuando se ejecuta
+        // Podemos verificar y loggear
+        if (job.getState() == org.jobrunr.jobs.states.StateName.PROCESSING) {
+            log.debug("Job {} is already PROCESSING in JobRunr", jobId);
+        } else {
+            log.info("Job {} is IN_PROGRESS but JobRunr state is: {}",
+                    jobId, job.getState());
+        }
+
+        // Actualizar metadata si es necesario
+        updateJobMetadata(job, "executorStatus", "IN_PROGRESS");
+        updateJobMetadata(job, "executorMessage", result.getMessage());
+    }
+
+    /**
+     * Manejar estado COMPLETED
+     */
+    private void handleCompleted(Job job, JobResult result) {
+
+        UUID jobUuid = job.getId();
+        JobId jobId = new JobId(jobUuid);
+
+        log.info("✅ Job {} completed successfully - {}", jobId, result.getMessage());
+
+        // En JobRunr, el job dummy ya terminó (SUCCEEDED)
+        // Podemos actualizar metadata con el resultado real
+        updateJobMetadata(job, "executorStatus", "COMPLETED");
+        updateJobMetadata(job, "executorResult", result);
+        updateJobMetadata(job, "completedAt", result.getCompletedAt());
+        updateJobMetadata(job, "processingTime", result.getDurationMs());
+
+        // Si el job en JobRunr aún está en PROCESSING (no debería), forzar éxito
+        if (job.getState() == org.jobrunr.jobs.states.StateName.PROCESSING) {
+            log.warn("Job {} is still PROCESSING in JobRunr, marking as succeeded", jobId);
+            // JobRunr no permite cambiar estado manualmente fácilmente
+            // Una opción es re-encolar y hacer que termine exitosamente
+            requeueAsSucceeded(jobId, result);
+        }
+    }
+
+    /**
+     * Manejar estado FAILED
+     */
+    private void handleFailed(Job job, JobResult result) {
+
+        UUID jobUuid = job.getId();
+        JobId jobId = new JobId(jobUuid);
+
+        log.error("❌ Job {} failed: {}", jobId, result.getErrorDetails());
+
+        // Actualizar metadata
+        updateJobMetadata(job, "executorStatus", "FAILED");
+        updateJobMetadata(job, "executorError", "fatal error");
+        updateJobMetadata(job, "errorDetails", result.getErrorDetails());
+
+        // Si el job en JobRunr muestra SUCCEEDED (porque el dummy terminó bien),
+        // necesitamos marcarlo como fallido
+        if (job.getState() == org.jobrunr.jobs.states.StateName.SUCCEEDED) {
+            log.warn("Job {} is SUCCEEDED in JobRunr but failed in executor", jobId);
+            // Re-encolar y hacer que falle
+            requeueAsFailed(jobId, result);
+        }
+    }
+
+    /**
+     * Manejar estado CANCELLED
+     */
+    private void handleCancelled(JobId jobId) {
+        try {
+            jobScheduler.delete(jobId);
+            log.info("Job {} cancelled", jobId);
+        } catch (Exception e) {
+            log.error("Failed to cancel job {}: {}", jobId, e.getMessage());
+        }
+    }
+
+    /**
+     * Actualizar metadata del job en JobRunr
+     */
+    private void updateJobMetadata(Job job, String key, Object value) {
+        try {
+            // En JobRunr 8.3.1, puedes usar JobDetails para metadata
+            // Pero es más complejo. Una alternativa es guardar en tu propia tabla.
+            log.debug("Would update metadata for job {}: {}={}",
+                    job.getId(), key, value);
+
+            // Guardar en tu propia tabla de tracking
+            saveToCustomTrackingTable(job.getId().toString(), key, value);
+
+        } catch (Exception e) {
+            log.warn("Could not update metadata for job {}: {}",
+                    job.getId(), e.getMessage());
+        }
+    }
+
+    /**
+     * Re-encolar job como exitoso
+     */
+    private void requeueAsSucceeded(JobId jobId, JobResult result) {
+        try {
+            // Eliminar el job actual
+            jobScheduler.delete(jobId);
+
+            // Crear nuevo job que termine exitosamente
+            JobId newJobId = jobScheduler.enqueue(() -> {
+                log.info("Job {} completed successfully in executor",
+                        result.getJobId());
+                // No hacer nada, solo terminar exitosamente
+            });
+
+            log.info("Re-queued job {} as {} with SUCCEEDED state",
+                    jobId, newJobId);
+
+        } catch (Exception e) {
+            log.error("Failed to requeue job {} as succeeded: {}",
+                    jobId, e.getMessage());
+        }
+    }
+
+    /**
+     * Re-encolar job como fallido
+     */
+    private void requeueAsFailed(JobId jobId, JobResult result) {
+        try {
+            // Eliminar el job actual
+            jobScheduler.delete(jobId);
+
+            // Crear nuevo job que falle explícitamente
+            JobId newJobId = jobScheduler.enqueue(() -> {
+                log.error("Job {} failed in executor: {}",
+                        result.getJobId(), result.getErrorDetails());
+                throw new RuntimeException("Job failed in executor: " +
+                        result.getErrorDetails());
+            });
+
+            log.info("Re-queued job {} as {} with FAILED state",
+                    jobId, newJobId);
+
+        } catch (Exception e) {
+            log.error("Failed to requeue job {} as failed: {}",
+                    jobId, e.getMessage());
+        }
+    }
+
+    /**
+     * Crear job retrospectivo si no existe
+     */
+    private void createRetrospectiveJob(JobId jobId, JobResult result) {
+        try {
+            log.info("Creating retrospective job for {}", jobId);
+
+            // Crear un job que refleje el estado real
+            if (result.getStatus() == JobStatusEnum.COMPLETED) {
+                jobScheduler.enqueue(() -> {
+                    log.info("Retrospective: Job {} completed at {}",
+                            result.getJobId(), result.getCompletedAt());
+                });
+            } else if (result.getStatus() == JobStatusEnum.FAILED) {
+                jobScheduler.enqueue(() -> {
+                    throw new RuntimeException("Retrospective failure: " +
+                            result.getErrorDetails());
+                });
+            }
+
+        } catch (Exception e) {
+            log.error("Failed to create retrospective job: {}", e.getMessage());
+        }
+    }
+
+    /**
+     * Guardar en tabla personalizada de tracking
+     */
+    private void saveToCustomTrackingTable(String jobrunrJobId, String key, Object value) {
+        // Implementar según tu base de datos
+        // Ejemplo con JPA:
+        // JobTracking tracking = jobTrackingRepository.findByJobrunrJobId(jobrunrJobId)
+        //     .orElse(new JobTracking(jobrunrJobId));
+        // tracking.getMetadata().put(key, value);
+        // jobTrackingRepository.save(tracking);
     }
 }
-
