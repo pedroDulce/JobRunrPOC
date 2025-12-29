@@ -2,7 +2,6 @@ package com.company.batchscheduler.producer;
 
 import com.company.batchscheduler.model.JobStatus;
 import com.company.batchscheduler.service.JobStatusService;
-import com.company.batchscheduler.service.JobTrackingService;
 import common.batch.dto.JobRequest;
 import common.batch.dto.JobStatusEnum;
 import common.batch.dto.JobType;
@@ -30,7 +29,6 @@ public class KafkaPublisherForJobs {
     @Value("${kafka.topics.job-requests}")
     private String jobRequestsTopic;
 
-    private final JobTrackingService jobTrackingService;
     private final JobScheduler jobScheduler;
     private final JobStatusService jobStatusService;
     private final KafkaTemplate<String, JobRequest> kafkaTemplate;
@@ -89,11 +87,6 @@ public class KafkaPublisherForJobs {
 
         log.info("🎯 JobRunr Job created - ID: {}, For Executor Job: {}",
                 jobrunrJobId, executorJobId);
-
-        // 3. Crear tracking inicial
-        jobTrackingService.createInitialTracking(
-                jobrunrJobId, executorJobId, correlationId, request.getBusinessDomain(), request.getJobName()
-        );
 
         return MessageBuilder
                 .withPayload(request)

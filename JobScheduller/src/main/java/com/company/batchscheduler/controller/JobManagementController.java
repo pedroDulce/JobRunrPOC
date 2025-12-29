@@ -3,7 +3,6 @@ package com.company.batchscheduler.controller;
 import com.company.batchscheduler.model.JobStatus;
 import com.company.batchscheduler.repository.JobStatusRepository;
 import com.company.batchscheduler.service.JobService;
-import com.company.batchscheduler.service.JobTrackingService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -19,7 +18,6 @@ public class JobManagementController {
 
     private final JobService jobService;
     private final JobStatusRepository statusRepository;
-    private final JobTrackingService jobTrackingService;
 
     @GetMapping("/status/{jobId}")
     public ResponseEntity<JobStatus> getStatus(@PathVariable String jobId) {
@@ -48,24 +46,6 @@ public class JobManagementController {
                     "message", "Job not found or could not be deleted",
                     "jobId", jobId
             ));
-        }
-    }
-
-    @GetMapping("/{jobrunrJobId}/status")
-    public ResponseEntity<Map<String, Object>> getJobStatus(@PathVariable String jobrunrJobId) {
-        try {
-            Map<String, Object> status = jobTrackingService.getCombinedStatus(jobrunrJobId);
-
-            if (status.containsKey("error") && "Tracking not found".equals(status.get("error"))) {
-                return ResponseEntity.notFound().build();
-            }
-
-            return ResponseEntity.ok(status);
-
-        } catch (Exception e) {
-            log.error("Error getting status for {}: {}", jobrunrJobId, e.getMessage());
-            return ResponseEntity.internalServerError()
-                    .body(Map.of("error", e.getMessage()));
         }
     }
 

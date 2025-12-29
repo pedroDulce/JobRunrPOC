@@ -1,6 +1,5 @@
 package com.company.batchscheduler.consumer;
 
-import com.company.batchscheduler.service.JobTrackingService;
 import common.batch.dto.JobResult;
 import common.batch.dto.JobStatusEnum;
 import lombok.RequiredArgsConstructor;
@@ -14,7 +13,6 @@ import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.stereotype.Component;
 
-import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Slf4j
@@ -24,7 +22,6 @@ public class JobResultConsumer {
 
     private final StorageProvider storageProvider;
     private final JobScheduler jobScheduler;
-    private final JobTrackingService jobTrackingService;
 
     @KafkaListener(
             topics = "${kafka.topics.job-results}",
@@ -49,18 +46,6 @@ public class JobResultConsumer {
 
             if (jobrunrJobIdStr != null && !jobrunrJobIdStr.isEmpty()) {
                 updateJobRunrStatus(jobrunrJobIdStr, result);
-                // Actualizar tracking
-                jobTrackingService.updateFromExecutorResult(
-                        jobrunrJobIdStr,
-                        result.getJobId(),
-                        correlationId,
-                        result.getStatus().name(),
-                        result.getMessage(),
-                        result.getErrorDetails(),
-                        result.getStartedAt(),
-                        result.getCompletedAt()
-                );
-
             } else {
                 log.warn("No JobRunr Job ID found for job {}", jobrunrJobIdStr);
             }
