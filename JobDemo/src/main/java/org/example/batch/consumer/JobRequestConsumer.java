@@ -49,12 +49,6 @@ public class JobRequestConsumer {
             Acknowledgment acknowledgment) {
 
         JobResult result;
-        /*if (jobrunrJobId == null || "".contentEquals(jobrunrJobId)) {
-            // Confirmar offset para que descarte este mensaje a futuro
-            acknowledgment.acknowledge();
-            return;
-        }*/
-
         try {
             JobRequest jobRequest = record.value();
 
