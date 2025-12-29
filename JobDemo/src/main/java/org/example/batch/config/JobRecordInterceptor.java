@@ -43,12 +43,12 @@ public class JobRecordInterceptor implements RecordInterceptor<String, JobReques
 
         // Extraer y log headers importantes
         record.headers().forEach(header -> {
-            if (header.key().equals("job-type") ||
+            /*if (header.key().equals("job-type") ||
                     header.key().equals("priority") ||
                     header.key().equals("correlation-id") ||
-                    header.key().equals("business-domain")) {
+                    header.key().equals("business-domain")) {*/
                 log.debug("   Header {}: {}", header.key(), new String(header.value()));
-            }
+                //}
         });
 
         return record;

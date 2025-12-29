@@ -57,8 +57,8 @@ kafka:
 
   filter:
     enabled: true
-    business-domains: "ReportingService"  # Solo procesar este business-domain
-    target-batches: "batch-process-1"     # Solo procesar este target-batch
+    business-domains: "job-executor-service"  # Solo procesar este business-domain
+    target-batches: "ResumenDiarioClientesAsync"     # Solo procesar este target-batch
 
   consumer:
     concurrency: 3
