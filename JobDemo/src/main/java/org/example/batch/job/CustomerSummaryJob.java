@@ -28,13 +28,13 @@ public class CustomerSummaryJob {
         String jobId = jobRequest.getJobId();
         resultado.setJobId(jobId);
         try {
-            String processDateStr = jobRequest.getParameters().get("date");
+            LocalDateTime processDateTime = jobRequest.getScheduledAt();
             String emailRecipient = jobRequest.getParameters().get("emailRecipient");
-            log.info("🚀 Iniciando job {} con fecha: {} y tipo: {}", jobId, processDateStr, jobRequest.getJobType());
+            log.info("🚀 Iniciando job {} con fecha: {} y tipo: {}", jobId, processDateTime, jobRequest.getJobType());
             log.info("con headers: {}", headers);
 
             // Convertir String a LocalDate
-            LocalDate processDate = LocalDate.parse(processDateStr);
+            LocalDate processDate = processDateTime.toLocalDate();
 
             Thread.sleep(20000); // 20 segundos
 
@@ -49,7 +49,7 @@ public class CustomerSummaryJob {
             log.info("✅ Job {} completado exitosamente", jobId);
 
 
-            resultado.setMessage("Proceso ha enviado el correo con toda la info solicitada en fecha " + processDateStr);
+            resultado.setMessage("Proceso ha enviado el correo con toda la info solicitada en fecha " + processDate);
             resultado.setStatus(JobStatusEnum.SUCCESS);
             resultado.setDurationMs(millsTerminado - mills);
             resultado.setCompletedAt(LocalDateTime.now());

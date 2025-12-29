@@ -41,12 +41,10 @@ public class JobRequestConsumer {
             ConsumerRecord<String, JobRequest> record,
             @Header(KafkaHeaders.RECEIVED_KEY) String key,
             @Header(KafkaHeaders.RECEIVED_PARTITION) Integer partition,
-            @Header(KafkaHeaders.RECEIVED_TOPIC) String topic,
-            @Header(KafkaHeaders.RECEIVED_TIMESTAMP) Long timestamp,
             @Header(value = "business-domain", required = false) String businessDomain,
             @Header(value = "target-batch", required = false) String targetBatch,
             @Header(value = "job-type", required = false) String jobType,
-            @Header(value = "priority", defaultValue = "MEDIUM") String priority,
+            //@Header(value = "priority", defaultValue = "MEDIUM") String priority,
             @Header(value = "correlation-id", required = false) String correlationId,
             Acknowledgment acknowledgment) {
 
@@ -71,7 +69,7 @@ public class JobRequestConsumer {
                     key,
                     partition,
                     jobType,
-                    priority
+                    JobPriority.HIGH /*priority*/
             );
 
             // Verificar que los headers coinciden con lo esperado
@@ -87,43 +85,17 @@ public class JobRequestConsumer {
             log.info("Executing job: {} for business-domain: {}",
                     jobRequest.getJobName(), businessDomain);
 
-            jobExecutionService.executeJob(jobRequest, extractHeaders(record));
+            processWithHighPriority(jobRequest, extractHeaders(record), correlationId);
 
             // Confirmar procesamiento
             acknowledgment.acknowledge();
             log.info("✅ Job {} executed successfully", jobRequest.getJobId());
 
         } catch (Exception e) {
-            shutdown();
             log.error("❌ Error processing job request: {}", e.getMessage(), e);
-            // No confirmar para que se reintente
+            shutdown();
         }
     }
-
-    /**
-     * Listener para jobs de alta prioridad (separado)
-     */
-    @KafkaListener(
-            topics = "${kafka.topics.job-requests}",
-            containerFactory = "jobRequestListenerContainerFactory",
-            groupId = "${spring.kafka.consumer.group-id}-high-priority",
-            id = "high-priority-consumer"
-    )
-    public void consumeHighPriorityJob(
-            ConsumerRecord<String, JobRequest> record,
-            //@Header("priority") String priority,
-            Acknowledgment acknowledgment) {
-
-        if (!JobPriority.HIGH.equals(JobPriority.HIGH)) {
-            return;
-        }
-
-        log.info("⚡ Processing HIGH priority job from dedicated consumer: {}", record.key());
-
-        processWithHighPriority(record.value(), extractHeaders(record), null);
-        acknowledgment.acknowledge();
-    }
-
 
     /**
      * Procesar job con alta prioridad
@@ -131,7 +103,7 @@ public class JobRequestConsumer {
     private JobResult processWithHighPriority(JobRequest jobRequest,
                                               Map<String, String> headers,
                                               String correlationId) {
-        log.info("⚡ Processing HIGH priority job: {}", jobRequest.getJobId());
+        log.info("⚡ Processing HIGH priority job: {}, with correlationId: {}", jobRequest.getJobId(), correlationId);
 
         try {
             // Ejecutar en thread separado para no bloquear el consumer
