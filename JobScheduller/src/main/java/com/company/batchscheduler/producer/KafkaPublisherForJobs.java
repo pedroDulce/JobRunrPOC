@@ -16,8 +16,6 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 @RequiredArgsConstructor
@@ -85,7 +83,8 @@ public class KafkaPublisherForJobs {
 
                 // Headers de routing/filtrado
                 .setHeader("job-type", request.getJobType())          // "ASYNCRONOUS"
-                .setHeader("business-domain", request.getJobName()) // Ej: "ResumenDiarioClientesAsync"
+                .setHeader("business-domain", request.getBusinessDomain()) // Ej: "application-job-demo"
+                .setHeader("target-batch", request.getJobName()) // Ej: "ResumenDiarioClientesAsync"
 
                 // Headers de procesamiento
                 .setHeader("priority", request.getPriority())         // Ej: "HIGH", "MEDIUM", "LOW"
@@ -102,18 +101,6 @@ public class KafkaPublisherForJobs {
                 .setHeader("scheduled-at", request.getScheduledAt() != null ?
                         request.getScheduledAt().toString() : LocalDateTime.now().toString())
                 .build();
-    }
-
-    /**
-     * Metadata adicional para tracking y routing
-     */
-    private Map<String, Object> createMetadataForRouting(JobRequest request) {
-        Map<String, Object> metadata = new HashMap<>();
-        metadata.put("jobType", request.getJobType());
-        metadata.put("businessDomain", request.getJobName());
-        metadata.put("priority", request.getPriority());
-        metadata.put("requiredCapabilities", request.getRequiredCapabilities());
-        return metadata;
     }
 
     /**
@@ -152,74 +139,6 @@ public class KafkaPublisherForJobs {
     }
 
     /**
-     * Método para publicar con routing explícito
-     * (Para casos donde quieres forzar un routing específico)
-     */
-    public JobStatus publishWithCustomRouting(String jobId, JobRequest request,
-                                              Map<String, String> routingHeaders) {
-        MessageBuilder<JobRequest> messageBuilder = MessageBuilder
-                .withPayload(request)
-                .setHeader(KafkaHeaders.TOPIC, jobRequestsTopic)
-                .setHeader(KafkaHeaders.KEY, jobId);
-
-        // Añadir headers de routing personalizados
-        routingHeaders.forEach(messageBuilder::setHeader);
-
-        // Headers por defecto
-        messageBuilder.setHeader("source", "batch-scheduler-service")
-                .setHeader("timestamp", System.currentTimeMillis());
-
-        return publishMessage(jobId, request, messageBuilder.build());
-    }
-
-    /**
-     * Método genérico para publicar cualquier mensaje
-     */
-    private JobStatus publishMessage(String jobId, JobRequest request, Message<JobRequest> message) {
-        JobStatus status = createInitialStatus(jobId, request);
-
-        try {
-            CompletableFuture<SendResult<String, JobRequest>> future =
-                    kafkaTemplate.send(message);
-
-            future.whenComplete((result, ex) -> {
-                if (ex != null) {
-                    handlePublishFailure(jobId, ex);
-                } else {
-                    handlePublishSuccess(jobId, result);
-                }
-            });
-
-        } catch (Exception e) {
-            log.error("Error sending message to Kafka: {}", e.getMessage());
-            status.setStatus("FAILED");
-            status.setMessage("Failed to enqueue job: " + e.getMessage());
-            jobStatusService.saveOrUpdate(status);
-
-
-
-        }
-
-        return status;
-    }
-
-    /**
-     * Crea estado inicial del job
-     */
-    private JobStatus createInitialStatus(String jobId, JobRequest request) {
-        JobStatus status = JobStatus.builder()
-                .jobId(jobId)
-                .jobType(JobType.ASYNCRONOUS.toString())
-                .status("ENQUEUED")
-                .message("Job enqueued for execution")
-                .createdAt(LocalDateTime.now())
-                //.metadata(createMetadataForRouting(request))
-                .build();
-
-        return jobStatusService.saveOrUpdate(status);
-    }
-
-    /**
      * Genera correlation ID para tracing
      */
     private String generateCorrelationId() {
@@ -247,24 +166,4 @@ public class KafkaPublisherForJobs {
         });
     }
 
-    /**
-     * Método para obtener headers de routing de un JobRequest
-     */
-    public Map<String, String> extractRoutingHeaders(JobRequest request) {
-        Map<String, String> headers = new HashMap<>();
-
-        if (request.getJobType() != null) {
-            headers.put("job-type", request.getJobType().toString());
-        }
-
-        if (request.getJobName() != null) {
-            headers.put("business-domain", request.getJobName());
-        }
-
-        if (request.getPriority() != null) {
-            headers.put("priority", request.getPriority());
-        }
-
-        return headers;
-    }
 }

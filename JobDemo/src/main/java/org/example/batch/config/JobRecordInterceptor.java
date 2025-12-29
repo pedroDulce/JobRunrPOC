@@ -45,7 +45,8 @@ public class JobRecordInterceptor implements RecordInterceptor<String, JobReques
         record.headers().forEach(header -> {
             if (header.key().equals("job-type") ||
                     header.key().equals("priority") ||
-                    header.key().equals("correlation-id")) {
+                    header.key().equals("correlation-id") ||
+                    header.key().equals("business-domain")) {
                 log.debug("   Header {}: {}", header.key(), new String(header.value()));
             }
         });
@@ -100,13 +101,14 @@ public class JobRecordInterceptor implements RecordInterceptor<String, JobReques
     /**
      * Método 6: Llamado cuando un record es filtrado (no es parte de la interfaz estándar)
      */
+    // En JobRecordInterceptor, agrega este método si no existe:
     public void onFiltered(ConsumerRecord<String, JobRequest> record, String reason) {
         totalRecordsFiltered++;
 
         log.debug("🚫 Record filtered - Key: {}, Reason: {}", record.key(), reason);
 
-        // Log cada 50 records filtrados
-        if (totalRecordsFiltered % 50 == 0) {
+        // Log cada 10 records filtrados
+        if (totalRecordsFiltered % 10 == 0) {
             log.info("🚫 Total records filtered: {}", totalRecordsFiltered);
         }
     }

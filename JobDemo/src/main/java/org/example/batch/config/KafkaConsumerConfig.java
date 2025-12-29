@@ -17,14 +17,10 @@ import org.springframework.kafka.listener.CommonErrorHandler;
 import org.springframework.kafka.listener.ContainerProperties;
 import org.springframework.kafka.listener.DefaultErrorHandler;
 import org.springframework.kafka.listener.RetryListener;
-import org.springframework.kafka.support.serializer.ErrorHandlingDeserializer;
 import org.springframework.kafka.support.serializer.JsonDeserializer;
 import org.springframework.util.backoff.FixedBackOff;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Slf4j
 @Configuration
@@ -40,17 +36,55 @@ public class KafkaConsumerConfig {
     @Value("${kafka.consumer.concurrency:1}")
     private int concurrency;
 
-    @Value("${spring.application.name:job-executor-service}")
-    private String serviceName;
+    @Value("${kafka.filter.enabled:true}")
+    private boolean filterEnabled;
+
+    @Value("${kafka.filter.business-domains:}")
+    private String businessDomainsConfig;
+
+    @Value("${kafka.filter.target-batches:}")
+    private String targetBatchesConfig;
+
+    private Set<String> allowedBusinessDomains;
+    private Set<String> allowedTargetBatches;
 
     @Autowired(required = false)
     private JobRecordInterceptor jobRecordInterceptor;
 
     /**
+     * Inicializar sets de filtrado
+     */
+    private void initializeFilterSets() {
+        allowedBusinessDomains = parseCommaSeparatedSet(businessDomainsConfig);
+        allowedTargetBatches = parseCommaSeparatedSet(targetBatchesConfig);
+
+        log.info("Kafka Filter Configuration:");
+        log.info("  Enabled: {}", filterEnabled);
+        log.info("  Allowed Business Domains: {}", allowedBusinessDomains);
+        log.info("  Allowed Target Batches: {}", allowedTargetBatches);
+    }
+
+    /**
+     * Parsear valores separados por comas
+     */
+    private Set<String> parseCommaSeparatedSet(String config) {
+        Set<String> result = new HashSet<>();
+        if (config != null && !config.trim().isEmpty()) {
+            Arrays.stream(config.split(","))
+                    .map(String::trim)
+                    .filter(s -> !s.isEmpty())
+                    .forEach(result::add);
+        }
+        return result;
+    }
+
+    /**
      * Consumer Factory para JobRequest (JSON)
      */
     @Bean
-    public ConsumerFactory<String, JobRequest> jobRequestConsumerFactory() {
+    public ConsumerFactory<String, JobRequest> simpleJobRequestConsumerFactory() {
+        initializeFilterSets(); // Inicializar filtros
+
         Map<String, Object> props = new HashMap<>();
 
         props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
@@ -61,37 +95,6 @@ public class KafkaConsumerConfig {
         props.put(ConsumerConfig.MAX_POLL_INTERVAL_MS_CONFIG, 300000);
         props.put(ConsumerConfig.SESSION_TIMEOUT_MS_CONFIG, 45000);
         props.put(ConsumerConfig.HEARTBEAT_INTERVAL_MS_CONFIG, 3000);
-
-        // Deserializadores con ErrorHandlingDeserializer
-        ErrorHandlingDeserializer<String> keyDeserializer =
-                new ErrorHandlingDeserializer<>(new StringDeserializer());
-
-        // JsonDeserializer para JobRequest
-        JsonDeserializer<JobRequest> valueDeserializer = new JsonDeserializer<>(JobRequest.class);
-        valueDeserializer.addTrustedPackages("*");
-        valueDeserializer.setUseTypeHeaders(false);
-
-        ErrorHandlingDeserializer<JobRequest> errorHandlingValueDeserializer =
-                new ErrorHandlingDeserializer<>(valueDeserializer);
-
-        return new DefaultKafkaConsumerFactory<>(
-                props,
-                keyDeserializer,
-                errorHandlingValueDeserializer
-        );
-    }
-
-    /**
-     * Consumer Factory alternativa (más simple)
-     */
-    @Bean
-    public ConsumerFactory<String, JobRequest> simpleJobRequestConsumerFactory() {
-        Map<String, Object> props = new HashMap<>();
-
-        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
-        props.put(ConsumerConfig.GROUP_ID_CONFIG, groupId);
-        props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
-        props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);
 
         // Configuración directa para JsonDeserializer
         props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
@@ -121,38 +124,97 @@ public class KafkaConsumerConfig {
 
         // Configurar filtrado por headers
         factory.setRecordFilterStrategy(record -> {
-            return !shouldProcessMessage(record);
+            return shouldFilterMessage(record);
         });
 
-        // Configurar error handler SIMPLE (sin DLQ por ahora)
+        // Configurar error handler
         factory.setCommonErrorHandler(simpleErrorHandler());
 
         // Configurar interceptor si existe
         if (jobRecordInterceptor != null) {
             factory.setRecordInterceptor(jobRecordInterceptor);
+            log.info("JobRecordInterceptor registered successfully");
         }
 
         return factory;
     }
 
     /**
-     * Error Handler simple (sin DeadLetterPublishingRecoverer)
+     * Lógica de filtrado basada en business-domain y target-batch
+     */
+    private boolean shouldFilterMessage(ConsumerRecord<String, JobRequest> record) {
+        // Si el filtrado está deshabilitado, procesar todos los mensajes
+        if (!filterEnabled) {
+            return false;
+        }
+
+        try {
+            String businessDomain = extractHeader(record, "business-domain");
+            String targetBatch = extractHeader(record, "target-batch");
+
+            log.debug("Checking message - BusinessDomain: {}, TargetBatch: {}, Key: {}",
+                    businessDomain, targetBatch, record.key());
+
+            // Verificar business-domain
+            boolean businessDomainMatches = allowedBusinessDomains.isEmpty() ||
+                    (businessDomain != null && allowedBusinessDomains.contains(businessDomain));
+
+            // Verificar target-batch
+            boolean targetBatchMatches = allowedTargetBatches.isEmpty() ||
+                    (targetBatch != null && allowedTargetBatches.contains(targetBatch));
+
+            // Si ambos criterios coinciden, NO filtrar (procesar)
+            boolean shouldProcess = businessDomainMatches && targetBatchMatches;
+
+            if (!shouldProcess) {
+                log.debug("Filtering message - Key: {}, BusinessDomain: {}, TargetBatch: {}",
+                        record.key(), businessDomain, targetBatch);
+
+                // Notificar al interceptor si existe
+                if (jobRecordInterceptor != null) {
+                    String reason = String.format("BusinessDomain: %s, TargetBatch: %s",
+                            businessDomain, targetBatch);
+                    jobRecordInterceptor.onFiltered(record, reason);
+                }
+            }
+
+            return !shouldProcess;
+
+        } catch (Exception e) {
+            log.error("Error in message filtering for key {}: {}",
+                    record.key(), e.getMessage());
+            return true; // Filtrar en caso de error
+        }
+    }
+
+    /**
+     * Extraer valor de header
+     */
+    private String extractHeader(ConsumerRecord<?, ?> record, String headerName) {
+        try {
+            org.apache.kafka.common.header.Header header =
+                    record.headers().lastHeader(headerName);
+            return header != null ? new String(header.value()) : null;
+        } catch (Exception e) {
+            log.debug("Error extracting header {}: {}", headerName, e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Error Handler simple
      */
     @Bean
     public CommonErrorHandler simpleErrorHandler() {
-        // Backoff: 1 segundo, 3 intentos
         FixedBackOff fixedBackOff = new FixedBackOff(1000L, 3);
-
         DefaultErrorHandler errorHandler = new DefaultErrorHandler(fixedBackOff);
 
-        // No reintentar para estas excepciones
         errorHandler.addNotRetryableExceptions(
                 IllegalArgumentException.class,
                 org.springframework.messaging.converter.MessageConversionException.class,
                 org.springframework.kafka.support.serializer.DeserializationException.class
         );
 
-        // Listener para logs de reintentos
         errorHandler.setRetryListeners(new RetryListener() {
             @Override
             public void failedDelivery(ConsumerRecord<?, ?> record, Exception ex, int deliveryAttempt) {
@@ -166,59 +228,6 @@ public class KafkaConsumerConfig {
         });
 
         return errorHandler;
-    }
-
-
-    /**
-     * Lógica de filtrado basada en headers
-     */
-    private boolean shouldProcessMessage(ConsumerRecord<String, JobRequest> record) {
-        try {
-            // 1. Verificar header 'target-service'
-            String targetService = getHeaderValue(record, "target-service");
-            if (targetService != null && !targetService.equalsIgnoreCase(serviceName)) {
-                log.debug("Ignoring message: target-service {} doesn't match {}",
-                        targetService, serviceName);
-                return false;
-            }
-
-            // 2. Verificar que el job type sea soportado
-            String jobType = getHeaderValue(record, "job-type");
-            if (jobType != null && !isJobTypeSupported(jobType)) {
-                log.debug("Ignoring message: job-type {} not supported", jobType);
-                return false;
-            }
-
-            return true;
-
-        } catch (Exception e) {
-            log.error("Error in message filtering: {}", e.getMessage());
-            return false;
-        }
-    }
-
-    private String getHeaderValue(ConsumerRecord<?, ?> record, String headerName) {
-        try {
-            org.apache.kafka.common.header.Header header = record.headers().lastHeader(headerName);
-            return header != null ? new String(header.value()) : null;
-        } catch (Exception e) {
-            return null;
-        }
-    }
-
-    private boolean isJobTypeSupported(String jobType) {
-        List<String> supportedJobTypes = getSupportedJobTypes();
-        return jobType != null && supportedJobTypes.contains(jobType.toUpperCase());
-    }
-
-    protected List<String> getSupportedJobTypes() {
-        return Arrays.asList(
-                "CUSTOMER_SUMMARY",
-                "CUSTOMER_EXPORT",
-                "REPORT_GENERATION",
-                "DATA_SYNC",
-                "RESUMEN_DIARIO_CLIENTES"  // Añade los tipos que usas
-        );
     }
 
     /**
@@ -238,6 +247,4 @@ public class KafkaConsumerConfig {
         ProducerFactory<String, Object> factory = new DefaultKafkaProducerFactory<>(props);
         return new KafkaTemplate<>(factory);
     }
-
-
 }

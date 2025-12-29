@@ -21,49 +21,31 @@ spring:
       ddl-auto: update
     show-sql: true
 
+
   kafka:
     bootstrap-servers: localhost:9092
-
     consumer:
-      group-id: ${spring.application.name}-job-consumer  # customer-service-job-consumer
+      group-id: ${spring.application.name}-job-consumer
       auto-offset-reset: earliest
       enable-auto-commit: false
       fetch-min-size: 1024
       fetch-max-wait: 500
-
       properties:
         session.timeout.ms: 45000
         max.poll.interval.ms: 300000
         max.poll.records: 10
         heartbeat.interval.ms: 3000
         isolation.level: read_committed
-
-        # Deserialización
         spring.json.trusted.packages: "*"
         spring.json.value.default.type: common.batch.dto.JobRequest
         spring.json.use.type.headers: false
-
-        # Para el RecordInterceptor
-        interceptor.classes: org.apache.kafka.clients.consumer.ConsumerInterceptor
-        # Configuración de filtrado
-        filter:
-          enabled: true
-          supported-business-domains: ${KAFKA_SUPPORTED_DOMAINS:ResumenDiarioClientesAsync}
-          supported-job-types: ${KAFKA_SUPPORTED_JOB_TYPES:ASYNCRONOUS}
-
-        # Configuración de interceptor
-        interceptor:
-          log-level: DEBUG
-          enable-timing: true
-          enable-headers-logging: false  # Por privacidad
-
     listener:
       ack-mode: manual_immediate
       concurrency: 3
       poll-timeout: 5000
       missing-topics-fatal: false
 
-# Configuración específica de Kafka para este servicio
+# Configuración de filtrado
 kafka:
   topics:
     job-requests: job-requests-topic
@@ -72,29 +54,19 @@ kafka:
     retry-topic: job-requests-retry
     retry-suffix: "-retry"
     dlq-suffix: "-dlq"
-  interceptor:
-    job-record-interceptor:
-      enabled: true
-      log-filtered-records: false
-      metrics-enabled: true
+
+  filter:
+    enabled: true
+    business-domains: "ReportingService"  # Solo procesar este business-domain
+    target-batches: "batch-process-1"     # Solo procesar este target-batch
+
   consumer:
     concurrency: 3
     poll-timeout: 5000
-
-    # Filtrado por headers
-    filter:
-      enabled: true
-      target-service: ${spring.application.name}  # Solo procesa jobs para este servicio
-      supported-categories: "CUSTOMER,REPORTING"  # Categorías soportadas
-      supported-domains: "SALES,OPERATIONS"       # Dominios soportados
-
-    # Política de reintentos
     retry:
       max-attempts: 3
       backoff-delay: 1000
       max-delay: 10000
-
-    # Dead Letter Queue
     dlq:
       enabled: true
       max-retries: 3
