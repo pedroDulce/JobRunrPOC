@@ -4,6 +4,7 @@ import common.batch.dto.JobRequest;
 import common.batch.dto.JobStatusEnum;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.jobrunr.jobs.JobId;
 import org.jobrunr.scheduling.JobScheduler;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -62,8 +63,9 @@ public class KafkaPublisherForJobs {
     private Message<JobRequest> buildMessageWithRoutingHeaders(String jobId, JobRequest request) {
         String correlationId = generateCorrelationId();
         String executorJobId = request.getJobId();
+        String jobRunrJobId = executorJobId;
 
-        log.info("🎯 JobRunr Job created - ID: {}", executorJobId);
+        log.info("🎯 JobRunr Job created - ID: {}, For Executor Job: {}", jobRunrJobId, executorJobId);
 
         return MessageBuilder
                 .withPayload(request)
@@ -71,7 +73,7 @@ public class KafkaPublisherForJobs {
                 .setHeader(KafkaHeaders.TOPIC, jobRequestsTopic)
                 .setHeader(KafkaHeaders.KEY, jobId)
                 .setHeader("job-id", jobId)
-                .setHeader("jobrunr-job-id", jobId)  //
+                .setHeader("jobrunr-job-id", jobRunrJobId)
                 // Headers de routing/filtrado
                 .setHeader("job-type", request.getJobType())          // "ASYNCRONOUS"
                 .setHeader("business-domain", request.getBusinessDomain()) // Ej: "application-job-demo"
