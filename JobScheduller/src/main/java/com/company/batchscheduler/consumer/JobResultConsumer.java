@@ -38,9 +38,6 @@ public class JobResultConsumer {
             String jobrunrJobIdStr = jobrunrJobIdHeader != null ?
                     jobrunrJobIdHeader : result.getJobrunrJobId();
 
-            String correlationId = correlationIdHeader != null ?
-                    correlationIdHeader : result.getCorrelationId();
-
             log.info("📨 Received job {} result: {} for JobRunr Job: {}, Status: {}",
                     result.getJobName(), executorJobId, jobrunrJobIdStr, result.getStatus());
 

@@ -3,7 +3,6 @@ package com.company.batchscheduler.producer;
 import com.company.batchscheduler.model.JobStatus;
 import com.company.batchscheduler.service.JobStatusService;
 import common.batch.dto.JobRequest;
-import common.batch.dto.JobStatusEnum;
 import common.batch.dto.JobType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

@@ -2,7 +2,6 @@ package com.company.batchscheduler.controller;
 
 import common.batch.dto.JobRequest;
 import common.batch.dto.JobResult;
-import common.batch.dto.JobStatusEnum;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
