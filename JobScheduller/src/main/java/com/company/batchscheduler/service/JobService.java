@@ -84,7 +84,7 @@ public class JobService {
     /**
      * Método para imprimir TODA la información del job (no solo metadatos)
      */
-    public void printCompleteJobInfo(String jobId) {
+    public void printCompleteJobInfo(UUID jobId) {
         try {
             Job job = getById(jobId);
             if (job == null) {
@@ -141,7 +141,7 @@ public class JobService {
     /**
      * Actualizar metadata del job
      */
-    public boolean updateMetadata(String jobId) {
+    public boolean updateMetadata(UUID jobId) {
         try {
             // 1. Obtener el job existente para copiar sus datos
             Job existingJob = getById(jobId);
@@ -191,7 +191,7 @@ public class JobService {
      * FAILED
      * DELETED
      */
-    public boolean updateJobStatus(String jobId, String newStatus, Date completionDate) {
+    public boolean updateJobStatus(UUID jobId, String newStatus, Date completionDate) {
         try {
             log.info("Actualizando job " + jobId + " a estado: " + newStatus);
 
@@ -386,12 +386,12 @@ public class JobService {
      * Métodos de conveniencia
      */
     public boolean completeSuccessJob(UUID jobId) {
-        return updateJobStatus(jobId.toString(), StateName.SUCCEEDED.toString(), new Date());
+        return updateJobStatus(jobId, StateName.SUCCEEDED.toString(), new Date());
     }
 
     public boolean failJob(UUID jobId, String errorMessage) {
         try {
-            Job job = getById(jobId.toString());
+            Job job = getById(jobId);
             if (job == null) {
                 log.info("Job no encontrado: " + jobId);
                 return false;
@@ -417,7 +417,7 @@ public class JobService {
         }
     }
 
-    public boolean startJob(String jobId) {
+    public boolean startJob(UUID jobId) {
         try {
             Job job = getById(jobId);
             if (job == null) return false;
@@ -443,7 +443,7 @@ public class JobService {
 
     public boolean continueJob(UUID jobId) {
         try {
-            Job job = getById(jobId.toString());
+            Job job = getById(jobId);
             if (job == null) return false;
 
             invokeSetStatus(job, StateName.PROCESSING.toString());
@@ -458,11 +458,11 @@ public class JobService {
         }
     }
 
-    public boolean pauseJob(String jobId) {
+    public boolean pauseJob(UUID jobId) {
         return updateJobStatus(jobId, StateName.AWAITING.toString(), null);
     }
 
-    public boolean cancelJob(String jobId) {
+    public boolean cancelJob(UUID jobId) {
         return updateJobStatus(jobId, StateName.DELETED.toString(), new Date());
     }
 
@@ -524,15 +524,8 @@ public class JobService {
         }
     }
 
-    public Job getById(String jobId) {
-        Iterator<RecurringJob> ite = storageProvider.getRecurringJobs().iterator();
-        while (ite.hasNext()) {
-            RecurringJob recurringJob = ite.next();
-            if (recurringJob.getId().contentEquals(jobId)) {
-                return recurringJob.toScheduledJob();
-            }
-        }
-        return null;
+    public Job getById(UUID jobId) {
+        return storageProvider.getJobById(jobId);
     }
 
 

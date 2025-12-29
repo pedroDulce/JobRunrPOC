@@ -6,6 +6,8 @@ import common.batch.dto.JobStatusEnum;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.jobrunr.jobs.annotations.Job;
+import org.jobrunr.jobs.context.JobContext;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
@@ -28,13 +30,13 @@ public class RemoteJobDispatcher {
         this.circuitBreaker = CircuitBreaker.ofDefaults("remoteJob");
     }
 
-    @org.jobrunr.jobs.annotations.Job(name = "Ejecutar job en microservicio de forma síncrona")
-    public void executeRestRemote(String jobId, String jobType, String microserviceUrl, Map<String, String> parameters) {
+    @Job(name = "Ejecutar job en microservicio de forma síncrona")
+    public void executeRestRemote(JobRequest request, JobContext jobContext) {
+
         Supplier<JobResult> supplier = () -> {
-            JobRequest request = new JobRequest(jobId, jobType, parameters);
             request.setScheduledAt(LocalDateTime.now());
             ResponseEntity<JobResult> response = restTemplate.postForEntity(
-                    microserviceUrl,
+                    request.getParameters().get("url"),
                     request,
                     JobResult.class
             );
@@ -50,7 +52,7 @@ public class RemoteJobDispatcher {
                     result.getMessage());
         }
 
-        log.info("Job {} ejecutado en microservicio: {}", jobId, jobType);
+        log.info("Job {} ejecutado en microservicio: {}", jobContext.getJobId(), request.getJobType());
     }
 
 

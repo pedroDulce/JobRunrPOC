@@ -6,6 +6,7 @@ import common.batch.dto.JobType;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.jobrunr.jobs.context.JobContext;
 import org.jobrunr.scheduling.JobScheduler;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -41,11 +42,10 @@ public class JobSchedulerController {
 
         // JobRunr puede serializar estos parámetros String correctamente
         jobScheduler.scheduleRecurrently(
-                jobId,
+                request.getJobName(),
                 request.getCronExpression(),
-                () -> publisherForJobs.publishEventForRunJob(jobId, request)
+                () -> publisherForJobs.publishEventForRunJob(request, null)
         );
-
         Map<String, Object> response = new HashMap<>();
         response.put("jobId", jobId);
         response.put("jobName", request.getJobName());
@@ -70,14 +70,9 @@ public class JobSchedulerController {
         String microUrl = request.getParameters().get("url");
 
         jobScheduler.scheduleRecurrently(
-                jobId,
+                request.getJobName(),
                 request.getCronExpression(),
-                () -> remoteJobDispatcher.executeRestRemote(
-                        jobId,
-                        JobType.SYNCRONOUS.toString(),
-                        microUrl,
-                        request.getParameters()
-                )
+                () -> remoteJobDispatcher.executeRestRemote(request, null)
         );
 
         return ResponseEntity.ok(Map.of(
