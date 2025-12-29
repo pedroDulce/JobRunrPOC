@@ -75,3 +75,8 @@ resilience4j.circuitbreaker:
       wait-duration-in-open-state: 5s
       failure-rate-threshold: 50
       event-consumer-buffer-size: 10
+
+logging:
+  level:
+    org.jobrunr.storage.ConcurrentJobModificationException: FATAL
+    org.jobrunr.storage.sql.commondb.ConcurrentSqlModificationException: FATAL

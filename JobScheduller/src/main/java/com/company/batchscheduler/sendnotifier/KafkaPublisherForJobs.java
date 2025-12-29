@@ -16,6 +16,7 @@ import org.springframework.stereotype.Component;
 import org.jobrunr.jobs.context.JobContext;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
@@ -37,6 +38,7 @@ public class KafkaPublisherForJobs {
     public JobStatusEnum publishEventForRunJob(JobRequest request, JobContext jobContext) {
 
         UUID jobExecutionId = jobContext.getJobId();
+        jobContext.saveMetadata("remote", "true");
 
         request.setScheduledAt(LocalDateTime.now());
 
