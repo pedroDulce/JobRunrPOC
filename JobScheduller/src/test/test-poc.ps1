@@ -4,15 +4,15 @@ Write-Host "==========================================="
 
 $baseUrl = "http://localhost:8080"
 
-Write-Host "`Programando job con enfoque asincrono en su ejecucion..." -ForegroundColor Yellow
+Write-Host "`Programando job con enfoque asincrono en su ejecucion cada minuto..." -ForegroundColor Yellow
 $scheduleBody = @{
     jobName = "ResumenDiarioClientesAsync"
     businessDomain = "job-executor-service"
     jobType = "ASYNCRONOUS"
     priority = "MEDIUM"
-    cronExpression = "0 */5 * * * *"
-    processDate = "2024-01-15"
+    cronExpression = "0 */1 * * * *"
     parameters = @{
+        "processDate" = "2025-12-15"
         "emailRecipient" = "admin@company.com"
         "customerFilter" = "*"
     }

@@ -1,11 +1,10 @@
 package com.company.batchscheduler.sendnotifier;
 
+import com.company.batchscheduler.service.JobService;
 import common.batch.dto.JobRequest;
 import common.batch.dto.JobStatusEnum;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.jobrunr.jobs.JobId;
-import org.jobrunr.scheduling.JobScheduler;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.KafkaHeaders;
@@ -15,6 +14,7 @@ import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 @RequiredArgsConstructor
@@ -25,7 +25,7 @@ public class KafkaPublisherForJobs {
     @Value("${kafka.topics.job-requests}")
     private String jobRequestsTopic;
 
-    private final JobScheduler jobScheduler;
+    private final JobService jobService;
     private final KafkaTemplate<String, JobRequest> kafkaTemplate;
 
     /**
@@ -39,8 +39,7 @@ public class KafkaPublisherForJobs {
             Message<JobRequest> message = buildMessageWithRoutingHeaders(jobId, request);
 
             // Publicar a Kafka
-            CompletableFuture<SendResult<String, JobRequest>> future =
-                    kafkaTemplate.send(message);
+            CompletableFuture<SendResult<String, JobRequest>> future = kafkaTemplate.send(message);
 
             future.whenComplete((result, ex) -> {
                 if (ex != null) {
@@ -49,6 +48,9 @@ public class KafkaPublisherForJobs {
                     handlePublishSuccess(jobId, result);
                 }
             });
+
+            jobService.startJob(UUID.fromString(jobId));
+
             return JobStatusEnum.IN_PROGRESS;
 
         } catch (Exception e) {

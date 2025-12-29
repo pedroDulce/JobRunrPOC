@@ -26,7 +26,7 @@ import java.util.UUID;
 @Slf4j
 public class JobSchedulerController {
 
-    private final KafkaPublisherForJobs kafkaPublisherWithoutHeadersInMessagesForJobs;
+    private final KafkaPublisherForJobs publisherForJobs;
 
     private final JobScheduler jobScheduler;
 
@@ -39,16 +39,11 @@ public class JobSchedulerController {
         String jobId = UUID.randomUUID().toString();
         request.setJobId(jobId);
 
-        // Preparar parámetros como Strings
-        String processDateStr = (request.getScheduledAt() != null)
-                ? request.getScheduledAt().toString()
-                : LocalDate.now().toString();
-
         // JobRunr puede serializar estos parámetros String correctamente
         jobScheduler.scheduleRecurrently(
                 jobId,
                 request.getCronExpression(),
-                () -> kafkaPublisherWithoutHeadersInMessagesForJobs.publishEventForRunJob(jobId, request)
+                () -> publisherForJobs.publishEventForRunJob(jobId, request)
         );
 
         Map<String, Object> response = new HashMap<>();
@@ -57,7 +52,7 @@ public class JobSchedulerController {
         response.put("business-domain", request.getBusinessDomain());
         response.put("status", "SCHEDULED");
         response.put("cronExpression", request.getCronExpression());
-        response.put("processDate", processDateStr);
+        response.put("processDate", request.getParameters().get("processDate"));
         response.put("message", "Job programado exitosamente");
         response.put("dashboardUrl", "http://localhost:8000");
 

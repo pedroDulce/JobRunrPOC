@@ -1,5 +1,6 @@
 package com.company.batchscheduler.receivenotifier;
 
+import com.company.batchscheduler.service.JobService;
 import common.batch.dto.JobResult;
 import common.batch.dto.JobStatusEnum;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +21,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class JobResultConsumer {
 
+    private final JobService jobService;
     private final StorageProvider storageProvider;
     private final JobScheduler jobScheduler;
 
@@ -118,6 +120,7 @@ public class JobResultConsumer {
             log.info("Job {} is IN_PROGRESS but JobRunr state is: {}",
                     jobId, job.getState());
         }
+        jobService.continueJob(job.getId());
 
         // Actualizar metadata si es necesario
         updateJobMetadata(job, "executorStatus", "IN_PROGRESS");
@@ -167,8 +170,9 @@ public class JobResultConsumer {
 
         // Si el job en JobRunr muestra SUCCEEDED (porque el dummy terminó bien),
         // necesitamos marcarlo como fallido
-        if (job.getState() == org.jobrunr.jobs.states.StateName.SUCCEEDED) {
-            log.warn("Job {} is SUCCEEDED in JobRunr but failed in executor", jobId);
+        if (job.getState() == org.jobrunr.jobs.states.StateName.PROCESSING ||
+                job.getState() == org.jobrunr.jobs.states.StateName.SUCCEEDED) {
+            log.warn("Job {} is SUCCEEDED or PROCESSING in JobRunr but failed in executor", jobId);
             // Re-encolar y hacer que falle
             requeueAsFailed(jobId, result);
         }
@@ -192,7 +196,6 @@ public class JobResultConsumer {
     private void updateJobMetadata(Job job, String key, Object value) {
         try {
             // En JobRunr 8.3.1, puedes usar JobDetails para metadata
-            // Pero es más complejo. Una alternativa es guardar en tu propia tabla.
             log.debug("Would update metadata for job {}: {}={}",
                     job.getId(), key, value);
 
