@@ -48,7 +48,7 @@ public class JobSchedulerController {
         jobScheduler.scheduleRecurrently(
                 jobId,
                 request.getCronExpression(),
-                () -> kafkaPublisherWithoutHeadersInMessagesForJobs.publishEventForRunJob(jobId, request)
+                () -> kafkaPublisherWithoutHeadersInMessagesForJobs.publishEventForRunJob(request)
         );
 
         Map<String, Object> response = new HashMap<>();
