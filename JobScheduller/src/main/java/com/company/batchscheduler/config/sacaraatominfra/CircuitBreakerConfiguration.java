@@ -1,4 +1,4 @@
-package com.company.batchscheduler.config;
+package com.company.batchscheduler.config.sacaraatominfra;
 
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import io.github.resilience4j.circuitbreaker.CircuitBreakerConfig;

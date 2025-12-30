@@ -68,7 +68,7 @@ public class JobManagementOperations {
     private boolean updateFinalJobStatus(UUID jobId, String newStatus, String messageCompleted, String erroDetails,
                                     Date completionDate) {
         try {
-            log.info("Actualizando job " + jobId + " a estado: " + newStatus);
+            log.info("Finalizando job " + jobId + " a estado: " + newStatus);
 
             // 1. Obtener el job existente
             Job job = getById(jobId);

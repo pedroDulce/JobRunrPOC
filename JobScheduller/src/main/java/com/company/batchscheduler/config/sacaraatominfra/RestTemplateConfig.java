@@ -1,4 +1,4 @@
-package com.company.batchscheduler.config;
+package com.company.batchscheduler.config.sacaraatominfra;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
