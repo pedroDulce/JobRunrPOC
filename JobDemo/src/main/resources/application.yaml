@@ -6,10 +6,6 @@ spring:
   application:
     name: job-executor-service
 
-  #autoconfigure:
-   # exclude:
-    #  - org.springframework.boot.autoconfigure.jobrunr.JobRunrAutoConfiguration
-
   batch:
     job:
       enabled: true
@@ -17,14 +13,6 @@ spring:
       initialize-schema: always
     jdbc:
       initialize-schema: always
-
-app:
-  batch:
-    chunk-size: 100
-    grid-size: 4
-    partition-size: 1000
-    mail:
-      enabled: false # Cambiar a true cuando configures email
 
   datasource:
     url: jdbc:postgresql://localhost:5432/job_demo_database
@@ -59,6 +47,14 @@ kafka:
     target-jobs: "ResumenDiarioClientesAsync"     # Solo procesar este
     target-batches: "springBatchSample"         # Solo procesar este
 
+
+app:
+  batch:
+    chunk-size: 100
+    grid-size: 4
+    partition-size: 1000
+    mail:
+      enabled: false # Cambiar a true cuando configures email
 
 # Logging específico para Kafka
 logging:

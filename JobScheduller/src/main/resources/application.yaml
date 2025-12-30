@@ -5,6 +5,17 @@ spring:
   server:
     port: 8080
 
+  datasource:
+    url: jdbc:postgresql://localhost:5432/batch-scheduler
+    username: batch_user
+    password: batch_password
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: false
+
   kafka:
     bootstrap-servers: localhost:9092
     consumer:
@@ -20,17 +31,6 @@ spring:
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
       properties:
         spring.json.add.type.headers: false
-
-  datasource:
-    url: jdbc:postgresql://localhost:5432/batch-scheduler
-    username: batch_user
-    password: batch_password
-    driver-class-name: org.postgresql.Driver
-
-  jpa:
-    hibernate:
-      ddl-auto: none
-    show-sql: false
 
 jobrunr:
   background-job-server:
@@ -54,8 +54,6 @@ jobrunr:
 
   miscellaneous:
     allow-anonymous-data-usage: false
-
-
 
 # Topics de Kafka
 kafka:
