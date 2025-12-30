@@ -6,7 +6,7 @@ import common.batch.dto.JobStatusEnum;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.example.batch.job.CustomerSummaryJob;
+import org.example.batch.job.CustomerSummaryReportJob;
 import org.example.batch.service.BatchJobExecutorService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -32,7 +32,7 @@ public class JobNotifier {
     @Value("${kafka.topics.job-results}")
     private String jobResultsTopic;
 
-    private final CustomerSummaryJob jobExecutionService;
+    private final CustomerSummaryReportJob jobExecutionService;
     private final BatchJobExecutorService batchJobExecutorService;
     private final KafkaTemplate<String, JobResult> kafkaTemplate;
 

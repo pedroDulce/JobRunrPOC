@@ -16,10 +16,9 @@ import java.util.Map;
 @Component
 @Slf4j
 @RequiredArgsConstructor
-public class CustomerSummaryJob {
+public class CustomerSummaryReportJob {
 
     private final DailySummaryRepository dailySummaryRepository;
-    private final EmailService emailService;
 
     public JobResult executeJob(JobRequest jobRequest, Map<String, String> headers) {
 
@@ -85,12 +84,16 @@ public class CustomerSummaryJob {
                 </html>
                 """, date, jobId, count, LocalDateTime.now());
 
-            emailService.sendEmail(recipient, subject, body);
+            this.sendEmail(recipient, subject, body);
             log.info("📧 Email enviado a: {}", recipient);
 
         } catch (Exception e) {
             log.warn("⚠️ No se pudo enviar email: {}", e.getMessage());
         }
+    }
+
+    public void sendEmail(String recipient, String subject, String body) {
+        log.info("sending mail... to " + subject + " with body content: " + body);
     }
 
 

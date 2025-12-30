@@ -4,7 +4,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.batch.model.CustomerTransaction;
 import org.example.batch.model.ProcessedTransaction;
-import org.example.batch.service.BatchJobExecutorService;
 import org.example.batch.service.BatchStatusNotifier;
 import org.springframework.batch.core.*;
 import org.springframework.batch.core.configuration.annotation.EnableBatchProcessing;
