@@ -132,7 +132,7 @@ public class JobResultConsumer {
 
         log.info("✅ Job {} completed successfully - {}", jobId, result.getMessage());
 
-        // Si el job en JobRunr aún está en PROCESSING (no debería), forzar éxito
+        // Si el job en JobRunr aún está en PROCESSING, forzar éxito
         if (job.getState() == org.jobrunr.jobs.states.StateName.PROCESSING) {
             log.warn("Job {} is still PROCESSING in JobRunr, marking as succeeded", jobId);
             jobManagementOperations.completeSuccessJob(job.getId(), result.getMessage());
@@ -149,11 +149,10 @@ public class JobResultConsumer {
 
         log.error("❌ Job {} failed: {}", jobId, result.getErrorDetails());
 
-        // Si el job en JobRunr muestra SUCCEEDED (porque el dummy terminó bien),
-        // necesitamos marcarlo como fallido
+        // El job en JobRunr aún está en PROCESSING o completado por error: marcarlo como fallido
         if (job.getState() == org.jobrunr.jobs.states.StateName.PROCESSING ||
                 job.getState() == org.jobrunr.jobs.states.StateName.SUCCEEDED) {
-            log.warn("Job {} is SUCCEEDED or PROCESSING in JobRunr but failed in executor", jobId);
+            log.warn("Job {} is PROCESSING in JobRunr but failed in executor", jobId);
             jobManagementOperations.failJob(job.getId(), result.getMessage(), result.getErrorDetails());
         }
     }
