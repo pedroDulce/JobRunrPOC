@@ -25,7 +25,7 @@ import java.util.*;
 @Slf4j
 @Configuration
 @EnableKafka
-public class KafkaConsumerConfig {
+public class KafkaJobOrderConsumerConfig {
 
     @Value("${spring.kafka.bootstrap-servers:localhost:9092}")
     private String bootstrapServers;

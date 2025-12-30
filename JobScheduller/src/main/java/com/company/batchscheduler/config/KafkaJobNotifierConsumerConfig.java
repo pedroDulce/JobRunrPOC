@@ -7,7 +7,7 @@ import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
 import org.springframework.kafka.core.ConsumerFactory;
 
 @Configuration
-public class KafkaConsumerConfig {
+public class KafkaJobNotifierConsumerConfig {
 
     @Bean
     public ConcurrentKafkaListenerContainerFactory<String, JobResult> kafkaListenerContainerFactory(
@@ -16,12 +16,6 @@ public class KafkaConsumerConfig {
         ConcurrentKafkaListenerContainerFactory<String, JobResult> factory =
                 new ConcurrentKafkaListenerContainerFactory<>();
         factory.setConsumerFactory(consumerFactory);
-
-        // Configurar reintentos
-        /*factory.setCommonErrorHandler(new SeekToCurrentErrorHandler(
-                new DeadLetterPublishingRecoverer(kafkaTemplate()),
-                3 // Número de reintentos
-        ));*/
 
         return factory;
     }
