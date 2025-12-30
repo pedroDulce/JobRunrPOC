@@ -4,7 +4,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.batch.model.CustomerTransaction;
 import org.example.batch.model.ProcessedTransaction;
-import org.example.batch.notifier.BatchStatusNotifier;
+import org.example.batch.notifier.EmailReporter;
+import org.example.batch.notifier.NotifierProgress;
 import org.springframework.batch.core.*;
 import org.springframework.batch.core.configuration.annotation.EnableBatchProcessing;
 import org.springframework.batch.core.configuration.annotation.StepScope;
@@ -42,7 +43,9 @@ public class SpringBatchExecutorConfig {
     private final DataSource dataSource;
     private final JobRepository jobRepository;
     private final PlatformTransactionManager transactionManager;
-    private final BatchStatusNotifier batchStatusNotifier; // Servicio para notificar estados
+    private final EmailReporter emailReporter;
+    private final NotifierProgress notifierProgress;
+
 
     @Value("${app.batch.chunk-size:100}")
     private int chunkSize;
@@ -192,7 +195,7 @@ public class SpringBatchExecutorConfig {
                         // Extraer jobId del contexto y notificar inicio
                         String jobId = stepExecution.getJobParameters().getString("externalJobId");
                         if (jobId != null) {
-                            batchStatusNotifier.notifyProgress(
+                            notifierProgress.notifyProgress(
                                     jobId, "Iniciando procesamiento batch", 0
                             );
                         }
@@ -205,7 +208,7 @@ public class SpringBatchExecutorConfig {
                         if (jobId != null) {
                             int progress = (int) ((stepExecution.getWriteCount() * 100) /
                                     Math.max(1, stepExecution.getReadCount()));
-                            batchStatusNotifier.notifyProgress(
+                            notifierProgress.notifyProgress(
                                     jobId, "Procesando...", progress
                             );
                         }
@@ -240,7 +243,7 @@ public class SpringBatchExecutorConfig {
     @Bean
     public JobExecutionListener batchJobExecutionListener() {
         return new JobExecutionListener() {
-            private final BatchStatusNotifier notifier = batchStatusNotifier;
+            private final NotifierProgress notifier = notifierProgress;
 
             @Override
             public void beforeJob(JobExecution jobExecution) {
@@ -273,7 +276,7 @@ public class SpringBatchExecutorConfig {
                         );
 
                         // Enviar email con informe
-                        notifier.sendEmailReport(jobId, report);
+                        emailReporter.sendEmailReport(jobId, report);
                     }
 
                 } else {
