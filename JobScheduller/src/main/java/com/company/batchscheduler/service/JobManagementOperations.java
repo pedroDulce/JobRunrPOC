@@ -1,5 +1,6 @@
 package com.company.batchscheduler.service;
 
+import com.company.batchscheduler.repository.JobRunrAdminRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jobrunr.jobs.Job;
@@ -94,21 +95,38 @@ public class JobManagementOperations {
     /**
      * Métodos de conveniencia
      */
-    public boolean completeSuccessJob(UUID jobId, String messageCompleted, String errorDetails) {
-        return updateFinalJobStatus(jobId, StateName.SUCCEEDED.toString(), messageCompleted, errorDetails, new Date());
+    public boolean completeSuccessJob(UUID jobId, String messageCompleted) {
+        // 1. Obtener el job existente
+        Job job = getById(jobId);
+
+        if (job == null) {
+            log.error("Job no encontrado: " + jobId);
+            return false;
+        }
+        job = job.succeeded();
+        job.getMetadata().put("finalizado", "De forma exitosa." + messageCompleted);
+        storageProvider.save(job);
+        return true;
     }
 
     public boolean failJob(UUID jobId, String messageCompleted, String errorDetails) {
-        return updateFinalJobStatus(jobId, StateName.FAILED.toString(), messageCompleted, errorDetails, new Date());
+        // 1. Obtener el job existente
+        Job job = getById(jobId);
+
+        if (job == null) {
+            log.error("Job no encontrado: " + jobId);
+            return false;
+        }
+        job = job.failed(messageCompleted, new Exception("Error: " + messageCompleted + ". Detalles: " + errorDetails));
+        job.getMetadata().put("finalizado", "Con errores");
+        storageProvider.save(job);
+        return true;
     }
 
-    public boolean startJob(UUID jobId) {
+    public boolean startOrContinueJob(UUID jobId) {
         return updateJobStatus(jobId, StateName.PROCESSING.toString());
     }
 
-    public boolean continueJob(UUID jobId) {
-        return updateJobStatus(jobId, StateName.PROCESSING.toString());
-    }
 
     public boolean cancelJob(UUID jobId) {
         return updateJobStatus(jobId, StateName.DELETED.toString());

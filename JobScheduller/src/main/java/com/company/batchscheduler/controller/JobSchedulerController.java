@@ -1,6 +1,6 @@
 package com.company.batchscheduler.controller;
 
-import com.company.batchscheduler.sendnotifier.JobOrderService;
+import com.company.batchscheduler.remotesender.JobOrderInitRemoteBatch;
 import common.batch.dto.JobRequest;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -24,7 +24,7 @@ import java.util.UUID;
 @Slf4j
 public class JobSchedulerController {
 
-    private final JobOrderService publisherForJobs;
+    private final JobOrderInitRemoteBatch publisherForJobs;
     private final JobScheduler jobScheduler;
 
     @PostMapping("/schedule-remote-async")

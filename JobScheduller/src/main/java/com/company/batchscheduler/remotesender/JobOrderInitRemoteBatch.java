@@ -1,4 +1,4 @@
-package com.company.batchscheduler.sendnotifier;
+package com.company.batchscheduler.remotesender;
 
 import com.company.batchscheduler.service.JobManagementOperations;
 import common.batch.dto.JobRequest;
@@ -23,7 +23,7 @@ import java.util.concurrent.CompletableFuture;
 @RequiredArgsConstructor
 @Slf4j
 @Component
-public class JobOrderService {
+public class JobOrderInitRemoteBatch {
 
     @Value("${kafka.topics.job-requests}")
     private String jobRequestsTopic;
@@ -34,7 +34,7 @@ public class JobOrderService {
     /**
      * Publica un evento de job con headers de routing para filtrado
      */
-    @Job(name = "Job remoto con invocación asíncrona")
+    @Job(name = "Job remoto")
     public JobStatusEnum publishEventForRunRemoteJobs(JobRequest request, JobContext jobContext) {
 
         UUID jobExecutionId = jobContext.getJobId();
@@ -58,7 +58,7 @@ public class JobOrderService {
                     handlePublishSuccess(jobExecutionId, result);
                 }
             });
-            jobManagementOperations.startJob(jobExecutionId);
+            jobManagementOperations.startOrContinueJob(jobExecutionId);
 
             return JobStatusEnum.IN_PROGRESS;
 
