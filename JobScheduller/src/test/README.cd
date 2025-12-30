@@ -1,4 +1,6 @@
 # Desde PowerShell (como Administrador si hay restricciones)
 cd C:\pedro.dulce\develop\JobRunnerPOC\CommonJobUtils\src\test
 Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser  # Solo primera vez
-.\test-poc.ps1
+
+.\register-simpleJob.ps1
+.\register-batch.ps1

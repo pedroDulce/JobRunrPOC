@@ -18,7 +18,7 @@ import java.util.Map;
 @Slf4j
 @RequestMapping("/api/jobs")
 @RequiredArgsConstructor
-public class JobExecutorController {
+public class SyncJobExecutorController {
 
     @PostMapping("/execute-sync")
     public ResponseEntity<JobResult> executeJob(@RequestBody JobRequest request) {

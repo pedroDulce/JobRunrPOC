@@ -1,8 +1,7 @@
 package com.company.batchscheduler.controller;
 
-import com.company.batchscheduler.sendnotifier.KafkaPublisherForJobs;
+import com.company.batchscheduler.sendnotifier.JobOrderService;
 import common.batch.dto.JobRequest;
-import common.batch.dto.JobType;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,11 +24,8 @@ import java.util.UUID;
 @Slf4j
 public class JobSchedulerController {
 
-    private final KafkaPublisherForJobs publisherForJobs;
-
+    private final JobOrderService publisherForJobs;
     private final JobScheduler jobScheduler;
-
-    private final RemoteJobDispatcher remoteJobDispatcher;
 
     @PostMapping("/schedule-remote-async")
     public ResponseEntity<Map<String, Object>> executeRemoteJob(@RequestBody JobRequest request) {
@@ -59,28 +55,6 @@ public class JobSchedulerController {
 
         return ResponseEntity.ok(response);
     }
-
-
-    @PostMapping("/schedule-remote-sync")
-    public ResponseEntity<?> scheduleRemoteJob(@RequestBody JobRequest request) {
-        String jobId = UUID.randomUUID().toString();
-        request.setJobId(jobId);
-        String microUrl = request.getParameters().get("url");
-
-        jobScheduler.scheduleRecurrently(
-                request.getJobName(),
-                request.getCronExpression(),
-                () -> remoteJobDispatcher.executeRestRemote(request, null)
-        );
-
-        return ResponseEntity.ok(Map.of(
-                "jobId", jobId,
-                "status", "SCHEDULED",
-                "microservice", "job-remote-executor:" + microUrl,
-                "jobType", JobType.SYNCRONOUS
-        ));
-    }
-
 
     private void validateCronExpression(String cronExpression) {
         if (cronExpression == null || cronExpression.trim().isEmpty()) {

@@ -1,4 +1,4 @@
-package com.company.batchscheduler.controller;
+package com.company.batchscheduler.service;
 
 import org.jobrunr.jobs.states.StateName;
 

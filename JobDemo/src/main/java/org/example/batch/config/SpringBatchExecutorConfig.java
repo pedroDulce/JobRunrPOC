@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.batch.model.CustomerTransaction;
 import org.example.batch.model.ProcessedTransaction;
+import org.example.batch.service.BatchJobExecutorService;
 import org.example.batch.service.BatchStatusNotifier;
 import org.springframework.batch.core.*;
 import org.springframework.batch.core.configuration.annotation.EnableBatchProcessing;
@@ -193,7 +194,7 @@ public class SpringBatchExecutorConfig {
                         String jobId = stepExecution.getJobParameters().getString("externalJobId");
                         if (jobId != null) {
                             batchStatusNotifier.notifyProgress(
-                                    jobId, "PROGRESS", "Iniciando procesamiento batch", 0
+                                    jobId, "Iniciando procesamiento batch", 0
                             );
                         }
                     }
@@ -206,7 +207,7 @@ public class SpringBatchExecutorConfig {
                             int progress = (int) ((stepExecution.getWriteCount() * 100) /
                                     Math.max(1, stepExecution.getReadCount()));
                             batchStatusNotifier.notifyProgress(
-                                    jobId, "PROGRESS", "Procesando...", progress
+                                    jobId, "Procesando...", progress
                             );
                         }
                         return ExitStatus.COMPLETED;

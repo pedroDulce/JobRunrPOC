@@ -17,7 +17,7 @@ import java.util.UUID;
 @Slf4j
 @RequiredArgsConstructor
 @Service
-public class JobService {
+public class JobManagementOperations {
     private final JobRunrAdminRepository jobRunrAdminRepository;
     private final StorageProvider storageProvider;
 
@@ -31,7 +31,42 @@ public class JobService {
      * FAILED
      * DELETED
      */
-    private boolean updateJobStatus(UUID jobId, String newStatus, Date completionDate) {
+    private boolean updateJobStatus(UUID jobId, String newStatus) {
+        try {
+            log.info("Actualizando job " + jobId + " a estado: " + newStatus);
+
+            // 1. Obtener el job existente
+            Job job = getById(jobId);
+
+            if (job == null) {
+                log.error("Job no encontrado: " + jobId);
+                return false;
+            }
+
+            jobRunrAdminRepository.updateJobState(job.getId(), newStatus);
+
+            log.info("Job actualizado exitosamente");
+            return true;
+
+        } catch (Exception e) {
+            log.error("Error actualizando job " + jobId + ": " + e.getMessage());
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    /**
+     * Método principal para actualizar estado y fecha de finalización
+     * newStatus permitidos:
+     * ENQUEUED
+     * SCHEDULED
+     * PROCESSING
+     * SUCCEEDED
+     * FAILED
+     * DELETED
+     */
+    private boolean updateFinalJobStatus(UUID jobId, String newStatus, String messageCompleted, String erroDetails,
+                                    Date completionDate) {
         try {
             log.info("Actualizando job " + jobId + " a estado: " + newStatus);
 
@@ -59,24 +94,24 @@ public class JobService {
     /**
      * Métodos de conveniencia
      */
-    public boolean completeSuccessJob(UUID jobId) {
-        return updateJobStatus(jobId, StateName.SUCCEEDED.toString(), new Date());
+    public boolean completeSuccessJob(UUID jobId, String messageCompleted, String errorDetails) {
+        return updateFinalJobStatus(jobId, StateName.SUCCEEDED.toString(), messageCompleted, errorDetails, new Date());
     }
 
-    public boolean failJob(UUID jobId, String errorMessage) {
-        return updateJobStatus(jobId, StateName.FAILED.toString(), new Date());
+    public boolean failJob(UUID jobId, String messageCompleted, String errorDetails) {
+        return updateFinalJobStatus(jobId, StateName.FAILED.toString(), messageCompleted, errorDetails, new Date());
     }
 
     public boolean startJob(UUID jobId) {
-        return updateJobStatus(jobId, StateName.PROCESSING.toString(), new Date());
+        return updateJobStatus(jobId, StateName.PROCESSING.toString());
     }
 
     public boolean continueJob(UUID jobId) {
-        return updateJobStatus(jobId, StateName.PROCESSING.toString(), new Date());
+        return updateJobStatus(jobId, StateName.PROCESSING.toString());
     }
 
     public boolean cancelJob(UUID jobId) {
-        return updateJobStatus(jobId, StateName.DELETED.toString(), new Date());
+        return updateJobStatus(jobId, StateName.DELETED.toString());
     }
 
     public Job getById(UUID jobId) {

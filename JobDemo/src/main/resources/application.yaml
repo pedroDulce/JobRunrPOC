@@ -56,7 +56,8 @@ kafka:
 
   filter:
     business-domains: ${spring.application.name}
-    target-batches: "ResumenDiarioClientesAsync,springBatchSample"     # Solo procesar este
+    target-jobs: "ResumenDiarioClientesAsync"     # Solo procesar este
+    target-batches: "springBatchSample"         # Solo procesar este
 
 
 # Logging específico para Kafka

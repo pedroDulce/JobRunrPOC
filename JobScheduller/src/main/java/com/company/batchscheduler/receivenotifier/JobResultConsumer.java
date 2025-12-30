@@ -1,13 +1,12 @@
 package com.company.batchscheduler.receivenotifier;
 
-import com.company.batchscheduler.service.JobService;
+import com.company.batchscheduler.service.JobManagementOperations;
 import common.batch.dto.JobResult;
 import common.batch.dto.JobStatusEnum;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jobrunr.jobs.Job;
 import org.jobrunr.jobs.JobId;
-import org.jobrunr.jobs.states.StateName;
 import org.jobrunr.scheduling.JobScheduler;
 import org.jobrunr.storage.StorageProvider;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -22,7 +21,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class JobResultConsumer {
 
-    private final JobService jobService;
+    private final JobManagementOperations jobManagementOperations;
     private final StorageProvider storageProvider;
     private final JobScheduler jobScheduler;
 
@@ -119,7 +118,7 @@ public class JobResultConsumer {
             log.debug("Job {} is already PROCESSING in JobRunr", jobId);
         } else {
             log.info("Job {} is IN_PROGRESS but JobRunr state is: {}", jobId, job.getState());
-            jobService.continueJob(job.getId());
+            jobManagementOperations.continueJob(job.getId());
         }
     }
 
@@ -136,7 +135,7 @@ public class JobResultConsumer {
         // Si el job en JobRunr aún está en PROCESSING (no debería), forzar éxito
         if (job.getState() == org.jobrunr.jobs.states.StateName.PROCESSING) {
             log.warn("Job {} is still PROCESSING in JobRunr, marking as succeeded", jobId);
-            jobService.completeSuccessJob(job.getId());
+            jobManagementOperations.completeSuccessJob(job.getId(), result.getMessage(), result.getErrorDetails());
         }
     }
 
@@ -155,7 +154,7 @@ public class JobResultConsumer {
         if (job.getState() == org.jobrunr.jobs.states.StateName.PROCESSING ||
                 job.getState() == org.jobrunr.jobs.states.StateName.SUCCEEDED) {
             log.warn("Job {} is SUCCEEDED or PROCESSING in JobRunr but failed in executor", jobId);
-            jobService.failJob(job.getId(), result.getErrorDetails());
+            jobManagementOperations.failJob(job.getId(), result.getMessage(), result.getErrorDetails());
         }
     }
 
@@ -170,8 +169,5 @@ public class JobResultConsumer {
             log.error("Failed to cancel job {}: {}", jobId, e.getMessage());
         }
     }
-
-
-
 
 }

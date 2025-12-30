@@ -1,5 +1,7 @@
 package com.company.batchscheduler.controller;
 
+import com.company.batchscheduler.service.JobManagementOperations;
+import lombok.RequiredArgsConstructor;
 import org.springframework.boot.availability.AvailabilityChangeEvent;
 import org.springframework.boot.availability.LivenessState;
 import org.springframework.context.ApplicationEventPublisher;
@@ -10,14 +12,13 @@ import java.util.HashMap;
 import java.util.Map;
 
 @RestController
+@RequiredArgsConstructor
 @RequestMapping("/api/v1/health")
 public class HealthController {
 
     private final ApplicationEventPublisher eventPublisher;
 
-    public HealthController(ApplicationEventPublisher eventPublisher) {
-        this.eventPublisher = eventPublisher;
-    }
+    private final JobManagementOperations jobManagementOperations;
 
     @GetMapping
     public ResponseEntity<Map<String, Object>> health() {

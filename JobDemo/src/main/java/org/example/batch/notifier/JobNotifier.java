@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.example.batch.job.CustomerSummaryJob;
+import org.example.batch.service.BatchJobExecutorService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -14,6 +15,7 @@ import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.kafka.support.SendResult;
 import org.springframework.messaging.handler.annotation.Header;
+import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,6 +33,7 @@ public class JobNotifier {
     private String jobResultsTopic;
 
     private final CustomerSummaryJob jobExecutionService;
+    private final BatchJobExecutorService batchJobExecutorService;
     private final KafkaTemplate<String, JobResult> kafkaTemplate;
 
     @KafkaListener(
@@ -46,7 +49,7 @@ public class JobNotifier {
             @Header(KafkaHeaders.RECEIVED_PARTITION) Integer partition,
             @Header(KafkaHeaders.RECEIVED_TOPIC) String topic,
             @Header(value = "business-domain", required = true) String businessDomain,
-            @Header(value = "target-batch", required = true) String targetBatch,
+            @Header(value = "target-job", required = true) String targetJob,
             @Header(value = "priority", defaultValue = "MEDIUM") String priority,
             @Header(value = "correlation-id", required = true) String correlationId,
             @Header(value = "jobrunr-job-id", required = true) String jobrunrJobId,
@@ -68,14 +71,14 @@ public class JobNotifier {
                     jobRequest.getJobId(),
                     jobrunrJobId,
                     businessDomain,
-                    targetBatch,
+                    targetJob,
                     priority,
                     correlationId
             );
 
             // 1. Publicar estado IN_PROGRESS
             publishJobStatus(jobRequest, JobStatusEnum.IN_PROGRESS, null,
-                    correlationId, jobrunrJobId, "Job execution started");
+                    correlationId, jobrunrJobId, "JobExecutor: remote Job execution started");
 
             // 2. Ejecutar el job
             result = jobExecutionService.executeJob(jobRequest, extractHeaders(record));
@@ -101,6 +104,69 @@ public class JobNotifier {
             // No confirmar para que se reintente
         }
     }
+
+    @Transactional
+    public void consumeBatchRequest(
+            ConsumerRecord<String, JobRequest> record,
+            @Header(KafkaHeaders.RECEIVED_KEY) String key,
+            @Header(KafkaHeaders.RECEIVED_PARTITION) Integer partition,
+            @Header(KafkaHeaders.RECEIVED_TOPIC) String topic,
+            @Header(value = "business-domain", required = true) String businessDomain,
+            @Header(value = "target-batch", required = true) String targetBatch,
+            @Header(value = "priority", defaultValue = "MEDIUM") String priority,
+            @Header(value = "correlation-id", required = true) String correlationId,
+            @Header(value = "jobrunr-job-id", required = true) String jobrunrJobId,
+            @Payload Map<String, Object> payload,
+            Acknowledgment acknowledgment) {
+
+        JobResult result;
+        try {
+            JobRequest jobRequest = record.value();
+
+            log.info("""
+                    📥 JobExecutor: Received Batch Request:
+                    Job ID: {}
+                    JobRunr Job ID: {}
+                    Business Domain: {}
+                    Target Batch: {}
+                    Priority: {}
+                    Correlation ID: {}
+                    """,
+                    jobRequest.getJobId(),
+                    jobrunrJobId,
+                    businessDomain,
+                    targetBatch,
+                    priority,
+                    correlationId
+            );
+
+            // 1. Publicar estado IN_PROGRESS
+            publishJobStatus(jobRequest, JobStatusEnum.IN_PROGRESS, null,
+                    correlationId, jobrunrJobId, "JobExecutor: remote Batch execution started");
+
+            // 2. Ejecutar el batch
+            batchJobExecutorService.executeSpringBatchJob(jobrunrJobId, jobRequest.getJobName(),
+                    jobRequest.getParameters());
+
+            // 4. Confirmar offset
+            acknowledgment.acknowledge();
+
+            log.info("✅ JobExecutor: Batch {} executed successfully", jobRequest.getJobId());
+
+        } catch (Exception e) {
+            log.error("❌ JobExecutor: Error processing Batch request: {}", e.getMessage(), e);
+
+            // Publicar estado FAILED si hay jobRequest
+            if (record != null && record.value() != null) {
+                JobRequest jobRequest = record.value();
+                publishJobStatus(jobRequest, JobStatusEnum.FAILED, e,
+                        correlationId, jobrunrJobId, "Batch execution failed: " + e.getMessage());
+            }
+
+            // No confirmar para que se reintente
+        }
+    }
+
 
     /**
      * Publicar estado del job al scheduler
@@ -160,7 +226,7 @@ public class JobNotifier {
     /**
      * Publicar al topic de resultados
      */
-    private void publishToResultsTopic(JobResult result) {
+    public void publishToResultsTopic(JobResult result) {
         String key = result.getJobId();
 
         CompletableFuture<SendResult<String, JobResult>> future =

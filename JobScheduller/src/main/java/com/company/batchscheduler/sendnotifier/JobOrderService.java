@@ -1,8 +1,9 @@
 package com.company.batchscheduler.sendnotifier;
 
-import com.company.batchscheduler.service.JobService;
+import com.company.batchscheduler.service.JobManagementOperations;
 import common.batch.dto.JobRequest;
 import common.batch.dto.JobStatusEnum;
+import common.batch.dto.JobType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jobrunr.jobs.annotations.Job;
@@ -22,12 +23,12 @@ import java.util.concurrent.CompletableFuture;
 @RequiredArgsConstructor
 @Slf4j
 @Component
-public class KafkaPublisherForJobs {
+public class JobOrderService {
 
     @Value("${kafka.topics.job-requests}")
     private String jobRequestsTopic;
 
-    private final JobService jobService;
+    private final JobManagementOperations jobManagementOperations;
     private final KafkaTemplate<String, JobRequest> kafkaTemplate;
 
     /**
@@ -44,7 +45,8 @@ public class KafkaPublisherForJobs {
 
         try {
             // Crear mensaje con headers de routing
-            Message<JobRequest> message = buildMessageWithRoutingHeaders(jobExecutionId, request);
+            Message<JobRequest> message = buildMessageWithRoutingHeaders(jobExecutionId, request,
+                    request.getJobType().contentEquals(JobType.BATCH_PROCESSING.name()));
 
             // Publicar a Kafka
             CompletableFuture<SendResult<String, JobRequest>> future = kafkaTemplate.send(message);
@@ -56,7 +58,7 @@ public class KafkaPublisherForJobs {
                     handlePublishSuccess(jobExecutionId, result);
                 }
             });
-            jobService.startJob(jobExecutionId);
+            jobManagementOperations.startJob(jobExecutionId);
 
             return JobStatusEnum.IN_PROGRESS;
 
@@ -70,7 +72,7 @@ public class KafkaPublisherForJobs {
     /**
      * Construye mensaje con headers de routing para filtrado
      */
-    private Message<JobRequest> buildMessageWithRoutingHeaders(UUID jobExecutionId, JobRequest request) {
+    private Message<JobRequest> buildMessageWithRoutingHeaders(UUID jobExecutionId, JobRequest request, Boolean targetBatch) {
         String correlationId = generateCorrelationId();
         String jobRunrJobId = jobExecutionId.toString();
 
@@ -86,7 +88,7 @@ public class KafkaPublisherForJobs {
                 // Headers de routing/filtrado
                 .setHeader("job-type", request.getJobType())          // "ASYNCRONOUS"
                 .setHeader("business-domain", request.getBusinessDomain()) // Ej: "application-job-demo"
-                .setHeader("target-batch", request.getJobName()) // Ej: "ResumenDiarioClientesAsync"
+                .setHeader(targetBatch ? "target-batch" : "target-job", request.getJobName()) // Ej: "ResumenDiarioClientesAsync"
 
                 // Headers de procesamiento
                 .setHeader("priority", request.getPriority())         // Ej: "HIGH", "MEDIUM", "LOW"
