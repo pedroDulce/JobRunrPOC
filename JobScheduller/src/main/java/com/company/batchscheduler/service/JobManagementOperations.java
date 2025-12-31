@@ -73,7 +73,6 @@ public class JobManagementOperations {
         job.getMetadata().put("duración",jobResult.getDurationMs());
         job.getMetadata().put("momento de iniciar",jobResult.getStartedAt());
         job.getMetadata().put("momento de finalización",jobResult.getCompletedAt());
-        //storageProvider.save(job);
         jobRunrAdminRepository.updateJobState(job.getId(), StateName.SUCCEEDED.name());
         return true;
     }
@@ -94,7 +93,6 @@ public class JobManagementOperations {
         job.getMetadata().put("momento de iniciar",jobResult.getStartedAt());
         job.getMetadata().put("momento de finalización",jobResult.getCompletedAt());
 
-        //storageProvider.save(job);
         jobRunrAdminRepository.updateJobState(job.getId(), StateName.FAILED.name());
         return true;
     }
