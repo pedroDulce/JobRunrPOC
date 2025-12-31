@@ -1,6 +1,7 @@
 package com.company.batchscheduler.service;
 
 import com.company.batchscheduler.repository.JobRunrAdminRepository;
+import common.batch.dto.JobResult;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jobrunr.jobs.Job;
@@ -10,7 +11,6 @@ import org.jobrunr.jobs.states.StateName;
 import org.jobrunr.storage.StorageProvider;
 import org.springframework.stereotype.Service;
 
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -60,7 +60,7 @@ public class JobManagementOperations {
     /**
      * Métodos de conveniencia
      */
-    public boolean completeSuccessJob(UUID jobId, String messageCompleted) {
+    public boolean completeSuccessJob(UUID jobId, JobResult jobResult) {
         // 1. Obtener el job existente
         Job job = getById(jobId);
 
@@ -69,13 +69,16 @@ public class JobManagementOperations {
             return false;
         }
         job = job.succeeded();
-        job.getMetadata().put("finalizado", "De forma exitosa." + messageCompleted);
+        job.getMetadata().put("finalizado", "De forma exitosa." + jobResult.getMessage());
+        job.getMetadata().put("duración",jobResult.getDurationMs());
+        job.getMetadata().put("momento de iniciar",jobResult.getStartedAt());
+        job.getMetadata().put("momento de finalización",jobResult.getCompletedAt());
         //storageProvider.save(job);
         jobRunrAdminRepository.updateJobState(job.getId(), StateName.SUCCEEDED.name());
         return true;
     }
 
-    public boolean failJob(UUID jobId, String messageCompleted, String errorDetails) {
+    public boolean failJob(UUID jobId, JobResult jobResult) {
         // 1. Obtener el job existente
         Job job = getById(jobId);
 
@@ -83,8 +86,14 @@ public class JobManagementOperations {
             log.error("Job no encontrado: " + jobId);
             return false;
         }
-        job = job.failed(messageCompleted, new Exception("Error: " + messageCompleted + ". Detalles: " + errorDetails));
-        job.getMetadata().put("finalizado", "Con errores");
+        job = job.failed(jobResult.getMessage(), new Exception("Error: " + jobResult.getMessage()
+                + ". Detalles: " + jobResult.getErrorDetails()));
+        job.getMetadata().put("finalizado", "Con errores: " + jobResult.getMessage());
+        job.getMetadata().put("errorDetails", jobResult.getErrorDetails());
+        job.getMetadata().put("duración",jobResult.getDurationMs());
+        job.getMetadata().put("momento de iniciar",jobResult.getStartedAt());
+        job.getMetadata().put("momento de finalización",jobResult.getCompletedAt());
+
         //storageProvider.save(job);
         jobRunrAdminRepository.updateJobState(job.getId(), StateName.FAILED.name());
         return true;

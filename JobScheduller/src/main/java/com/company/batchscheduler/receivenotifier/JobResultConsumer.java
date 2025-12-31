@@ -135,7 +135,7 @@ public class JobResultConsumer {
         // Si el job en JobRunr aún está en PROCESSING, forzar éxito
         if (job.getState() == org.jobrunr.jobs.states.StateName.PROCESSING) {
             log.warn("Job {} is still PROCESSING in JobRunr, marking as succeeded", jobId);
-            jobManagementOperations.completeSuccessJob(job.getId(), result.getMessage());
+            jobManagementOperations.completeSuccessJob(job.getId(), result);
         }
     }
 
@@ -153,7 +153,7 @@ public class JobResultConsumer {
         if (job.getState() == org.jobrunr.jobs.states.StateName.PROCESSING ||
                 job.getState() == org.jobrunr.jobs.states.StateName.SUCCEEDED) {
             log.warn("Job {} is PROCESSING in JobRunr but failed in executor", jobId);
-            jobManagementOperations.failJob(job.getId(), result.getMessage(), result.getErrorDetails());
+            jobManagementOperations.failJob(job.getId(), result);
         }
     }
 
