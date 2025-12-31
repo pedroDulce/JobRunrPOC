@@ -70,6 +70,8 @@ public class JobNotifier {
             // 1. Publicar estado IN_PROGRESS
             kafkaPublisher.publishJobStatus(jobRequest, JobStatusEnum.IN_PROGRESS, null,
                     correlationId, jobrunrJobId, "JobExecutor: remote Job execution started");
+            // Confirmar offset
+            acknowledgment.acknowledge();
 
             // 2. Ejecutar el job
             result = jobExecutionService.executeJob(jobRequest, extractHeaders(record));

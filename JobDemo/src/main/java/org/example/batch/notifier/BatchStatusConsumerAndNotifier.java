@@ -69,12 +69,12 @@ public class BatchStatusConsumerAndNotifier {
             kafkaPublisher.publishJobStatus(jobRequest, JobStatusEnum.IN_PROGRESS, null,
                     correlationId, jobrunrJobId, "JobExecutor: remote Batch execution started");
 
-            // 2. Ejecutar el batch
+            // 2. Confirmar offset
+            acknowledgment.acknowledge();
+
+            // 3. Ejecutar el batch
             executeSpringBatchJob(jobrunrJobId, jobRequest.getJobName(),
                     jobRequest.getParameters());
-
-            // 4. Confirmar offset
-            acknowledgment.acknowledge();
 
             log.info("✅ JobExecutor: Batch {} executed successfully", jobRequest.getJobId());
 
