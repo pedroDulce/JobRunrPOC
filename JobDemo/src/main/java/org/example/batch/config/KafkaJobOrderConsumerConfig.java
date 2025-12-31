@@ -172,14 +172,14 @@ public class KafkaJobOrderConsumerConfig {
 
             // Verificar target-batch
             boolean targetJobMatches = allowedTargetJobs.isEmpty() ||
-                    (targetBatch != null && allowedTargetJobs.contains(targetJob));
+                    (targetJob != null && allowedTargetJobs.contains(targetJob));
 
             // Si ambos criterios coinciden, NO filtrar (procesar)
             boolean shouldProcess = businessDomainMatches && (targetJobMatches || targetBatchMatches);
 
             if (!shouldProcess) {
-                log.debug("Filtering message - Key: {}, BusinessDomain: {}, TargetBatch: {}",
-                        record.key(), businessDomain, targetBatch);
+                log.debug("No procesamos este evento: el message contiene headers no válidas: "
+                        + "BusinessDomain: {}, TargetBatch: {}, TargetJob: {}",  businessDomain, targetBatch, targetJob);
 
                 // Notificar al interceptor si existe
                 if (jobRecordInterceptor != null) {
