@@ -65,5 +65,10 @@ public class HealthController {
         }
     }
 
+    @GetMapping("/info/{jobId}")
+    public ResponseEntity<Map<String, Object>> getJobInfoById(@PathVariable String jobId) {
+        return ResponseEntity.ok(jobManagementOperations.getJobInfo(jobId));
+    }
+
 
 }

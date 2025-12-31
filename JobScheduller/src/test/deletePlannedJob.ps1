@@ -1,6 +1,6 @@
 # Configurar variables
 $baseUrl = "http://localhost:8080"
-$jobId = "019b746f-2070-798b-be07-7c992a6d84e9" # Job Id del trabajo a eliminar
+$jobId = "019b74be-70ef-7b2c-a2c3-3b8ccaa8ccf3" # Job Id del trabajo a eliminar
 $endpoint = "/api/v1/deleteJobById/$jobId"
 
 # Realizar la petición DELETE
