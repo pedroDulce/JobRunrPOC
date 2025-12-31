@@ -45,8 +45,7 @@ public class JobOrderInitRemoteBatch {
 
         try {
             // Crear mensaje con headers de routing
-            Message<JobRequest> message = buildMessageWithRoutingHeaders(jobExecutionId, request,
-                    request.getJobType().contentEquals(JobType.BATCH_PROCESSING.name()));
+            Message<JobRequest> message = buildMessageWithRoutingHeaders(jobExecutionId, request);
 
             // Publicar a Kafka
             CompletableFuture<SendResult<String, JobRequest>> future = kafkaTemplate.send(message);
@@ -72,7 +71,7 @@ public class JobOrderInitRemoteBatch {
     /**
      * Construye mensaje con headers de routing para filtrado
      */
-    private Message<JobRequest> buildMessageWithRoutingHeaders(UUID jobExecutionId, JobRequest request, Boolean targetBatch) {
+    private Message<JobRequest> buildMessageWithRoutingHeaders(UUID jobExecutionId, JobRequest request) {
         String correlationId = generateCorrelationId();
         String jobRunrJobId = jobExecutionId.toString();
 
@@ -88,7 +87,9 @@ public class JobOrderInitRemoteBatch {
                 // Headers de routing/filtrado
                 .setHeader("job-type", request.getJobType())          // "ASYNCRONOUS"
                 .setHeader("business-domain", request.getBusinessDomain()) // Ej: "application-job-demo"
-                .setHeader((targetBatch ? "target-batch" : "target-job"), request.getJobName()) // Ej: "ResumenDiarioClientesAsync"
+                .setHeader((JobType.BATCH_PROCESSING.name().contentEquals(request.getJobType()) ? "target-batch"
+                        : "target-job"),
+                        request.getJobName()) // Ej: "ResumenDiarioClientesAsync"
 
                 // Headers de procesamiento
                 .setHeader("priority", request.getPriority())         // Ej: "HIGH", "MEDIUM", "LOW"

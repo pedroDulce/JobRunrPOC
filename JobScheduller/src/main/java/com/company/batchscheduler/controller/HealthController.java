@@ -57,7 +57,7 @@ public class HealthController {
 
     @DeleteMapping("/deleteJobById/{jobId}")
     public ResponseEntity<String> deleteJobById(@PathVariable String jobId) {
-        Boolean deleted = jobManagementOperations.deleteJob(jobId);
+        Boolean deleted = jobManagementOperations.deletePlannedJob(jobId);
         if (deleted) {
             return ResponseEntity.ok("Job " + jobId + " eliminado.");
         } else {

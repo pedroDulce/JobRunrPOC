@@ -140,9 +140,9 @@ public class JobManagementOperations {
     /**
      * Eliminar un job por su ID
      */
-    public boolean deleteJob(String jobId) {
+    public boolean deletePlannedJob(String jobId) {
         try {
-            int deleted = storageProvider.deleteRecurringJob(jobId);
+            int deleted = storageProvider.deletePermanently(UUID.fromString(jobId));
             log.info("Job {} deleted successfully", jobId);
             return deleted > 0;
         } catch (Exception e) {
