@@ -142,9 +142,9 @@ public class JobManagementOperations {
      */
     public boolean deleteJob(String jobId) {
         try {
-            storageProvider.deleteRecurringJob(jobId);
+            int deleted = storageProvider.deleteRecurringJob(jobId);
             log.info("Job {} deleted successfully", jobId);
-            return true;
+            return deleted > 0;
         } catch (Exception e) {
             log.error("Error deleting job {}: {}", jobId, e.getMessage());
             return false;
@@ -195,9 +195,9 @@ public class JobManagementOperations {
      */
     public boolean deleteRecurringJobByName(String jobName) {
         try {
-            storageProvider.deleteRecurringJob(jobName);
+            int deleted = storageProvider.deleteRecurringJob(jobName);
             log.info("Recurring job {} deleted", jobName);
-            return true;
+            return deleted > 0;
         } catch (Exception e) {
             log.error("Error deleting recurring job {}: {}", jobName, e.getMessage());
             return false;

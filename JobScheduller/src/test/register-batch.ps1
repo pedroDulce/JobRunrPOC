@@ -1,5 +1,5 @@
-# test-poc-fixed.ps1
-Write-Host "PRUEBAS en MODO ASINCRONO - Batch Scheduler POC" -ForegroundColor Cyan
+
+Write-Host "PRUEBAS en MODO ASINCRONO - Batch Scheduler" -ForegroundColor Cyan
 Write-Host "==========================================="
 
 $baseUrl = "http://localhost:8080"
@@ -24,13 +24,13 @@ try {
         -Headers @{"Content-Type" = "application/json"} `
         -Body $scheduleBody
 
-    Write-Host "   OK - Job programado: $($response.jobId)" -ForegroundColor Green
-    Write-Host "   Cron: $($response.cronExpression)" -ForegroundColor Green
+    Write-Host "  OK - Job programado: $($response.jobId)" -ForegroundColor Green
+    Write-Host "  Cron: $($response.cronExpression)" -ForegroundColor Green
 
 } catch {
-    Write-Host "   ERROR: $($_.Exception.Message)" -ForegroundColor Red
+    Write-Host "  ERROR: $($_.Exception.Message)" -ForegroundColor Red
     if ($_.ErrorDetails.Message) {
-        Write-Host "   Response: $($_.ErrorDetails.Message)" -ForegroundColor Red
+        Write-Host "  Response: $($_.ErrorDetails.Message)" -ForegroundColor Red
     }
 }
 

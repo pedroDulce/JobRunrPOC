@@ -55,7 +55,7 @@ public class JobNotifier {
                     Job ID: {}
                     JobRunr Job ID: {}
                     Business Domain: {}
-                    Target Batch: {}
+                    Target Job: {}
                     Priority: {}
                     Correlation ID: {}
                     """,

@@ -13,14 +13,14 @@ import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/v1/health")
+@RequestMapping("/api/v1")
 public class HealthController {
 
     private final ApplicationEventPublisher eventPublisher;
 
     private final JobManagementOperations jobManagementOperations;
 
-    @GetMapping
+    @GetMapping("/health")
     public ResponseEntity<Map<String, Object>> health() {
         Map<String, Object> health = new HashMap<>();
         health.put("status", "UP");
@@ -31,7 +31,7 @@ public class HealthController {
         return ResponseEntity.ok(health);
     }
 
-    @PostMapping("/liveness/{state}")
+    @PostMapping("/health/liveness/{state}")
     public ResponseEntity<String> setLiveness(@PathVariable String state) {
         switch (state.toUpperCase()) {
             case "CORRECT":
@@ -44,4 +44,26 @@ public class HealthController {
                 return ResponseEntity.badRequest().body("Invalid state");
         }
     }
+
+    @DeleteMapping("/deleteRecurringJob/{jobName}")
+    public ResponseEntity<String> deleteRecurringJobByName(@PathVariable String jobName) {
+        Boolean deleted = jobManagementOperations.deleteRecurringJobByName(jobName);
+        if (deleted) {
+            return ResponseEntity.ok("Recurring Job " + jobName + " eliminado.");
+        } else {
+            return ResponseEntity.ok("Operación no realizada: Recurring Job no localizado: " + jobName);
+        }
+    }
+
+    @DeleteMapping("/deleteJobById/{jobId}")
+    public ResponseEntity<String> deleteJobById(@PathVariable String jobId) {
+        Boolean deleted = jobManagementOperations.deleteJob(jobId);
+        if (deleted) {
+            return ResponseEntity.ok("Job " + jobId + " eliminado.");
+        } else {
+            return ResponseEntity.ok("Operación no realizada: Job no localizado: " + jobId);
+        }
+    }
+
+
 }

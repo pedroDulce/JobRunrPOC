@@ -88,7 +88,7 @@ public class JobOrderInitRemoteBatch {
                 // Headers de routing/filtrado
                 .setHeader("job-type", request.getJobType())          // "ASYNCRONOUS"
                 .setHeader("business-domain", request.getBusinessDomain()) // Ej: "application-job-demo"
-                .setHeader(targetBatch ? "target-batch" : "target-job", request.getJobName()) // Ej: "ResumenDiarioClientesAsync"
+                .setHeader((targetBatch ? "target-batch" : "target-job"), request.getJobName()) // Ej: "ResumenDiarioClientesAsync"
 
                 // Headers de procesamiento
                 .setHeader("priority", request.getPriority())         // Ej: "HIGH", "MEDIUM", "LOW"
