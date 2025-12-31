@@ -34,10 +34,10 @@ public class CustomerSummaryReportJob {
 
             // Convertir String a LocalDate
             LocalDate processDate = processDateTime.toLocalDate();
-
+            log.info("Procesando resumen para fecha-parameter-informe: {}", processDate);
             Thread.sleep(20000); // 20 segundos
 
-            log.info("Procesando resumen para fecha: {}", processDate);
+            log.info("...procesado resumen para fecha-parameter-informe: {}", processDate);
             if (emailRecipient != null) {
                 log.info("📧 Enviando email a: {}", emailRecipient);
                 sendSummaryEmail(processDate, jobId, emailRecipient);
@@ -46,7 +46,6 @@ public class CustomerSummaryReportJob {
             long millsTerminado = Calendar.getInstance().getTimeInMillis();
 
             log.info("✅ Job {} completado exitosamente", jobId);
-
 
             resultado.setMessage("Proceso ha enviado el correo con toda la info solicitada en fecha " + processDate);
             resultado.setStatus(JobStatusEnum.COMPLETED);
