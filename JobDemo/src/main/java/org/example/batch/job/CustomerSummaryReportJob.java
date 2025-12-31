@@ -20,12 +20,12 @@ public class CustomerSummaryReportJob {
 
     private final DailySummaryRepository dailySummaryRepository;
 
-    public JobResult executeJob(JobRequest jobRequest, Map<String, String> headers) {
+    public JobResult executeJob(JobRequest jobRequest, Map<String, String> headers) throws Exception {
 
         long mills = Calendar.getInstance().getTimeInMillis();
-        JobResult resultado = new JobResult();
+        //JobResult resultado = new JobResult();
         String jobId = jobRequest.getJobId();
-        resultado.setJobId(jobId);
+        //resultado.setJobId(jobId);
         try {
             LocalDateTime processDateTime = jobRequest.getScheduledAt();
             String emailRecipient = jobRequest.getParameters().get("emailRecipient");
@@ -47,21 +47,25 @@ public class CustomerSummaryReportJob {
 
             log.info("✅ Job {} completado exitosamente", jobId);
 
-            resultado.setMessage("Proceso ha enviado el correo con toda la info solicitada en fecha " + processDate);
-            resultado.setStatus(JobStatusEnum.COMPLETED);
-            resultado.setDurationMs(millsTerminado - mills);
-            resultado.setCompletedAt(LocalDateTime.now());
+            JobResult resultado = JobResult.builder()
+                    .jobId(jobRequest.getJobId())
+                    .jobName(jobRequest.getJobName())
+                    .status(JobStatusEnum.COMPLETED)
+                    .message("Proceso ha enviado el correo con toda la info solicitada en fecha " + processDate)
+                    .startedAt(LocalDateTime.now())
+                    .completedAt(LocalDateTime.now())
+                    .errorDetails(null)
+                    .durationMs(millsTerminado - mills)
+                    .correlationId(jobRequest.getCorrelationId())
+                    .jobrunrJobId(jobRequest.getJobId())  // IMPORTANTE: ID de JobRunr
+                    .build();
 
             return resultado;
 
         } catch (Exception e) {
-            long millsTerminado = Calendar.getInstance().getTimeInMillis();
             log.error("❌ Error en job {}: {}", jobId, e.getMessage(), e);
-            resultado.setStatus(JobStatusEnum.FAILED);
-            resultado.setDurationMs(millsTerminado - mills);
-            resultado.setCompletedAt(LocalDateTime.now());
+            throw new Exception("❌ Error en job {}: {}", e);
         }
-        return resultado;
     }
 
     private void sendSummaryEmail(LocalDate date, String jobId, String recipient) {

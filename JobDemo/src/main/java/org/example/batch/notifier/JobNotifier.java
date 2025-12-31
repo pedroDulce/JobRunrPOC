@@ -66,6 +66,9 @@ public class JobNotifier {
                     priority,
                     correlationId
             );
+            if (jobRequest.getJobId() == null) {
+                jobRequest.setJobId(jobrunrJobId);
+            }
 
             // 1. Publicar estado IN_PROGRESS
             kafkaPublisher.publishJobStatus(jobRequest, JobStatusEnum.IN_PROGRESS, null,
