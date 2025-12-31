@@ -45,8 +45,12 @@ public class KafkaJobOrderConsumerConfig {
     @Value("${kafka.filter.target-batches:}")
     private String targetBatchesConfig;
 
+    @Value("${kafka.filter.target-jobs:}")
+    private String targetJobsConfig;
+
     private Set<String> allowedBusinessDomains;
     private Set<String> allowedTargetBatches;
+    private Set<String> allowedTargetJobs;
 
     @Autowired(required = false)
     private JobRecordInterceptor jobRecordInterceptor;
@@ -57,11 +61,13 @@ public class KafkaJobOrderConsumerConfig {
     private void initializeFilterSets() {
         allowedBusinessDomains = parseCommaSeparatedSet(businessDomainsConfig);
         allowedTargetBatches = parseCommaSeparatedSet(targetBatchesConfig);
+        allowedTargetJobs = parseCommaSeparatedSet(targetJobsConfig);
 
         log.info("Kafka Filter Configuration:");
         log.info("  Enabled: {}", filterEnabled);
         log.info("  Allowed Business Domains: {}", allowedBusinessDomains);
         log.info("  Allowed Target Batches: {}", allowedTargetBatches);
+        log.info("  Allowed Target Jobs: {}", allowedTargetJobs);
     }
 
     /**
@@ -151,6 +157,7 @@ public class KafkaJobOrderConsumerConfig {
         try {
             String businessDomain = extractHeader(record, "business-domain");
             String targetBatch = extractHeader(record, "target-batch");
+            String targetJob = extractHeader(record, "target-job");
 
             log.debug("Checking message - BusinessDomain: {}, TargetBatch: {}, Key: {}",
                     businessDomain, targetBatch, record.key());
@@ -162,6 +169,10 @@ public class KafkaJobOrderConsumerConfig {
             // Verificar target-batch
             boolean targetBatchMatches = allowedTargetBatches.isEmpty() ||
                     (targetBatch != null && allowedTargetBatches.contains(targetBatch));
+
+            // Verificar target-batch
+            boolean targetJobMatches = allowedTargetJobs.isEmpty() ||
+                    (targetBatch != null && allowedTargetJobs.contains(targetJob));
 
             // Si ambos criterios coinciden, NO filtrar (procesar)
             boolean shouldProcess = businessDomainMatches && targetBatchMatches;
