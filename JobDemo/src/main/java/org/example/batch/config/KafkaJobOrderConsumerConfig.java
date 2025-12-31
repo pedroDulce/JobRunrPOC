@@ -175,7 +175,7 @@ public class KafkaJobOrderConsumerConfig {
                     (targetBatch != null && allowedTargetJobs.contains(targetJob));
 
             // Si ambos criterios coinciden, NO filtrar (procesar)
-            boolean shouldProcess = businessDomainMatches && targetBatchMatches;
+            boolean shouldProcess = businessDomainMatches && (targetJobMatches || targetBatchMatches);
 
             if (!shouldProcess) {
                 log.debug("Filtering message - Key: {}, BusinessDomain: {}, TargetBatch: {}",
