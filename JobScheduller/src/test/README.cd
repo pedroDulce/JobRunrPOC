@@ -4,3 +4,13 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser  # Solo pri
 
 .\register-simpleJob.ps1
 .\register-batch.ps1
+
+
+LIMPIEZA:
+DROP TABLE IF EXISTS
+jobrunr_jobrunr_jobs,
+jobrunr_jobrunr_recurring_jobs,
+jobrunr_jobrunr_backgroundjobservers,
+jobrunr_jobrunr_migrations,
+jobrunr_jobrunr_metadata
+CASCADE;
