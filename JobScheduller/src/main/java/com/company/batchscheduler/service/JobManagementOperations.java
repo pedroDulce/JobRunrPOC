@@ -56,41 +56,6 @@ public class JobManagementOperations {
         }
     }
 
-    /**
-     * Método principal para actualizar estado y fecha de finalización
-     * newStatus permitidos:
-     * ENQUEUED
-     * SCHEDULED
-     * PROCESSING
-     * SUCCEEDED
-     * FAILED
-     * DELETED
-     */
-    private boolean updateFinalJobStatus(UUID jobId, String newStatus, String messageCompleted, String erroDetails,
-                                    Date completionDate) {
-        try {
-            log.info("Finalizando job " + jobId + " a estado: " + newStatus);
-
-            // 1. Obtener el job existente
-            Job job = getById(jobId);
-
-            if (job == null) {
-                log.error("Job no encontrado: " + jobId);
-                return false;
-            }
-
-            jobRunrAdminRepository.updateJobState(job.getId(), newStatus);
-
-            log.info("Job actualizado exitosamente");
-            return true;
-
-        } catch (Exception e) {
-            log.error("Error actualizando job " + jobId + ": " + e.getMessage());
-            e.printStackTrace();
-            return false;
-        }
-    }
-
 
     /**
      * Métodos de conveniencia
@@ -105,7 +70,8 @@ public class JobManagementOperations {
         }
         job = job.succeeded();
         job.getMetadata().put("finalizado", "De forma exitosa." + messageCompleted);
-        storageProvider.save(job);
+        //storageProvider.save(job);
+        jobRunrAdminRepository.updateJobState(job.getId(), StateName.SUCCEEDED.name());
         return true;
     }
 
@@ -119,7 +85,8 @@ public class JobManagementOperations {
         }
         job = job.failed(messageCompleted, new Exception("Error: " + messageCompleted + ". Detalles: " + errorDetails));
         job.getMetadata().put("finalizado", "Con errores");
-        storageProvider.save(job);
+        //storageProvider.save(job);
+        jobRunrAdminRepository.updateJobState(job.getId(), StateName.FAILED.name());
         return true;
     }
 
