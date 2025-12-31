@@ -60,12 +60,10 @@ public class JobManagementOperations {
     /**
      * Métodos de conveniencia
      */
-    public boolean completeSuccessJob(UUID jobId, JobResult jobResult) {
+    public boolean completeSuccessJob(Job job, JobResult jobResult) {
         // 1. Obtener el job existente
-        Job job = getById(jobId);
-
         if (job == null) {
-            log.error("Job no encontrado: " + jobId);
+            log.error("Job no encontrado");
             return false;
         }
         job = job.succeeded();
@@ -77,12 +75,9 @@ public class JobManagementOperations {
         return true;
     }
 
-    public boolean failJob(UUID jobId, JobResult jobResult) {
-        // 1. Obtener el job existente
-        Job job = getById(jobId);
-
+    public boolean failJob(Job job, JobResult jobResult) {
         if (job == null) {
-            log.error("Job no encontrado: " + jobId);
+            log.error("Job no encontrado");
             return false;
         }
         job = job.failed(jobResult.getMessage(), new Exception("Error: " + jobResult.getMessage()

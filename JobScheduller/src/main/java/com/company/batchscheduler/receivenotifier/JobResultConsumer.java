@@ -127,15 +127,12 @@ public class JobResultConsumer {
      */
     private void handleCompleted(Job job, JobResult result) {
 
-        UUID jobUuid = job.getId();
-        JobId jobId = new JobId(jobUuid);
-
-        log.info("✅ Job {} completed successfully - {}", jobId, result.getMessage());
+        log.info("✅ Job {} completed successfully - {}", job.getId(), result.getMessage());
 
         // Si el job en JobRunr aún está en PROCESSING, forzar éxito
         if (job.getState() == org.jobrunr.jobs.states.StateName.PROCESSING) {
-            log.warn("Job {} is still PROCESSING in JobRunr, marking as succeeded", jobId);
-            jobManagementOperations.completeSuccessJob(job.getId(), result);
+            log.warn("Job {} is still PROCESSING in JobRunr, marking as succeeded", job.getId());
+            jobManagementOperations.completeSuccessJob(job, result);
         }
     }
 
@@ -153,7 +150,7 @@ public class JobResultConsumer {
         if (job.getState() == org.jobrunr.jobs.states.StateName.PROCESSING ||
                 job.getState() == org.jobrunr.jobs.states.StateName.SUCCEEDED) {
             log.warn("Job {} is PROCESSING in JobRunr but failed in executor", jobId);
-            jobManagementOperations.failJob(job.getId(), result);
+            jobManagementOperations.failJob(job, result);
         }
     }
 
