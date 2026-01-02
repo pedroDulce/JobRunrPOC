@@ -1,13 +1,16 @@
 package com.company.batchscheduler.service;
 
-import com.company.batchscheduler.repository.JobRunrAdminRepository;
 import common.batch.dto.JobResult;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jobrunr.jobs.Job;
 import org.jobrunr.jobs.JobDetails;
 import org.jobrunr.jobs.states.ScheduledState;
 import org.jobrunr.jobs.states.StateName;
+import org.jobrunr.scheduling.JobScheduler;
 import org.jobrunr.storage.StorageProvider;
 import org.springframework.stereotype.Service;
 
@@ -18,91 +21,78 @@ import java.util.UUID;
 @Slf4j
 @RequiredArgsConstructor
 @Service
+@Transactional
 public class JobManagementOperations {
-    private final JobRunrAdminRepository jobRunrAdminRepository;
+
     private final StorageProvider storageProvider;
 
-    /**
-     * Método principal para actualizar estado y fecha de finalización
-     * newStatus permitidos:
-     * ENQUEUED
-     * SCHEDULED
-     * PROCESSING
-     * SUCCEEDED
-     * FAILED
-     * DELETED
-     */
-    private boolean updateJobStatus(UUID jobId, String newStatus) {
-        try {
-            log.info("Actualizando job " + jobId + " a estado: " + newStatus);
+    @PersistenceContext
+    private EntityManager entityManager;
 
-            // 1. Obtener el job existente
-            Job job = getById(jobId);
+    public boolean updateJobStatus(String jobId, Integer progress) {
+        // Usar UPDATE con versión para evitar condiciones de carrera
+        int updated = entityManager.createNativeQuery("""
+            UPDATE jobrunr_jobrunr_jobs 
+            SET last_heartbeat = NOW(),
+                updated_at = NOW(),
+                progress = :progress,
+                version = version + 1
+            WHERE id = :jobId 
+              AND state NOT IN ('SUCCEEDED', 'FAILED', 'DELETED')
+              AND (last_heartbeat IS NULL OR last_heartbeat < NOW() - INTERVAL '5 minutes')
+            """)
+                .setParameter("jobId", jobId)
+                .setParameter("progress", progress)
+                .executeUpdate();
 
-            if (job == null) {
-                log.error("Job no encontrado: " + jobId);
-                return false;
-            }
-
-            jobRunrAdminRepository.updateJobState(job.getId(), newStatus);
-
-            log.info("Job actualizado exitosamente");
-            return true;
-
-        } catch (Exception e) {
-            log.error("Error actualizando job " + jobId + ": " + e.getMessage());
-            e.printStackTrace();
-            return false;
+        if (updated == 0) {
+            // Job podría estar completado o tener problemas
+            log.debug("Job podría estar completado o tener problemas");
         }
+        return updated > 0;
     }
 
 
-    /**
-     * Métodos de conveniencia
-     */
     public boolean completeSuccessJob(Job job, JobResult jobResult) {
-        // 1. Obtener el job existente
         if (job == null) {
             log.error("Job no encontrado");
             return false;
         }
-        job = job.succeeded();
-        job.getMetadata().put("finalizado", "De forma exitosa." + jobResult.getMessage());
-        job.getMetadata().put("duración",jobResult.getDurationMs());
-        job.getMetadata().put("momento de iniciar",jobResult.getStartedAt());
-        job.getMetadata().put("momento de finalización",jobResult.getCompletedAt());
-        jobRunrAdminRepository.updateJobState(job.getId(), StateName.SUCCEEDED.name());
+        Job succeededJob = job.succeeded();
+        // 2. Añadir metadata (esto sí es mutable)
+        succeededJob.getMetadata().put("finalizado", "De forma exitosa. " + jobResult.getMessage());
+        succeededJob.getMetadata().put("duracionMs", String.valueOf(jobResult.getDurationMs()));
+        succeededJob.getMetadata().put("inicio", jobResult.getStartedAt().toString());
+        succeededJob.getMetadata().put("fin", jobResult.getCompletedAt().toString());
+
+        // 3. Persistir el Job completo
+        storageProvider.save(succeededJob);
+
         return true;
     }
+
 
     public boolean failJob(Job job, JobResult jobResult) {
         if (job == null) {
             log.error("Job no encontrado");
             return false;
         }
-        job = job.failed(jobResult.getMessage(), new Exception("Error: " + jobResult.getMessage()
+        Job failedJob = job.failed(jobResult.getMessage(), new Exception("Error: " + jobResult.getMessage()
                 + ". Detalles: " + jobResult.getErrorDetails()));
-        job.getMetadata().put("finalizado", "Con errores: " + jobResult.getMessage());
-        job.getMetadata().put("errorDetails", jobResult.getErrorDetails());
-        job.getMetadata().put("duración",jobResult.getDurationMs());
-        job.getMetadata().put("momento de iniciar",jobResult.getStartedAt());
-        job.getMetadata().put("momento de finalización",jobResult.getCompletedAt());
+        failedJob.getMetadata().put("finalizado", "Con errores: " + jobResult.getMessage());
+        failedJob.getMetadata().put("errorDetails", jobResult.getErrorDetails());
+        failedJob.getMetadata().put("duración",jobResult.getDurationMs());
+        failedJob.getMetadata().put("momento de iniciar",jobResult.getStartedAt());
+        failedJob.getMetadata().put("momento de finalización",jobResult.getCompletedAt());
 
-        jobRunrAdminRepository.updateJobState(job.getId(), StateName.FAILED.name());
+        // 3. Persistir el Job completo
+        storageProvider.save(failedJob);
+
         return true;
     }
 
     public boolean startOrContinueJob(UUID jobId) {
-        return updateJobStatus(jobId, StateName.PROCESSING.toString());
-    }
-
-
-    public boolean cancelJob(UUID jobId) {
-        return updateJobStatus(jobId, StateName.DELETED.toString());
-    }
-
-    public Job getById(UUID jobId) {
-        return storageProvider.getJobById(jobId);
+        return updateJobStatus(jobId.toString(), 50 /*proceso al 50%*/);
     }
 
 

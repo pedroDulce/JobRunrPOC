@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jobrunr.jobs.annotations.Job;
 import org.jobrunr.jobs.context.JobContext;
+import org.jobrunr.scheduling.JobScheduler;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.KafkaHeaders;
@@ -30,12 +31,13 @@ public class JobOrderInitRemoteBatch {
 
     private final JobManagementOperations jobManagementOperations;
     private final KafkaTemplate<String, JobRequest> kafkaTemplate;
+    private final JobScheduler jobScheduler;
 
     /**
      * Publica un evento de job con headers de routing para filtrado
      */
     @Job(name = "Job remoto")
-    public JobStatusEnum publishEventForRunRemoteJobs(JobRequest request, JobContext jobContext) {
+    public JobStatusEnum executeRemoteJob(JobRequest request, JobContext jobContext) {
 
         UUID jobExecutionId = jobContext.getJobId();
         jobContext.saveMetadata("remote", "true");
@@ -44,19 +46,11 @@ public class JobOrderInitRemoteBatch {
         request.setScheduledAt(LocalDateTime.now());
 
         try {
-            // Crear mensaje con headers de routing
-            Message<JobRequest> message = buildMessageWithRoutingHeaders(jobExecutionId, request);
-
-            // Publicar a Kafka
-            CompletableFuture<SendResult<String, JobRequest>> future = kafkaTemplate.send(message);
-
-            future.whenComplete((result, ex) -> {
-                if (ex != null) {
-                    handlePublishFailure(jobExecutionId, ex);
-                } else {
-                    handlePublishSuccess(jobExecutionId, result);
-                }
-            });
+            // Crear el job en JobRunr con estado inicial
+            jobScheduler.enqueue(
+                    jobExecutionId,
+                    () -> this.sendToRemoteWorker(jobExecutionId, request)
+            );
             jobManagementOperations.startOrContinueJob(jobExecutionId);
 
             return JobStatusEnum.IN_PROGRESS;
@@ -71,13 +65,14 @@ public class JobOrderInitRemoteBatch {
     /**
      * Construye mensaje con headers de routing para filtrado
      */
-    private Message<JobRequest> buildMessageWithRoutingHeaders(UUID jobExecutionId, JobRequest request) {
+    private void sendToRemoteWorker(UUID jobExecutionId, JobRequest request) {
+
         String correlationId = generateCorrelationId();
         String jobRunrJobId = jobExecutionId.toString();
 
         log.info("🎯 JobRunr Job created - For Executor Job with ID: {}", jobRunrJobId);
 
-        return MessageBuilder
+        Message<JobRequest> message = MessageBuilder
                 .withPayload(request)
                 // Headers principales para routing
                 .setHeader(KafkaHeaders.TOPIC, jobRequestsTopic)
@@ -106,6 +101,17 @@ public class JobOrderInitRemoteBatch {
                 .setHeader("scheduled-at", request.getScheduledAt() != null ?
                         request.getScheduledAt().toString() : LocalDateTime.now().toString())
                 .build();
+
+        // Publicar a Kafka
+        CompletableFuture<SendResult<String, JobRequest>> future = kafkaTemplate.send(message);
+
+        future.whenComplete((result, ex) -> {
+            if (ex != null) {
+                handlePublishFailure(jobExecutionId, ex);
+            } else {
+                handlePublishSuccess(jobExecutionId, result);
+            }
+        });
     }
 
     /**

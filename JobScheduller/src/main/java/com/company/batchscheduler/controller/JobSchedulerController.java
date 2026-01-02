@@ -38,7 +38,7 @@ public class JobSchedulerController {
         jobScheduler.scheduleRecurrently(
                 request.getJobName(),
                 request.getCronExpression(),
-                () -> publisherForJobs.publishEventForRunRemoteJobs(request, null)
+                () -> publisherForJobs.executeRemoteJob(request, null)
         );
         Map<String, Object> response = new HashMap<>();
         response.put("jobId", jobId);
