@@ -8,12 +8,15 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jobrunr.jobs.Job;
 import org.jobrunr.jobs.JobDetails;
+import org.jobrunr.jobs.states.ProcessingState;
 import org.jobrunr.jobs.states.ScheduledState;
 import org.jobrunr.jobs.states.StateName;
 import org.jobrunr.scheduling.JobScheduler;
+import org.jobrunr.storage.BackgroundJobServerStatus;
 import org.jobrunr.storage.StorageProvider;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -26,31 +29,25 @@ public class JobManagementOperations {
 
     private final StorageProvider storageProvider;
 
-    @PersistenceContext
-    private EntityManager entityManager;
 
     public boolean updateJobStatus(String jobId, Integer progress) {
-        // Usar UPDATE con versión para evitar condiciones de carrera
-        int updated = entityManager.createNativeQuery("""
-            UPDATE jobrunr_jobrunr_jobs 
-            SET last_heartbeat = NOW(),
-                updated_at = NOW(),
-                progress = :progress,
-                version = version + 1
-            WHERE id = :jobId 
-              AND state NOT IN ('SUCCEEDED', 'FAILED', 'DELETED')
-              AND (last_heartbeat IS NULL OR last_heartbeat < NOW() - INTERVAL '5 minutes')
-            """)
-                .setParameter("jobId", jobId)
-                .setParameter("progress", progress)
-                .executeUpdate();
+        // 1. Obtener el job desde JobRunr
+        BackgroundJobServerStatus serverStatus = storageProvider.getBackgroundJobServers().get(0);
+        Job job = storageProvider.getJobById(UUID.fromString(jobId));
+        log.debug("serverStatus: " + serverStatus);
+        // 2. Actualizar metadata (forma correcta)
+        //JobDetails jobDetails = job.getJobDetails();
 
-        if (updated == 0) {
-            // Job podría estar completado o tener problemas
-            log.debug("Job podría estar completado o tener problemas");
-        }
-        return updated > 0;
+        // Opción A: Usar metadata del job
+        job.getMetadata().put("progress", progress);
+        job.getMetadata().put("lastHeartbeat", Instant.now());
+
+        // 3. Guardar
+        storageProvider.save(job);
+
+        return true;
     }
+
 
 
     public boolean completeSuccessJob(Job job, JobResult jobResult) {

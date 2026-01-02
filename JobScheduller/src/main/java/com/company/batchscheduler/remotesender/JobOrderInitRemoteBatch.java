@@ -17,6 +17,7 @@ import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.stereotype.Component;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -39,16 +40,23 @@ public class JobOrderInitRemoteBatch {
     @Job(name = "Job remoto")
     public JobStatusEnum executeRemoteJob(JobRequest request, JobContext jobContext) {
 
-        UUID jobExecutionId = jobContext.getJobId();
         jobContext.saveMetadata("remote", "true");
         jobContext.saveMetadata("nombre-Job", request.getJobName());
 
         request.setScheduledAt(LocalDateTime.now());
 
         try {
+            UUID jobExecutionId = jobContext.getJobId();
             this.sendToRemoteWorker(jobExecutionId, request);
 
-            jobManagementOperations.startOrContinueJob(jobExecutionId);
+            // Forzar que el job quede en PROCESSING indefinidamente
+            jobContext = JobContext.Null;
+
+            // Guardar metadata para tracking
+            jobContext.saveMetadata("sentToKafkaAt", Instant.now());
+            jobContext.saveMetadata("remoteWorkerNotified", true);
+            jobContext.saveMetadata("expectedCompletion",
+                    LocalDateTime.now().plusHours(24).toString());
 
             return JobStatusEnum.IN_PROGRESS;
 
