@@ -46,11 +46,8 @@ public class JobOrderInitRemoteBatch {
         request.setScheduledAt(LocalDateTime.now());
 
         try {
-            // Crear el job en JobRunr con estado inicial
-            jobScheduler.enqueue(
-                    jobExecutionId,
-                    () -> this.sendToRemoteWorker(jobExecutionId, request)
-            );
+            this.sendToRemoteWorker(jobExecutionId, request);
+
             jobManagementOperations.startOrContinueJob(jobExecutionId);
 
             return JobStatusEnum.IN_PROGRESS;
