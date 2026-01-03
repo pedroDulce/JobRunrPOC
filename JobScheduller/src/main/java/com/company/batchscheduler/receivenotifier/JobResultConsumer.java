@@ -58,7 +58,7 @@ public class JobResultConsumer {
     /**
      * Actualizar estado en JobRunr según tu JobResult
      */
-    private void updateJobRunrStatus(String jobrunrJobIdStr, JobResult result) {
+private void updateJobRunrStatus(String jobrunrJobIdStr, JobResult result) {
         try {
             UUID uuid = UUID.fromString(jobrunrJobIdStr);
             Job job = storageProvider.getJobById(new JobId(uuid));

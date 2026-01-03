@@ -8,7 +8,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jobrunr.jobs.annotations.Job;
 import org.jobrunr.jobs.context.JobContext;
-import org.jobrunr.server.BackgroundJobServer;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.KafkaHeaders;
@@ -30,7 +29,7 @@ public class JobOrderInitRemoteBatch {
     @Value("${kafka.topics.job-requests}")
     private String jobRequestsTopic;
 
-    private final BackgroundJobServer backgroundJobServer;
+    //private final BackgroundJobServer backgroundJobServer;
     private final JobManagementOperations jobManagementOperations;
     private final KafkaTemplate<String, JobRequest> kafkaTemplate;
 
@@ -56,9 +55,6 @@ public class JobOrderInitRemoteBatch {
             jobContext.saveMetadata("remoteWorkerNotified", true);
             jobContext.saveMetadata("expectedCompletion",
                     LocalDateTime.now().plusHours(2).toString());
-
-            org.jobrunr.jobs.Job job = this.jobManagementOperations.getById(jobExecutionId);
-            job.startProcessingOn(backgroundJobServer);
 
             return JobStatusEnum.IN_PROGRESS;
 
