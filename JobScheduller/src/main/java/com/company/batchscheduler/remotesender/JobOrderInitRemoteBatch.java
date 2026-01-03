@@ -56,6 +56,8 @@ public class JobOrderInitRemoteBatch {
             jobContext.saveMetadata("expectedCompletion",
                     LocalDateTime.now().plusHours(2).toString());
 
+            log.info("Job {} is IN_PROGRESS", jobExecutionId);
+            jobManagementOperations.startOrContinueJob(jobExecutionId);
             return JobStatusEnum.IN_PROGRESS;
 
         } catch (Exception e) {

@@ -128,10 +128,9 @@ private void updateJobRunrStatus(String jobrunrJobIdStr, JobResult result) {
         log.info("✅ Job {} completed successfully - {}", job.getId(), result.getMessage());
 
         // Si el job en JobRunr aún está en PROCESSING, forzar éxito
-        if (job.getState() == org.jobrunr.jobs.states.StateName.PROCESSING) {
-            log.warn("Job {} is still PROCESSING in JobRunr, marking as succeeded", job.getId());
-            jobManagementOperations.completeSuccessJob(job, result);
-        }
+        log.warn("Job {} is still PROCESSING in JobRunr, marking as succeeded", job.getId());
+        jobManagementOperations.completeSuccessJob(job, result);
+
     }
 
     /**
