@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -29,6 +30,17 @@ public class JobManagementOperations {
 
     private final StorageProvider storageProvider;
 
+    public Job getById(UUID jobId){
+        return storageProvider.getJobById(jobId);
+    }
+
+    public BackgroundJobServerStatus getFirstBackgroundJobServer() {
+        List<BackgroundJobServerStatus> servers = storageProvider.getBackgroundJobServers();
+        if (servers.isEmpty()) {
+            throw new IllegalStateException("No active background job servers");
+        }
+        return servers.get(0);
+    }
 
     public boolean updateJobStatus(String jobId, Integer progress) {
         // 1. Obtener el job desde JobRunr

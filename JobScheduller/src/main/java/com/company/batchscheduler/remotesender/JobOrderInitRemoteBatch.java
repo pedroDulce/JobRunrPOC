@@ -8,7 +8,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jobrunr.jobs.annotations.Job;
 import org.jobrunr.jobs.context.JobContext;
-import org.jobrunr.scheduling.JobScheduler;
+import org.jobrunr.server.BackgroundJobServer;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.KafkaHeaders;
@@ -30,9 +30,9 @@ public class JobOrderInitRemoteBatch {
     @Value("${kafka.topics.job-requests}")
     private String jobRequestsTopic;
 
+    private final BackgroundJobServer backgroundJobServer;
     private final JobManagementOperations jobManagementOperations;
     private final KafkaTemplate<String, JobRequest> kafkaTemplate;
-    private final JobScheduler jobScheduler;
 
     /**
      * Publica un evento de job con headers de routing para filtrado
@@ -49,14 +49,16 @@ public class JobOrderInitRemoteBatch {
             UUID jobExecutionId = jobContext.getJobId();
             this.sendToRemoteWorker(jobExecutionId, request);
 
-            // Forzar que el job quede en PROCESSING indefinidamente
-            jobContext = JobContext.Null;
-
             // Guardar metadata para tracking
-            jobContext.saveMetadata("sentToKafkaAt", Instant.now());
+            jobContext.saveMetadata("progress", 25);
+            jobContext.saveMetadata("progressMessage", "Processing data...");
+            jobContext.saveMetadata("lastUpdate", Instant.now());
             jobContext.saveMetadata("remoteWorkerNotified", true);
             jobContext.saveMetadata("expectedCompletion",
-                    LocalDateTime.now().plusHours(24).toString());
+                    LocalDateTime.now().plusHours(2).toString());
+
+            org.jobrunr.jobs.Job job = this.jobManagementOperations.getById(jobExecutionId);
+            job.startProcessingOn(backgroundJobServer);
 
             return JobStatusEnum.IN_PROGRESS;
 
@@ -65,6 +67,8 @@ public class JobOrderInitRemoteBatch {
             return JobStatusEnum.FAILED;
         }
     }
+
+
 
 
     /**

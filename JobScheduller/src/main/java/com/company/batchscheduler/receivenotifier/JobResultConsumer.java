@@ -61,12 +61,10 @@ public class JobResultConsumer {
     private void updateJobRunrStatus(String jobrunrJobIdStr, JobResult result) {
         try {
             UUID uuid = UUID.fromString(jobrunrJobIdStr);
-            JobId jobId = new JobId(uuid);
-
-            Job job = storageProvider.getJobById(jobId);
+            Job job = storageProvider.getJobById(new JobId(uuid));
 
             if (job != null) {
-                log.debug("Found JobRunr job {} with state: {}", jobId, job.getState());
+                log.debug("Found JobRunr job {} with state: {}", uuid, job.getState());
 
                 switch (result.getStatus()) {
                     case IN_PROGRESS:
@@ -86,14 +84,14 @@ public class JobResultConsumer {
 
                     case CANCELLED:
                         // Eliminar de JobRunr
-                        handleCancelled(jobId);
+                        handleCancelled(job);
                         break;
 
                     default:
-                        log.warn("Unknown status {} for job {}", result.getStatus(), jobId);
+                        log.warn("Unknown status {} for job {}", result.getStatus(), job.getId());
                 }
             } else {
-                log.warn("JobRunr job {} not found in storage", jobId);
+                log.warn("JobRunr job {} not found in storage", job.getId());
             }
 
         } catch (IllegalArgumentException e) {
@@ -157,12 +155,12 @@ public class JobResultConsumer {
     /**
      * Manejar estado CANCELLED
      */
-    private void handleCancelled(JobId jobId) {
+    private void handleCancelled(Job job) {
         try {
-            jobScheduler.delete(jobId);
-            log.info("Job {} cancelled", jobId);
+            jobScheduler.delete(job.getId());
+            log.info("Job {} cancelled", job.getId());
         } catch (Exception e) {
-            log.error("Failed to cancel job {}: {}", jobId, e.getMessage());
+            log.error("Failed to cancel job {}: {}", job.getId(), e.getMessage());
         }
     }
 
