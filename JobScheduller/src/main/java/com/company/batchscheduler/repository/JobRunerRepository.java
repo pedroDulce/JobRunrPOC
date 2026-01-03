@@ -1,5 +1,6 @@
 package com.company.batchscheduler.repository;
 
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -22,6 +23,7 @@ public class JobRunerRepository {
      * @param jobId ID del trabajo
      * @return número de filas actualizadas
      */
+    @Transactional
     public boolean updateJobToProcessing(UUID jobId) {
         // Primero: Bloquear la fila para evitar condiciones de carrera
         String lockSql = "SELECT id FROM jobrunr_jobs WHERE id = ? FOR UPDATE";
@@ -30,12 +32,12 @@ public class JobRunerRepository {
         String updateSql = """
             UPDATE jobrunr_jobs SET
             state = 'PROCESSING',
-            updatedAt = ?,
-                version = version + 1
+            updatedAt = NOW(),
+            version = version + 1
             WHERE id = ?
             """;
 
-        int updated = jdbcTemplate.update(updateSql, Instant.now(), jobId.toString());
+        int updated = jdbcTemplate.update(updateSql, jobId.toString());
         return updated > 0;
     }
 }

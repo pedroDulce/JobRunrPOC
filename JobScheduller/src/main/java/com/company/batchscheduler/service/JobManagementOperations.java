@@ -79,7 +79,7 @@ public class JobManagementOperations {
         succeededJob.getMetadata().put("fin", jobResult.getCompletedAt().toString());
 
         // 3. Persistir el Job completo
-        storageProvider.save(succeededJob);
+        //storageProvider.save(succeededJob);
 
         return true;
     }
