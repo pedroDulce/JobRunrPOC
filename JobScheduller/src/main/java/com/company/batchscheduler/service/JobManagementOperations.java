@@ -66,7 +66,12 @@ public class JobManagementOperations {
             log.error("Job no encontrado");
             return false;
         }
-        Job succeededJob = job.succeeded();
+        Job succeededJob;
+        if (!job.getState().name().contentEquals(StateName.SUCCEEDED.name())) {
+            succeededJob = job.succeeded();
+        } else {
+            succeededJob = job;
+        }
         // 2. Añadir metadata (esto sí es mutable)
         succeededJob.getMetadata().put("finalizado", "De forma exitosa. " + jobResult.getMessage());
         succeededJob.getMetadata().put("duracionMs", String.valueOf(jobResult.getDurationMs()));

@@ -40,7 +40,6 @@ jobrunr:
     password: admin
   database:
     type: sql
-    table-prefix: jobrunr_
     skip-create: false
 
 # Topics de Kafka
