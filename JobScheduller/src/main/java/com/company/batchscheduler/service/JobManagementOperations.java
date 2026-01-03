@@ -2,24 +2,19 @@ package com.company.batchscheduler.service;
 
 import com.company.batchscheduler.repository.JobRunerRepository;
 import common.batch.dto.JobResult;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jobrunr.jobs.Job;
 import org.jobrunr.jobs.JobDetails;
-import org.jobrunr.jobs.states.ProcessingState;
 import org.jobrunr.jobs.states.ScheduledState;
 import org.jobrunr.jobs.states.StateName;
-import org.jobrunr.scheduling.JobScheduler;
-import org.jobrunr.storage.BackgroundJobServerStatus;
 import org.jobrunr.storage.StorageProvider;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -32,18 +27,7 @@ public class JobManagementOperations {
     private final StorageProvider storageProvider;
     private final JobRunerRepository jobRunerRepository;
 
-    public Job getById(UUID jobId){
-        return storageProvider.getJobById(jobId);
-    }
-
-    public BackgroundJobServerStatus getFirstBackgroundJobServer() {
-        List<BackgroundJobServerStatus> servers = storageProvider.getBackgroundJobServers();
-        if (servers.isEmpty()) {
-            throw new IllegalStateException("No active background job servers");
-        }
-        return servers.get(0);
-    }
-
+    @Transactional(propagation = Propagation.REQUIRES_NEW, timeout = 10)
     public boolean updateJobStatus(String jobId, String state, Integer progress) {
         UUID uid = UUID.fromString(jobId);
         Job job = storageProvider.getJobById(uid);
@@ -59,42 +43,41 @@ public class JobManagementOperations {
         return true;
     }
 
-
-
+    @Transactional
     public boolean completeSuccessJob(Job job, JobResult jobResult) {
         if (job == null) {
             log.error("Job no encontrado");
             return false;
         }
-        Job succeededJob;
-        /*if (!job.getState().name().contentEquals(StateName.SUCCEEDED.name())) {
-            succeededJob = job.succeeded();
-        } else {*/
-            succeededJob = job;
-        //}
+
         // 2. Añadir metadata (esto sí es mutable)
-        succeededJob.getMetadata().put("finalizado", "De forma exitosa. " + jobResult.getMessage());
-        succeededJob.getMetadata().put("duracionMs", String.valueOf(jobResult.getDurationMs()));
-        succeededJob.getMetadata().put("inicio", jobResult.getStartedAt().toString());
-        succeededJob.getMetadata().put("fin", jobResult.getCompletedAt().toString());
+        job.getMetadata().put("finalizado", "De forma exitosa. " + jobResult.getMessage());
+        job.getMetadata().put("duracionMs", String.valueOf(jobResult.getDurationMs()));
+        job.getMetadata().put("inicio", jobResult.getStartedAt().toString());
+        job.getMetadata().put("fin", jobResult.getCompletedAt().toString());
 
         // 3. Persistir el Job completo
-        storageProvider.save(succeededJob);
+        storageProvider.save(job);
 
-        updateJobStatus(job.getId().toString(), StateName.SUCCEEDED.name(), 100);
+        //updateJobStatus(job.getId().toString(), StateName.SUCCEEDED.name(), 100);
+
+        Job succeededJob = job.succeeded();
+
+        // 6. Guardar el job con nuevo estado
+        storageProvider.save(succeededJob);
 
         return true;
     }
 
 
+    @Transactional
     public boolean failJob(Job job, JobResult jobResult) {
         if (job == null) {
             log.error("Job no encontrado");
             return false;
         }
-        Job failedJob = job;
-        /*Job failedJob = job.failed(jobResult.getMessage(), new Exception("Error: " + jobResult.getMessage()
-                + ". Detalles: " + jobResult.getErrorDetails()));*/
+        Job failedJob = job.failed(jobResult.getMessage(), new Exception("Error: " + jobResult.getMessage()
+                + ". Detalles: " + jobResult.getErrorDetails()));
         failedJob.getMetadata().put("finalizado", "Con errores: " + jobResult.getMessage());
         failedJob.getMetadata().put("errorDetails", jobResult.getErrorDetails());
         failedJob.getMetadata().put("duración",jobResult.getDurationMs());
@@ -108,14 +91,13 @@ public class JobManagementOperations {
         return true;
     }
 
+    @Transactional
     public boolean startOrContinueJob(UUID jobId) {
         return updateJobStatus(jobId.toString(), "PROCESSING",50);
     }
 
 
-    /**
-     * Eliminar un job por su ID
-     */
+    @Transactional
     public boolean deletePlannedJob(String jobId) {
         try {
             int deleted = storageProvider.deletePermanently(UUID.fromString(jobId));
@@ -166,9 +148,7 @@ public class JobManagementOperations {
         }
     }
 
-    /**
-     * Eliminar un job recurrente por nombre
-     */
+    @Transactional
     public boolean deleteRecurringJobByName(String jobName) {
         try {
             int deleted = storageProvider.deleteRecurringJob(jobName);
