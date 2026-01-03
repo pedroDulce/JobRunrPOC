@@ -24,20 +24,20 @@ public class JobRunerRepository {
      * @return número de filas actualizadas
      */
     @Transactional
-    public boolean updateJobToProcessing(UUID jobId) {
+    public boolean updateJobToProcessing(UUID jobId, String state) {
         // Primero: Bloquear la fila para evitar condiciones de carrera
         String lockSql = "SELECT id FROM jobrunr_jobs WHERE id = ? FOR UPDATE";
         jdbcTemplate.queryForObject(lockSql, String.class, jobId.toString());
 
         String updateSql = """
             UPDATE jobrunr_jobs SET
-            state = 'PROCESSING',
+            state = ?,
             updatedAt = NOW(),
             version = version + 1
             WHERE id = ?
             """;
 
-        int updated = jdbcTemplate.update(updateSql, jobId.toString());
+        int updated = jdbcTemplate.update(updateSql, state, jobId.toString());
         return updated > 0;
     }
 }

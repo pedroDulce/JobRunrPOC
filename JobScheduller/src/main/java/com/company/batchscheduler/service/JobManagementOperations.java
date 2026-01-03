@@ -44,14 +44,14 @@ public class JobManagementOperations {
         return servers.get(0);
     }
 
-    public boolean updateJobStatus(String jobId, Integer progress) {
+    public boolean updateJobStatus(String jobId, String state, Integer progress) {
         UUID uid = UUID.fromString(jobId);
         Job job = storageProvider.getJobById(uid);
         // Opción A: Usar metadata del job
         job.getMetadata().put("progress", progress);
         job.getMetadata().put("lastHeartbeat", Instant.now());
 
-        jobRunerRepository.updateJobToProcessing(uid);
+        jobRunerRepository.updateJobToProcessing(uid, state);
 
         // 3. Guardar
         storageProvider.save(job);
@@ -67,11 +67,11 @@ public class JobManagementOperations {
             return false;
         }
         Job succeededJob;
-        if (!job.getState().name().contentEquals(StateName.SUCCEEDED.name())) {
+        /*if (!job.getState().name().contentEquals(StateName.SUCCEEDED.name())) {
             succeededJob = job.succeeded();
-        } else {
+        } else {*/
             succeededJob = job;
-        }
+        //}
         // 2. Añadir metadata (esto sí es mutable)
         succeededJob.getMetadata().put("finalizado", "De forma exitosa. " + jobResult.getMessage());
         succeededJob.getMetadata().put("duracionMs", String.valueOf(jobResult.getDurationMs()));
@@ -80,6 +80,8 @@ public class JobManagementOperations {
 
         // 3. Persistir el Job completo
         storageProvider.save(succeededJob);
+
+        updateJobStatus(job.getId().toString(), StateName.SUCCEEDED.name(), 100);
 
         return true;
     }
@@ -90,14 +92,16 @@ public class JobManagementOperations {
             log.error("Job no encontrado");
             return false;
         }
-        Job failedJob = job.failed(jobResult.getMessage(), new Exception("Error: " + jobResult.getMessage()
-                + ". Detalles: " + jobResult.getErrorDetails()));
+        Job failedJob = job;
+        /*Job failedJob = job.failed(jobResult.getMessage(), new Exception("Error: " + jobResult.getMessage()
+                + ". Detalles: " + jobResult.getErrorDetails()));*/
         failedJob.getMetadata().put("finalizado", "Con errores: " + jobResult.getMessage());
         failedJob.getMetadata().put("errorDetails", jobResult.getErrorDetails());
         failedJob.getMetadata().put("duración",jobResult.getDurationMs());
         failedJob.getMetadata().put("momento de iniciar",jobResult.getStartedAt());
         failedJob.getMetadata().put("momento de finalización",jobResult.getCompletedAt());
 
+        updateJobStatus(job.getId().toString(), StateName.FAILED.name(), 100);
         // 3. Persistir el Job completo
         storageProvider.save(failedJob);
 
@@ -105,7 +109,7 @@ public class JobManagementOperations {
     }
 
     public boolean startOrContinueJob(UUID jobId) {
-        return updateJobStatus(jobId.toString(), 50 /*proceso al 50%*/);
+        return updateJobStatus(jobId.toString(), "PROCESSING",50);
     }
 
 

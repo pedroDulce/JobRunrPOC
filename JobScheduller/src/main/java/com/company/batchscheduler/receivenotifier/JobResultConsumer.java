@@ -14,6 +14,7 @@ import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.stereotype.Component;
 
+import java.time.Instant;
 import java.util.UUID;
 
 @Slf4j
@@ -113,6 +114,15 @@ private void updateJobRunrStatus(String jobrunrJobIdStr, JobResult result) {
         // En JobRunr, un job pasa automáticamente a PROCESSING cuando se ejecuta
         // Podemos verificar y loggear
         if (job.getState() == org.jobrunr.jobs.states.StateName.PROCESSING) {
+            // Opción A: Usar metadata del job
+            if (job.getMetadata().get("progress") == null) {
+                job.getMetadata().put("progress", 25);
+            } else {
+                job.getMetadata().put("progress", (Integer) job.getMetadata().get("progress") + 1);
+            }
+            job.getMetadata().put("lastHeartbeat", Instant.now());
+            // 3. Guardar
+            storageProvider.save(job);
             log.debug("Job {} is already PROCESSING in JobRunr", jobId);
         } else {
             log.info("Job {} is IN_PROGRESS but JobRunr state is: {}", jobId, job.getState());
