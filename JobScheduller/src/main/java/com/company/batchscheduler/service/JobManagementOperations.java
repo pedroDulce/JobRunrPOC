@@ -1,5 +1,6 @@
 package com.company.batchscheduler.service;
 
+import com.company.batchscheduler.repository.JobRunerRepository;
 import common.batch.dto.JobResult;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -29,6 +30,7 @@ import java.util.UUID;
 public class JobManagementOperations {
 
     private final StorageProvider storageProvider;
+    private final JobRunerRepository jobRunerRepository;
 
     public Job getById(UUID jobId){
         return storageProvider.getJobById(jobId);
@@ -43,16 +45,13 @@ public class JobManagementOperations {
     }
 
     public boolean updateJobStatus(String jobId, Integer progress) {
-        // 1. Obtener el job desde JobRunr
-        BackgroundJobServerStatus serverStatus = storageProvider.getBackgroundJobServers().get(0);
-        Job job = storageProvider.getJobById(UUID.fromString(jobId));
-        log.debug("serverStatus: " + serverStatus);
-        // 2. Actualizar metadata (forma correcta)
-        //JobDetails jobDetails = job.getJobDetails();
-
+        UUID uid = UUID.fromString(jobId);
+        Job job = storageProvider.getJobById(uid);
         // Opción A: Usar metadata del job
         job.getMetadata().put("progress", progress);
         job.getMetadata().put("lastHeartbeat", Instant.now());
+
+        jobRunerRepository.updateJobToProcessing(uid);
 
         // 3. Guardar
         storageProvider.save(job);
