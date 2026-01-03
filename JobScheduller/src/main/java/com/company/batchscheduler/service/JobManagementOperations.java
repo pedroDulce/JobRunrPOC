@@ -76,16 +76,19 @@ public class JobManagementOperations {
             log.error("Job no encontrado");
             return false;
         }
+
+        job.getMetadata().put("finalizado", "Con errores: " + jobResult.getMessage());
+        job.getMetadata().put("errorDetails", jobResult.getErrorDetails());
+        job.getMetadata().put("duración",jobResult.getDurationMs());
+        job.getMetadata().put("momento de iniciar",jobResult.getStartedAt());
+        job.getMetadata().put("momento de finalización",jobResult.getCompletedAt());
+
+        //updateJobStatus(job.getId().toString(), StateName.FAILED.name(), 100);
+        // 3. Persistir el Job completo
+        storageProvider.save(job);
+
         Job failedJob = job.failed(jobResult.getMessage(), new Exception("Error: " + jobResult.getMessage()
                 + ". Detalles: " + jobResult.getErrorDetails()));
-        failedJob.getMetadata().put("finalizado", "Con errores: " + jobResult.getMessage());
-        failedJob.getMetadata().put("errorDetails", jobResult.getErrorDetails());
-        failedJob.getMetadata().put("duración",jobResult.getDurationMs());
-        failedJob.getMetadata().put("momento de iniciar",jobResult.getStartedAt());
-        failedJob.getMetadata().put("momento de finalización",jobResult.getCompletedAt());
-
-        updateJobStatus(job.getId().toString(), StateName.FAILED.name(), 100);
-        // 3. Persistir el Job completo
         storageProvider.save(failedJob);
 
         return true;
