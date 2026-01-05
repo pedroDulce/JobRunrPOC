@@ -1,5 +1,6 @@
 package com.company.batchscheduler.receivenotifier;
 
+import com.company.batchscheduler.util.DateTimeUtil;
 import common.batch.dto.JobResult;
 import common.batch.dto.JobStatusEnum;
 import lombok.RequiredArgsConstructor;
@@ -13,7 +14,6 @@ import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.stereotype.Component;
 
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -105,7 +105,7 @@ public class JobResultConsumer {
     /**
      * Manejar estado IN_PROGRESS
      */
-    private void handleInProgress(Job job, JobResult result) {
+    private void handleInProgress(Job job, JobResult jobResult) {
 
         UUID jobUuid = job.getId();
         JobId jobId = new JobId(jobUuid);
@@ -116,11 +116,14 @@ public class JobResultConsumer {
             job.getMetadata().put("progress", (Integer) job.getMetadata().get("progress") + 1);
         }
         List<String> existingLabels = new ArrayList<>();
-        existingLabels.add("EN EJECUCIÓN");
+        existingLabels.add("EN EJECUCIÓN" +
+                ((job.getMetadata().get("progress") == null)
+                        ? " (iniciado el " + DateTimeUtil.formatear(jobResult.getStartedAt()) + ")"
+                        : ""));
         existingLabels.add("Progreso: " + job.getMetadata().get("progress") + "%");
-        existingLabels.add("Último latido: " + Instant.now());
+        existingLabels.add("Último latido: " + DateTimeUtil.formatNow());
 
-        job.getMetadata().put("lastHeartbeat", Instant.now());
+        job.getMetadata().put("lastHeartbeat", DateTimeUtil.formatNow());
 
         job.setLabels(existingLabels);
 
@@ -140,16 +143,16 @@ public class JobResultConsumer {
         UUID jobUuid = job.getId();
 
         job.getMetadata().put("progress", 100);
-        job.getMetadata().put("lastHeartbeat", Instant.now());
+        job.getMetadata().put("lastHeartbeat", DateTimeUtil.formatNow());
         job.getMetadata().put("finalizado", "De forma exitosa. " + jobResult.getMessage());
         job.getMetadata().put("duracionMs", String.valueOf(jobResult.getDurationMs()));
-        job.getMetadata().put("inicio", jobResult.getStartedAt().toString());
-        job.getMetadata().put("fin", jobResult.getCompletedAt().toString());
+        job.getMetadata().put("inicio", DateTimeUtil.formatear(jobResult.getStartedAt()));
+        job.getMetadata().put("fin", DateTimeUtil.formatear(jobResult.getCompletedAt()));
 
         List<String> existingLabels =  new ArrayList<>();
         existingLabels.add("COMPLETADO SIN ERRORES");
-        existingLabels.add("Progreso: 100%");
-        existingLabels.add("Duración (ms)" + jobResult.getDurationMs());
+        existingLabels.add("Finalizado en " + DateTimeUtil.formatNow());
+        existingLabels.add("Duración (seg.): " + jobResult.getDurationMs() / 1000);
         job.setLabels(existingLabels);
 
         // 3. Guardar
@@ -167,14 +170,14 @@ public class JobResultConsumer {
 
         job.getMetadata().put("finalizado", "Con errores: " + jobResult.getMessage());
         job.getMetadata().put("errorDetails", jobResult.getErrorDetails());
-        job.getMetadata().put("duración (ms)",jobResult.getDurationMs());
-        job.getMetadata().put("inicio",jobResult.getStartedAt());
-        job.getMetadata().put("fin",jobResult.getCompletedAt());
+        job.getMetadata().put("duración (ms)", jobResult.getDurationMs());
+        job.getMetadata().put("inicio", DateTimeUtil.formatear(jobResult.getStartedAt()));
+        job.getMetadata().put("fin", DateTimeUtil.formatear(jobResult.getCompletedAt()));
 
         List<String> existingLabels = job.getLabels();
         existingLabels.add("TRABAJO FALLIDO");
         existingLabels.add("Error: " + jobResult.getMessage() + ". Detalle Error: " + jobResult.getErrorDetails());
-        existingLabels.add("Finalizado en: " + jobResult.getCompletedAt());
+        existingLabels.add("Finalizado en: " + DateTimeUtil.formatear(jobResult.getCompletedAt()));
         job.setLabels(existingLabels);
         // 3. Guardar
         storageProvider.save(job);
@@ -193,5 +196,6 @@ public class JobResultConsumer {
             log.error("Failed to cancel job {}: {}", job.getId(), e.getMessage());
         }
     }
+
 
 }
