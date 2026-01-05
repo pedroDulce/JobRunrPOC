@@ -25,6 +25,8 @@ public class JobResultConsumer {
     private final JobManagementOperations jobManagementOperations;
     private final StorageProvider storageProvider;
     private final JobScheduler jobScheduler;
+    //private final TrackingJobRepository trackingJobRepository;
+
 
     @KafkaListener(
             topics = "${kafka.topics.job-results}",
@@ -45,11 +47,17 @@ public class JobResultConsumer {
                     result.getStatus().toString().contentEquals(JobStatusEnum.FAILED.toString()) ? result.getErrorDetails() : result.getMessage(),
                     result.getStatus());
 
-            if (jobrunrJobIdStr != null && !jobrunrJobIdStr.isEmpty()) {
+            /*if (jobrunrJobIdStr != null && !jobrunrJobIdStr.isEmpty()) {
                 updateJobRunrStatus(jobrunrJobIdStr, result);
             } else {
                 log.warn("No JobRunr Job ID found for job {}", jobrunrJobIdStr);
-            }
+            }*/
+            jobScheduler.enqueue(() ->
+                    cerrarJobExterno(
+                            jobrunrJobIdStr,
+                            result
+                    )
+            );
 
         } catch (Exception e) {
             log.error("Error processing job result for {}: {}", jobrunrJobIdHeader, e.getMessage(), e);
@@ -59,7 +67,7 @@ public class JobResultConsumer {
     /**
      * Actualizar estado en JobRunr según tu JobResult
      */
-private void updateJobRunrStatus(String jobrunrJobIdStr, JobResult result) {
+    private void updateJobRunrStatus(String jobrunrJobIdStr, JobResult result) {
         try {
             UUID uuid = UUID.fromString(jobrunrJobIdStr);
             Job job = storageProvider.getJobById(new JobId(uuid));
@@ -69,8 +77,8 @@ private void updateJobRunrStatus(String jobrunrJobIdStr, JobResult result) {
 
                 switch (result.getStatus()) {
                     case IN_PROGRESS:
-                        // JobRunr ya debería estar en PROCESSING
-                        handleInProgress(job, result);
+                        // No tocamos JobRuner
+                        //handleInProgress(job, result);
                         break;
 
                     case COMPLETED:
@@ -138,7 +146,8 @@ private void updateJobRunrStatus(String jobrunrJobIdStr, JobResult result) {
         log.info("✅ Job {} completed successfully - {}", job.getId(), result.getMessage());
 
         // Si el job en JobRunr aún está en PROCESSING, forzar éxito
-        log.warn("Job {} is still PROCESSING in JobRunr, marking as succeeded", job.getId());
+        log.warn("Job {} is still REMOTE PROCESSING in JobRunr, marking as succeeded", job.getId());
+
         jobManagementOperations.completeSuccessJob(job, result);
 
     }
@@ -151,15 +160,41 @@ private void updateJobRunrStatus(String jobrunrJobIdStr, JobResult result) {
         UUID jobUuid = job.getId();
         JobId jobId = new JobId(jobUuid);
 
-        log.error("❌ Job {} failed: {}", jobId, result.getErrorDetails());
+        jobManagementOperations.failJob(job, result);
 
-        // El job en JobRunr aún está en PROCESSING o completado por error: marcarlo como fallido
-        if (job.getState() == org.jobrunr.jobs.states.StateName.PROCESSING ||
-                job.getState() == org.jobrunr.jobs.states.StateName.SUCCEEDED) {
-            log.warn("Job {} is PROCESSING in JobRunr but failed in executor", jobId);
-            jobManagementOperations.failJob(job, result);
-        }
     }
+
+
+    /**
+     * Job de cierre lógico del proceso remoto
+     */
+    private void cerrarJobExterno(String jobId, JobResult result) {
+
+        log.info("Cerrando ejecución remota del job [{}] - success={}",
+                jobId, result.isSuccess());
+
+        // 1. Persistencia de estado FINAL (fuente de verdad)
+        /*trackingJobRepository.updateFinalState(
+                jobId,
+                result.isSuccess() ? "SUCCEEDED" : "FAILED",
+                result.getMessage(),
+                result.getStartedAt(),
+                result.getCompletedAt(),
+                result.getDurationMs()
+        );*/
+
+        // 2. Observabilidad (logs / métricas)
+        if (result.isSuccess()) {
+            log.info("Job remoto [{}] finalizado correctamente", jobId);
+        } else {
+            log.error("Job remoto [{}] finalizado con error: {}",
+                    jobId, result.getMessage());
+        }
+
+        // 3. (Opcional) Disparar notificación, auditoría o post-proceso
+        // jobScheduler.enqueue(() -> notificarResultado(jobId, result));
+    }
+
 
     /**
      * Manejar estado CANCELLED

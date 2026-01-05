@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jobrunr.jobs.JobId;
+import org.jobrunr.scheduling.JobBuilder;
 import org.jobrunr.scheduling.JobScheduler;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
@@ -76,10 +78,15 @@ public class JobSchedulerController {
     @PostMapping("/inmediate-remote-async")
     public ResponseEntity<Map<String, Object>> scheduleOnceExecutionJob(@RequestBody JobRequest request) {
 
-
-        JobId jobId = jobScheduler.enqueue(() -> publisherForJobs.executeRemoteJob(request, null));
+        UUID jobId = UUID.randomUUID();
         request.setJobId(jobId.toString());
 
+        // JobRunr puede serializar estos parámetros String correctamente
+        jobScheduler.schedule(
+                jobId,
+                Instant.now(),
+                () -> publisherForJobs.dispararJobRemoto(request, null)
+        );
         Map<String, Object> response = new HashMap<>();
         response.put("jobId", jobId.toString());
         response.put("jobName", request.getJobName());
@@ -91,7 +98,7 @@ public class JobSchedulerController {
         response.put("message", "Job programado con éxito.");
         response.put("dashboardUrl", "http://localhost:8000");
 
-        log.info("✅ Job programado para ser lanzado de forma inmediata: {}: {}", jobId, LocalDateTime.now());
+        log.info("✅ Job programado: {} con cron: {}", jobId, request.getCronExpression());
 
         return ResponseEntity.ok(response);
     }

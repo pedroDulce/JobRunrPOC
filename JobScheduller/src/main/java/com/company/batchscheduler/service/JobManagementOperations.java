@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jobrunr.jobs.Job;
 import org.jobrunr.jobs.JobDetails;
+import org.jobrunr.jobs.context.JobContext;
 import org.jobrunr.jobs.states.ScheduledState;
 import org.jobrunr.jobs.states.StateName;
 import org.jobrunr.storage.StorageProvider;
@@ -29,13 +30,6 @@ public class JobManagementOperations {
     @Transactional//(propagation = Propagation.REQUIRES_NEW, timeout = 10)
     public boolean updateJobStatus(String jobId, String state, Integer progress) {
         UUID uid = UUID.fromString(jobId);
-        Job job = storageProvider.getJobById(uid);
-        // Opción A: Usar metadata del job
-        job.getMetadata().put("progress", progress);
-        job.getMetadata().put("lastHeartbeat", Instant.now());
-
-        // 3. Guardar
-        storageProvider.save(job);
 
         jobRunerRepository.updateJobToProcessing(uid, state);
 
@@ -56,12 +50,14 @@ public class JobManagementOperations {
         job.getMetadata().put("fin", jobResult.getCompletedAt().toString());
 
         // 3. Persistir el Job completo
-        storageProvider.save(job);
+        //storageProvider.save(job);
 
         Job succeededJob = job.succeeded();
 
         // 6. Guardar el job con nuevo estado
-        storageProvider.save(succeededJob);
+        //storageProvider.save(succeededJob);
+
+        log.info("succeededJob states: {} ", succeededJob.getJobStates());
 
         return true;
     }
@@ -81,7 +77,7 @@ public class JobManagementOperations {
         job.getMetadata().put("momento de finalización",jobResult.getCompletedAt());
 
         // 3. Persistir el Job completo
-        storageProvider.save(job);
+        //storageProvider.save(job);
 
         Job failedJob = job.failed(jobResult.getMessage(), new Exception("Error: " + jobResult.getMessage()
                 + ". Detalles: " + jobResult.getErrorDetails()));

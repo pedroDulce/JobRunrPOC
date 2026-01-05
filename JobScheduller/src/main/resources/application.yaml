@@ -34,7 +34,7 @@ jobrunr:
     poll-interval-in-seconds: 15
     worker-count: 10
     retry-policy:
-      max-retries: 2
+      max-retries: 0
   dashboard:
     enabled: true
     port: 8000

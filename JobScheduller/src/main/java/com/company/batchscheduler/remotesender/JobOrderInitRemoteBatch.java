@@ -6,6 +6,7 @@ import common.batch.dto.JobStatusEnum;
 import common.batch.dto.JobType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.jobrunr.JobRunrException;
 import org.jobrunr.jobs.annotations.Job;
 import org.jobrunr.jobs.context.JobContext;
 import org.springframework.beans.factory.annotation.Value;
@@ -29,13 +30,36 @@ public class JobOrderInitRemoteBatch {
     @Value("${kafka.topics.job-requests}")
     private String jobRequestsTopic;
 
-    //private final BackgroundJobServer backgroundJobServer;
     private final JobManagementOperations jobManagementOperations;
     private final KafkaTemplate<String, JobRequest> kafkaTemplate;
 
-    /**
-     * Publica un evento de job con headers de routing para filtrado
-     */
+    @Job(name= "Job simulando fallo forzoso para no poner a SUCCEDED el job remoto que aún no ha empezado",
+            labels = {"enviando orden de trabajoa job remoto", "priority-high"})
+    public void dispararJobRemoto(JobRequest request, JobContext jobContext) {
+
+        jobContext.saveMetadata("remote", "true");
+        jobContext.saveMetadata("nombre-Job", request.getJobName());
+
+        request.setScheduledAt(LocalDateTime.now());
+        UUID jobExecutionId = jobContext.getJobId();
+        this.sendToRemoteWorker(jobExecutionId, request);
+
+        // Guardar metadata para tracking
+        jobContext.saveMetadata("progress", 25);
+        jobContext.saveMetadata("progressMessage", "Processing data...");
+        jobContext.saveMetadata("lastUpdate", Instant.now());
+        jobContext.saveMetadata("remoteWorkerNotified", true);
+        jobContext.saveMetadata("expectedCompletion",
+                LocalDateTime.now().plusHours(2).toString());
+
+        log.info("Job {} is IN_PROGRESS", jobExecutionId);
+
+        throw new JobRunrException(
+                "Ejecución delegada en job remoto: finalización controlada externamente."
+        );
+    }
+
+
     @Job(name = "Job remoto")
     public JobStatusEnum executeRemoteJob(JobRequest request, JobContext jobContext) {
 
