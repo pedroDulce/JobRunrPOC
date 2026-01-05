@@ -30,7 +30,7 @@ public class JobOrderInitRemoteBatch {
 
     private final KafkaTemplate<String, JobRequest> kafkaTemplate;
 
-    @Job(name= "Job con lanzamiento asíncrono")
+    @Job(name= "Async Job")
     public void dispararJobRemoto(JobRequest request, JobContext jobContext) {
 
         jobContext.saveMetadata("remote", "true");
