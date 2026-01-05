@@ -30,7 +30,7 @@ public class JobOrderInitRemoteBatch {
 
     private final KafkaTemplate<String, JobRequest> kafkaTemplate;
 
-    @Job(name= "Job simulando finalización exitosa del job remoto que aún no haya empezado")
+    @Job(name= "Job con lanzamiento asíncrono")
     public void dispararJobRemoto(JobRequest request, JobContext jobContext) {
 
         jobContext.saveMetadata("remote", "true");
@@ -51,38 +51,6 @@ public class JobOrderInitRemoteBatch {
         log.info("Job {} is IN_PROGRESS", jobExecutionId);
 
     }
-
-
-    @Job(name = "Job remoto")
-    public JobStatusEnum executeRemoteJob(JobRequest request, JobContext jobContext) {
-
-        jobContext.saveMetadata("remote", "true");
-        jobContext.saveMetadata("nombre-Job", request.getJobName());
-
-        request.setScheduledAt(LocalDateTime.now());
-
-        try {
-            UUID jobExecutionId = jobContext.getJobId();
-            this.sendToRemoteWorker(jobExecutionId, request);
-
-            // Guardar metadata para tracking
-            jobContext.saveMetadata("progress", 25);
-            jobContext.saveMetadata("progressMessage", "Processing data...");
-            jobContext.saveMetadata("lastUpdate", Instant.now());
-            jobContext.saveMetadata("remoteWorkerNotified", true);
-            jobContext.saveMetadata("expectedCompletion",
-                    LocalDateTime.now().plusHours(2).toString());
-
-            log.info("Job {} is IN_PROGRESS", jobExecutionId);
-            return JobStatusEnum.IN_PROGRESS;
-
-        } catch (Exception e) {
-            log.error("Error sending to Kafka: {}", e.getMessage());
-            return JobStatusEnum.FAILED;
-        }
-    }
-
-
 
 
     /**

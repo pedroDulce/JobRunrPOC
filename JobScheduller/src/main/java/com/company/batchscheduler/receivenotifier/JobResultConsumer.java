@@ -113,14 +113,20 @@ public class JobResultConsumer {
         if (job.getMetadata().get("progress") == null) {
             job.getMetadata().put("progress", 25);
         } else {
-            job.getMetadata().put("progress", (Integer) job.getMetadata().get("progress") + 1);
+            Integer progresoActual = (Integer) job.getMetadata().get("progress");
+            if (progresoActual > 95) {
+                progresoActual = 99;
+            } else {
+                progresoActual = progresoActual + 1;
+            }
+            job.getMetadata().put("progress", progresoActual);
         }
         List<String> existingLabels = new ArrayList<>();
         existingLabels.add("EN EJECUCIÓN" +
                 ((job.getMetadata().get("progress") == null)
                         ? " (iniciado el " + DateTimeUtil.formatear(jobResult.getStartedAt()) + ")"
                         : ""));
-        existingLabels.add("Progreso: " + job.getMetadata().get("progress") + "%");
+        existingLabels.add("Progreso: " + (Integer) job.getMetadata().get("progress") + "%");
         existingLabels.add("Último latido: " + DateTimeUtil.formatNow());
 
         job.getMetadata().put("lastHeartbeat", DateTimeUtil.formatNow());
