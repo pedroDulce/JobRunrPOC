@@ -5,6 +5,7 @@ import common.batch.dto.JobRequest;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.jobrunr.jobs.JobId;
 import org.jobrunr.scheduling.JobScheduler;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -28,7 +30,7 @@ public class JobSchedulerController {
     private final JobScheduler jobScheduler;
 
     @PostMapping("/schedule-remote-async")
-    public ResponseEntity<Map<String, Object>> executeRemoteJob(@RequestBody JobRequest request) {
+    public ResponseEntity<Map<String, Object>> scheduleRecurringJob(@RequestBody JobRequest request) {
         validateCronExpression(request.getCronExpression());
 
         String jobId = UUID.randomUUID().toString();
@@ -70,5 +72,29 @@ public class JobSchedulerController {
             );
         }
     }
+
+    @PostMapping("/inmediate-remote-async")
+    public ResponseEntity<Map<String, Object>> scheduleOnceExecutionJob(@RequestBody JobRequest request) {
+
+
+        JobId jobId = jobScheduler.enqueue(() -> publisherForJobs.executeRemoteJob(request, null));
+        request.setJobId(jobId.toString());
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("jobId", jobId.toString());
+        response.put("jobName", request.getJobName());
+        response.put("jobType", request.getJobType());
+        response.put("business-domain", request.getBusinessDomain());
+        response.put("status", "SCHEDULED");
+        response.put("cronExpression", request.getCronExpression());
+        response.put("processDate", request.getParameters().get("processDate"));
+        response.put("message", "Job programado con éxito.");
+        response.put("dashboardUrl", "http://localhost:8000");
+
+        log.info("✅ Job programado para ser lanzado de forma inmediata: {}: {}", jobId, LocalDateTime.now());
+
+        return ResponseEntity.ok(response);
+    }
+
 
 }

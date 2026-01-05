@@ -10,7 +10,6 @@ import org.jobrunr.jobs.states.ScheduledState;
 import org.jobrunr.jobs.states.StateName;
 import org.jobrunr.storage.StorageProvider;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
@@ -27,7 +26,7 @@ public class JobManagementOperations {
     private final StorageProvider storageProvider;
     private final JobRunerRepository jobRunerRepository;
 
-    @Transactional(propagation = Propagation.REQUIRES_NEW, timeout = 10)
+    @Transactional//(propagation = Propagation.REQUIRES_NEW, timeout = 10)
     public boolean updateJobStatus(String jobId, String state, Integer progress) {
         UUID uid = UUID.fromString(jobId);
         Job job = storageProvider.getJobById(uid);
@@ -35,10 +34,10 @@ public class JobManagementOperations {
         job.getMetadata().put("progress", progress);
         job.getMetadata().put("lastHeartbeat", Instant.now());
 
-        jobRunerRepository.updateJobToProcessing(uid, state);
-
         // 3. Guardar
         storageProvider.save(job);
+
+        jobRunerRepository.updateJobToProcessing(uid, state);
 
         return true;
     }
@@ -58,8 +57,6 @@ public class JobManagementOperations {
 
         // 3. Persistir el Job completo
         storageProvider.save(job);
-
-        //updateJobStatus(job.getId().toString(), StateName.SUCCEEDED.name(), 100);
 
         Job succeededJob = job.succeeded();
 
@@ -83,7 +80,6 @@ public class JobManagementOperations {
         job.getMetadata().put("momento de iniciar",jobResult.getStartedAt());
         job.getMetadata().put("momento de finalización",jobResult.getCompletedAt());
 
-        //updateJobStatus(job.getId().toString(), StateName.FAILED.name(), 100);
         // 3. Persistir el Job completo
         storageProvider.save(job);
 
