@@ -5,8 +5,6 @@ import common.batch.dto.JobRequest;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.jobrunr.jobs.JobId;
-import org.jobrunr.scheduling.JobBuilder;
 import org.jobrunr.scheduling.JobScheduler;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -15,7 +13,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.Instant;
-import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -42,7 +39,7 @@ public class JobSchedulerController {
         jobScheduler.scheduleRecurrently(
                 request.getJobName(),
                 request.getCronExpression(),
-                () -> publisherForJobs.executeRemoteJob(request, null)
+                () -> publisherForJobs.dispararJobRemoto(request, null)
         );
         Map<String, Object> response = new HashMap<>();
         response.put("jobId", jobId);
