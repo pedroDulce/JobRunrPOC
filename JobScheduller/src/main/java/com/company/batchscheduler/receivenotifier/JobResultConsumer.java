@@ -15,6 +15,7 @@ import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -54,12 +55,6 @@ public class JobResultConsumer {
             } else {
                 log.warn("No JobRunr Job ID found for job {}", jobrunrJobIdStr);
             }
-            /*jobScheduler.enqueue(() ->
-                    cerrarJobExterno(
-                            jobrunrJobIdStr,
-                            result
-                    )
-            );*/
 
         } catch (Exception e) {
             log.error("Error processing job result for {}: {}", jobrunrJobIdHeader, e.getMessage(), e);
@@ -125,7 +120,7 @@ public class JobResultConsumer {
         } else {
             job.getMetadata().put("progress", (Integer) job.getMetadata().get("progress") + 1);
         }
-        List<String> existingLabels = job.getLabels();
+        List<String> existingLabels = new ArrayList<>();
         existingLabels.add("PROCESSING");
         existingLabels.add("progress: " + job.getMetadata().get("progress") + "%");
         existingLabels.add("lastHeartbeat: " + Instant.now());
@@ -151,7 +146,7 @@ public class JobResultConsumer {
         JobId jobId = new JobId(jobUuid);
         job.getMetadata().put("progress", 100);
 
-        List<String> existingLabels = job.getLabels();
+        List<String> existingLabels =  new ArrayList<>();
         existingLabels.add("SUCCEDED");
         existingLabels.add("progress: 100%");
         existingLabels.add("lastHeartbeat: " + Instant.now());

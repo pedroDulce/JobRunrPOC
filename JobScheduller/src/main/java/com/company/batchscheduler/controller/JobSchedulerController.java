@@ -99,7 +99,7 @@ public class JobSchedulerController {
         response.put("message", "Job programado con éxito.");
         response.put("dashboardUrl", "http://localhost:8000");
 
-        log.info("✅ Job programado: {} con cron: {}", jobId, request.getCronExpression());
+        log.info("✅ Job de ejecución inmediata {}", jobId);
 
         return ResponseEntity.ok(response);
     }

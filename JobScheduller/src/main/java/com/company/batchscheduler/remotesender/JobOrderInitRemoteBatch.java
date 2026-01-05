@@ -32,8 +32,7 @@ public class JobOrderInitRemoteBatch {
     private final JobManagementOperations jobManagementOperations;
     private final KafkaTemplate<String, JobRequest> kafkaTemplate;
 
-    @Job(name= "Job simulando finalización exitosa del job remoto que aún no haya empezado",
-            labels = {"enviando orden de trabajo a job remoto", "priority-high"})
+    @Job(name= "Job simulando finalización exitosa del job remoto que aún no haya empezado")
     public void dispararJobRemoto(JobRequest request, JobContext jobContext) {
 
         jobContext.saveMetadata("remote", "true");
