@@ -6,7 +6,6 @@ import common.batch.dto.JobStatusEnum;
 import common.batch.dto.JobType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.jobrunr.JobRunrException;
 import org.jobrunr.jobs.annotations.Job;
 import org.jobrunr.jobs.context.JobContext;
 import org.springframework.beans.factory.annotation.Value;
@@ -33,8 +32,8 @@ public class JobOrderInitRemoteBatch {
     private final JobManagementOperations jobManagementOperations;
     private final KafkaTemplate<String, JobRequest> kafkaTemplate;
 
-    @Job(name= "Job simulando fallo forzoso para no poner a SUCCEDED el job remoto que aún no ha empezado",
-            labels = {"enviando orden de trabajoa job remoto", "priority-high"})
+    @Job(name= "Job simulando finalización exitosa del job remoto que aún no haya empezado",
+            labels = {"enviando orden de trabajo a job remoto", "priority-high"})
     public void dispararJobRemoto(JobRequest request, JobContext jobContext) {
 
         jobContext.saveMetadata("remote", "true");
@@ -54,9 +53,6 @@ public class JobOrderInitRemoteBatch {
 
         log.info("Job {} is IN_PROGRESS", jobExecutionId);
 
-        throw new JobRunrException(
-                "Ejecución delegada en job remoto: finalización controlada externamente."
-        );
     }
 
 

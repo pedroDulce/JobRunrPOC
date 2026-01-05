@@ -15,6 +15,8 @@ import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
+import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @Slf4j
@@ -47,17 +49,17 @@ public class JobResultConsumer {
                     result.getStatus().toString().contentEquals(JobStatusEnum.FAILED.toString()) ? result.getErrorDetails() : result.getMessage(),
                     result.getStatus());
 
-            /*if (jobrunrJobIdStr != null && !jobrunrJobIdStr.isEmpty()) {
+            if (jobrunrJobIdStr != null && !jobrunrJobIdStr.isEmpty()) {
                 updateJobRunrStatus(jobrunrJobIdStr, result);
             } else {
                 log.warn("No JobRunr Job ID found for job {}", jobrunrJobIdStr);
-            }*/
-            jobScheduler.enqueue(() ->
+            }
+            /*jobScheduler.enqueue(() ->
                     cerrarJobExterno(
                             jobrunrJobIdStr,
                             result
                     )
-            );
+            );*/
 
         } catch (Exception e) {
             log.error("Error processing job result for {}: {}", jobrunrJobIdHeader, e.getMessage(), e);
@@ -77,8 +79,7 @@ public class JobResultConsumer {
 
                 switch (result.getStatus()) {
                     case IN_PROGRESS:
-                        // No tocamos JobRuner
-                        //handleInProgress(job, result);
+                        handleInProgress(job, result);
                         break;
 
                     case COMPLETED:
@@ -119,23 +120,24 @@ public class JobResultConsumer {
         UUID jobUuid = job.getId();
         JobId jobId = new JobId(jobUuid);
 
-        // En JobRunr, un job pasa automáticamente a PROCESSING cuando se ejecuta
-        // Podemos verificar y loggear
-        if (job.getState() == org.jobrunr.jobs.states.StateName.PROCESSING) {
-            // Opción A: Usar metadata del job
-            if (job.getMetadata().get("progress") == null) {
-                job.getMetadata().put("progress", 25);
-            } else {
-                job.getMetadata().put("progress", (Integer) job.getMetadata().get("progress") + 1);
-            }
-            job.getMetadata().put("lastHeartbeat", Instant.now());
-            // 3. Guardar
-            storageProvider.save(job);
-            log.debug("Job {} is already PROCESSING in JobRunr", jobId);
+        if (job.getMetadata().get("progress") == null) {
+            job.getMetadata().put("progress", 25);
         } else {
-            log.info("Job {} is IN_PROGRESS but JobRunr state is: {}", jobId, job.getState());
-            jobManagementOperations.startOrContinueJob(job.getId());
+            job.getMetadata().put("progress", (Integer) job.getMetadata().get("progress") + 1);
         }
+        List<String> existingLabels = job.getLabels();
+        existingLabels.add("PROCESSING");
+        existingLabels.add("progress: " + job.getMetadata().get("progress") + "%");
+        existingLabels.add("lastHeartbeat: " + Instant.now());
+
+        job.getMetadata().put("lastHeartbeat", Instant.now());
+
+        job.setLabels(existingLabels);
+
+        // 3. Guardar
+        storageProvider.save(job);
+        log.debug("Job {} is already PROCESSING in JobRunr", jobId);
+
     }
 
     /**
@@ -145,10 +147,22 @@ public class JobResultConsumer {
 
         log.info("✅ Job {} completed successfully - {}", job.getId(), result.getMessage());
 
-        // Si el job en JobRunr aún está en PROCESSING, forzar éxito
-        log.warn("Job {} is still REMOTE PROCESSING in JobRunr, marking as succeeded", job.getId());
+        UUID jobUuid = job.getId();
+        JobId jobId = new JobId(jobUuid);
+        job.getMetadata().put("progress", 100);
 
-        jobManagementOperations.completeSuccessJob(job, result);
+        List<String> existingLabels = job.getLabels();
+        existingLabels.add("SUCCEDED");
+        existingLabels.add("progress: 100%");
+        existingLabels.add("lastHeartbeat: " + Instant.now());
+
+        job.getMetadata().put("lastHeartbeat", Instant.now());
+
+        job.setLabels(existingLabels);
+
+        // 3. Guardar
+        storageProvider.save(job);
+        log.debug("Job {} is already COMPLETED in JobRunr", jobId);
 
     }
 
@@ -157,10 +171,26 @@ public class JobResultConsumer {
      */
     private void handleFailed(Job job, JobResult result) {
 
+        log.info("✅ Job {} completed with errors - {}", job.getId(), result.getMessage());
+
         UUID jobUuid = job.getId();
         JobId jobId = new JobId(jobUuid);
+        job.getMetadata().put("progress", 100);
 
-        jobManagementOperations.failJob(job, result);
+        List<String> existingLabels = job.getLabels();
+        existingLabels.add("FAILED");
+        existingLabels.add("Error: " + result.getMessage());
+        existingLabels.add("Detalle Error: " + result.getErrorDetails());
+        existingLabels.add("progress: 100%");
+        existingLabels.add("lastHeartbeat: " + Instant.now());
+
+        job.getMetadata().put("lastHeartbeat", Instant.now());
+
+        job.setLabels(existingLabels);
+
+        // 3. Guardar
+        storageProvider.save(job);
+        log.debug("Job {} is already COMPLETED in JobRunr", jobId);
 
     }
 

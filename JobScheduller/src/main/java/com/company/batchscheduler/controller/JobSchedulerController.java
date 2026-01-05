@@ -87,6 +87,7 @@ public class JobSchedulerController {
                 Instant.now(),
                 () -> publisherForJobs.dispararJobRemoto(request, null)
         );
+
         Map<String, Object> response = new HashMap<>();
         response.put("jobId", jobId.toString());
         response.put("jobName", request.getJobName());
