@@ -1,6 +1,5 @@
 package com.company.batchscheduler.receivenotifier;
 
-import com.company.batchscheduler.service.JobManagementOperations;
 import common.batch.dto.JobResult;
 import common.batch.dto.JobStatusEnum;
 import lombok.RequiredArgsConstructor;
@@ -17,7 +16,6 @@ import org.springframework.stereotype.Component;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
 
 @Slf4j
@@ -25,11 +23,8 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class JobResultConsumer {
 
-    private final JobManagementOperations jobManagementOperations;
     private final StorageProvider storageProvider;
     private final JobScheduler jobScheduler;
-    //private final TrackingJobRepository trackingJobRepository;
-
 
     @KafkaListener(
             topics = "${kafka.topics.job-results}",
@@ -121,9 +116,9 @@ public class JobResultConsumer {
             job.getMetadata().put("progress", (Integer) job.getMetadata().get("progress") + 1);
         }
         List<String> existingLabels = new ArrayList<>();
-        existingLabels.add("PROCESSING");
-        existingLabels.add("progress: " + job.getMetadata().get("progress") + "%");
-        existingLabels.add("lastHeartbeat: " + Instant.now());
+        existingLabels.add("EN EJECUCIÓN");
+        existingLabels.add("Progreso: " + job.getMetadata().get("progress") + "%");
+        existingLabels.add("Último latido: " + Instant.now());
 
         job.getMetadata().put("lastHeartbeat", Instant.now());
 
@@ -138,86 +133,52 @@ public class JobResultConsumer {
     /**
      * Manejar estado COMPLETED
      */
-    private void handleCompleted(Job job, JobResult result) {
+    private void handleCompleted(Job job, JobResult jobResult) {
 
-        log.info("✅ Job {} completed successfully - {}", job.getId(), result.getMessage());
+        log.info("✅ Job {} completed successfully - {}", job.getId(), jobResult.getMessage());
 
         UUID jobUuid = job.getId();
-        JobId jobId = new JobId(jobUuid);
+
         job.getMetadata().put("progress", 100);
+        job.getMetadata().put("lastHeartbeat", Instant.now());
+        job.getMetadata().put("finalizado", "De forma exitosa. " + jobResult.getMessage());
+        job.getMetadata().put("duracionMs", String.valueOf(jobResult.getDurationMs()));
+        job.getMetadata().put("inicio", jobResult.getStartedAt().toString());
+        job.getMetadata().put("fin", jobResult.getCompletedAt().toString());
 
         List<String> existingLabels =  new ArrayList<>();
-        existingLabels.add("SUCCEDED");
-        existingLabels.add("progress: 100%");
-        existingLabels.add("lastHeartbeat: " + Instant.now());
-
-        job.getMetadata().put("lastHeartbeat", Instant.now());
-
+        existingLabels.add("COMPLETADO SIN ERRORES");
+        existingLabels.add("Progreso: 100%");
+        existingLabels.add("Duración (ms)" + jobResult.getDurationMs());
         job.setLabels(existingLabels);
 
         // 3. Guardar
         storageProvider.save(job);
-        log.debug("Job {} is already COMPLETED in JobRunr", jobId);
 
     }
 
     /**
      * Manejar estado FAILED
      */
-    private void handleFailed(Job job, JobResult result) {
+    private void handleFailed(Job job, JobResult jobResult) {
 
-        log.info("✅ Job {} completed with errors - {}", job.getId(), result.getMessage());
-
-        UUID jobUuid = job.getId();
-        JobId jobId = new JobId(jobUuid);
+        log.info("✅ Job {} completed with errors - {}", job.getId(), jobResult.getMessage());
         job.getMetadata().put("progress", 100);
 
+        job.getMetadata().put("finalizado", "Con errores: " + jobResult.getMessage());
+        job.getMetadata().put("errorDetails", jobResult.getErrorDetails());
+        job.getMetadata().put("duración (ms)",jobResult.getDurationMs());
+        job.getMetadata().put("inicio",jobResult.getStartedAt());
+        job.getMetadata().put("fin",jobResult.getCompletedAt());
+
         List<String> existingLabels = job.getLabels();
-        existingLabels.add("FAILED");
-        existingLabels.add("Error: " + result.getMessage());
-        existingLabels.add("Detalle Error: " + result.getErrorDetails());
-        existingLabels.add("progress: 100%");
-        existingLabels.add("lastHeartbeat: " + Instant.now());
-
-        job.getMetadata().put("lastHeartbeat", Instant.now());
-
+        existingLabels.add("TRABAJO FALLIDO");
+        existingLabels.add("Error: " + jobResult.getMessage() + ". Detalle Error: " + jobResult.getErrorDetails());
+        existingLabels.add("Finalizado en: " + jobResult.getCompletedAt());
         job.setLabels(existingLabels);
-
         // 3. Guardar
         storageProvider.save(job);
-        log.debug("Job {} is already COMPLETED in JobRunr", jobId);
 
-    }
-
-
-    /**
-     * Job de cierre lógico del proceso remoto
-     */
-    private void cerrarJobExterno(String jobId, JobResult result) {
-
-        log.info("Cerrando ejecución remota del job [{}] - success={}",
-                jobId, result.isSuccess());
-
-        // 1. Persistencia de estado FINAL (fuente de verdad)
-        /*trackingJobRepository.updateFinalState(
-                jobId,
-                result.isSuccess() ? "SUCCEEDED" : "FAILED",
-                result.getMessage(),
-                result.getStartedAt(),
-                result.getCompletedAt(),
-                result.getDurationMs()
-        );*/
-
-        // 2. Observabilidad (logs / métricas)
-        if (result.isSuccess()) {
-            log.info("Job remoto [{}] finalizado correctamente", jobId);
-        } else {
-            log.error("Job remoto [{}] finalizado con error: {}",
-                    jobId, result.getMessage());
-        }
-
-        // 3. (Opcional) Disparar notificación, auditoría o post-proceso
-        // jobScheduler.enqueue(() -> notificarResultado(jobId, result));
     }
 
 

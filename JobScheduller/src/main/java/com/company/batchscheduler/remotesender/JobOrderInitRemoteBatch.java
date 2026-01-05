@@ -1,6 +1,5 @@
 package com.company.batchscheduler.remotesender;
 
-import com.company.batchscheduler.service.JobManagementOperations;
 import common.batch.dto.JobRequest;
 import common.batch.dto.JobStatusEnum;
 import common.batch.dto.JobType;
@@ -29,7 +28,6 @@ public class JobOrderInitRemoteBatch {
     @Value("${kafka.topics.job-requests}")
     private String jobRequestsTopic;
 
-    private final JobManagementOperations jobManagementOperations;
     private final KafkaTemplate<String, JobRequest> kafkaTemplate;
 
     @Job(name= "Job simulando finalización exitosa del job remoto que aún no haya empezado")
@@ -76,7 +74,6 @@ public class JobOrderInitRemoteBatch {
                     LocalDateTime.now().plusHours(2).toString());
 
             log.info("Job {} is IN_PROGRESS", jobExecutionId);
-            jobManagementOperations.startOrContinueJob(jobExecutionId);
             return JobStatusEnum.IN_PROGRESS;
 
         } catch (Exception e) {

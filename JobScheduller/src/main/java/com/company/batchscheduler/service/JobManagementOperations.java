@@ -1,19 +1,15 @@
 package com.company.batchscheduler.service;
 
-import com.company.batchscheduler.repository.JobRunerRepository;
-import common.batch.dto.JobResult;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jobrunr.jobs.Job;
 import org.jobrunr.jobs.JobDetails;
-import org.jobrunr.jobs.context.JobContext;
 import org.jobrunr.jobs.states.ScheduledState;
 import org.jobrunr.jobs.states.StateName;
 import org.jobrunr.storage.StorageProvider;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -25,72 +21,6 @@ import java.util.UUID;
 public class JobManagementOperations {
 
     private final StorageProvider storageProvider;
-    private final JobRunerRepository jobRunerRepository;
-
-    @Transactional//(propagation = Propagation.REQUIRES_NEW, timeout = 10)
-    public boolean updateJobStatus(String jobId, String state, Integer progress) {
-        UUID uid = UUID.fromString(jobId);
-
-        jobRunerRepository.updateJobToProcessing(uid, state);
-
-        return true;
-    }
-
-    @Transactional
-    public boolean completeSuccessJob(Job job, JobResult jobResult) {
-        if (job == null) {
-            log.error("Job no encontrado");
-            return false;
-        }
-
-        // 2. Añadir metadata (esto sí es mutable)
-        job.getMetadata().put("finalizado", "De forma exitosa. " + jobResult.getMessage());
-        job.getMetadata().put("duracionMs", String.valueOf(jobResult.getDurationMs()));
-        job.getMetadata().put("inicio", jobResult.getStartedAt().toString());
-        job.getMetadata().put("fin", jobResult.getCompletedAt().toString());
-
-        // 3. Persistir el Job completo
-        //storageProvider.save(job);
-
-        Job succeededJob = job.succeeded();
-
-        // 6. Guardar el job con nuevo estado
-        //storageProvider.save(succeededJob);
-
-        log.info("succeededJob states: {} ", succeededJob.getJobStates());
-
-        return true;
-    }
-
-
-    @Transactional
-    public boolean failJob(Job job, JobResult jobResult) {
-        if (job == null) {
-            log.error("Job no encontrado");
-            return false;
-        }
-
-        job.getMetadata().put("finalizado", "Con errores: " + jobResult.getMessage());
-        job.getMetadata().put("errorDetails", jobResult.getErrorDetails());
-        job.getMetadata().put("duración",jobResult.getDurationMs());
-        job.getMetadata().put("momento de iniciar",jobResult.getStartedAt());
-        job.getMetadata().put("momento de finalización",jobResult.getCompletedAt());
-
-        // 3. Persistir el Job completo
-        //storageProvider.save(job);
-
-        Job failedJob = job.failed(jobResult.getMessage(), new Exception("Error: " + jobResult.getMessage()
-                + ". Detalles: " + jobResult.getErrorDetails()));
-        storageProvider.save(failedJob);
-
-        return true;
-    }
-
-    @Transactional
-    public boolean startOrContinueJob(UUID jobId) {
-        return updateJobStatus(jobId.toString(), "PROCESSING",50);
-    }
-
 
     @Transactional
     public boolean deletePlannedJob(String jobId) {
