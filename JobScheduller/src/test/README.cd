@@ -14,3 +14,12 @@ jobrunr_jobrunr_backgroundjobservers,
 jobrunr_jobrunr_migrations,
 jobrunr_jobrunr_metadata
 CASCADE;
+
+Arranca Apache Kafka:
+.\bin\windows\kafka-server-start.bat config\server.properties
+
+Acceder a BBDD PostgreSQL:
+"C:\Program Files\PostgreSQL\16\bin\psql.exe" -U batch_user -d batch-scheduler
+
+Consola JobRunr:
+http://localhost:8000/dashboard
