@@ -1,4 +1,4 @@
-package org.example.batch.config;
+package com.ad.muface.jobs.config;
 
 import common.batch.dto.JobResult;
 import org.apache.kafka.clients.producer.ProducerConfig;

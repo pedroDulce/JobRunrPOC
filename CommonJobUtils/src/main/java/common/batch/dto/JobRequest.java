@@ -17,7 +17,6 @@ import java.util.Map;
 public class JobRequest implements Serializable {
     private String jobId;
     private String jobName;
-
     private String businessDomain;
     private String cronExpression;
     private String correlationId;

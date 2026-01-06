@@ -1,6 +1,6 @@
-package org.example.batch.repository;
+package com.ad.muface.jobs.demobatch.repository;
 
-import org.example.batch.model.DailySummary;
+import com.ad.muface.jobs.demobatch.model.DailySummary;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 

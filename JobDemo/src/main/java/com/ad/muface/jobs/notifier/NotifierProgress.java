@@ -1,4 +1,4 @@
-package org.example.batch.notifier;
+package com.ad.muface.jobs.notifier;
 
 import common.batch.dto.JobResult;
 import common.batch.dto.JobStatusEnum;

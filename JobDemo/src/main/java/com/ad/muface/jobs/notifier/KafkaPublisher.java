@@ -1,4 +1,4 @@
-package org.example.batch.notifier;
+package com.ad.muface.jobs.notifier;
 
 import common.batch.dto.JobRequest;
 import common.batch.dto.JobResult;
@@ -50,8 +50,6 @@ public class KafkaPublisher {
     public void publishJobStatus(JobRequest jobRequest,
                                  JobStatusEnum status,
                                  Exception error,
-                                 String correlationId,
-                                 String jobrunrJobId,
                                  String message) {
 
         try {
@@ -64,8 +62,8 @@ public class KafkaPublisher {
                     .completedAt(status.compareTo(JobStatusEnum.COMPLETED) == 0 || status.compareTo(JobStatusEnum.FAILED) == 0
                             ? LocalDateTime.now() : null)
                     .errorDetails(error != null ? error.getMessage() : null)
-                    .correlationId(correlationId)
-                    .jobrunrJobId(jobrunrJobId)  // IMPORTANTE: ID de JobRunr
+                    .correlationId(jobRequest.getCorrelationId())
+                    .jobrunrJobId(jobRequest.getJobId())  // IMPORTANTE: ID de JobRunr
                     .build();
 
             publishToResultsTopic(statusResult);
@@ -75,6 +73,19 @@ public class KafkaPublisher {
         } catch (Exception e) {
             log.error("JobExecutor: Failed to publish job status for {}: {}",
                     jobRequest.getJobId(), e.getMessage());
+        }
+    }
+
+    public void publishJobHeartBeat(String jobId, JobResult statusResult) {
+
+        try {
+
+            publishToResultsTopic(statusResult);
+
+            log.debug("📤 JobExecutor: Published job status: {} for job {}", statusResult.getStatus(), jobId);
+
+        } catch (Exception e) {
+            log.error("JobExecutor: Failed to publish job status for {}: {}", jobId, e.getMessage());
         }
     }
 

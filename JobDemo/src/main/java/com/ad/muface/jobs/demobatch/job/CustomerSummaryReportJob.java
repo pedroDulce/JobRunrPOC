@@ -1,36 +1,38 @@
-package org.example.batch.job;
+package com.ad.muface.jobs.demobatch.job;
 
+import com.ad.muface.jobs.demobatch.repository.DailySummaryRepository;
+import com.ad.muface.jobs.infra.HeartbeatService;
+import com.ad.muface.jobs.infra.JobExecutor;
 import common.batch.dto.JobRequest;
 import common.batch.dto.JobResult;
 import common.batch.dto.JobStatusEnum;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.example.batch.repository.DailySummaryRepository;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Calendar;
-import java.util.Map;
 
 @Component
 @Slf4j
-@RequiredArgsConstructor
-public class CustomerSummaryReportJob {
+public class CustomerSummaryReportJob extends JobExecutor {
 
     private final DailySummaryRepository dailySummaryRepository;
 
-    public JobResult executeJob(JobRequest jobRequest, Map<String, String> headers) throws Exception {
+    protected CustomerSummaryReportJob(String jobId, HeartbeatService heartbeatService,
+                                       DailySummaryRepository dailySummaryRepository) {
+        super(jobId, heartbeatService);
+        this.dailySummaryRepository = dailySummaryRepository;
+    }
+
+    public JobResult executeJobLogic(JobRequest jobRequest) {
 
         long mills = Calendar.getInstance().getTimeInMillis();
-        //JobResult resultado = new JobResult();
         String jobId = jobRequest.getJobId();
-        //resultado.setJobId(jobId);
         try {
             LocalDateTime processDateTime = jobRequest.getScheduledAt();
             String emailRecipient = jobRequest.getParameters().get("emailRecipient");
             log.info("🚀 Iniciando job {} con fecha: {} y tipo: {}", jobId, processDateTime, jobRequest.getJobType());
-            log.info("con headers: {}", headers);
 
             // Convertir String a LocalDate
             LocalDate processDate = processDateTime.toLocalDate();
@@ -64,7 +66,7 @@ public class CustomerSummaryReportJob {
 
         } catch (Exception e) {
             log.error("❌ Error en job {}: {}", jobId, e.getMessage(), e);
-            throw new Exception("❌ Error en job {}: {}", e);
+            throw new RuntimeException("❌ Error en job {}: {}", e);
         }
     }
 

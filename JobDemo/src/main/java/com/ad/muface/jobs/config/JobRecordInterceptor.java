@@ -1,4 +1,4 @@
-package org.example.batch.config;
+package com.ad.muface.jobs.config;
 
 import common.batch.dto.JobRequest;
 import lombok.extern.slf4j.Slf4j;

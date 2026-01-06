@@ -61,4 +61,4 @@ logging:
   level:
     org.springframework.kafka: INFO
     org.apache.kafka: WARN
-    com.company.jobexecutor.kafka: DEBUG
+    com.ad: DEBUG

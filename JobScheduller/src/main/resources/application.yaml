@@ -50,6 +50,10 @@ kafka:
     job-requests: job-requests-topic
     job-results: job-results-topic
 
+api:
+  deep:
+    base_url: https://api.deepseek.com
+    api_key: sk-8e9343fcb81849f8800fb85bb2f05b07
 
 resilience4j.circuitbreaker:
   instances:

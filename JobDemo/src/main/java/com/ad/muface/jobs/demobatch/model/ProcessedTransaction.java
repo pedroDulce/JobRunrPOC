@@ -1,4 +1,4 @@
-package org.example.batch.model;
+package com.ad.muface.jobs.demobatch.model;
 
 import lombok.Data;
 import java.math.BigDecimal;

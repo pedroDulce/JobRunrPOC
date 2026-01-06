@@ -1,11 +1,11 @@
-package org.example.batch.config;
+package com.ad.muface.jobs.config;
 
+import com.ad.muface.jobs.demobatch.model.CustomerTransaction;
+import com.ad.muface.jobs.demobatch.model.ProcessedTransaction;
+import com.ad.muface.jobs.notifier.NotifierProgress;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.example.batch.model.CustomerTransaction;
-import org.example.batch.model.ProcessedTransaction;
-import org.example.batch.notifier.EmailReporter;
-import org.example.batch.notifier.NotifierProgress;
+import com.ad.muface.jobs.notifier.EmailReporter;
 import org.springframework.batch.core.*;
 import org.springframework.batch.core.configuration.annotation.EnableBatchProcessing;
 import org.springframework.batch.core.configuration.annotation.StepScope;

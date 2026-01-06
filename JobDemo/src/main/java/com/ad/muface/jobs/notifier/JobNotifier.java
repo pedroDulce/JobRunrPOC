@@ -1,4 +1,4 @@
-package org.example.batch.notifier;
+package com.ad.muface.jobs.notifier;
 
 import common.batch.dto.JobRequest;
 import common.batch.dto.JobResult;
@@ -6,7 +6,7 @@ import common.batch.dto.JobStatusEnum;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.example.batch.job.CustomerSummaryReportJob;
+import com.ad.muface.jobs.demobatch.job.CustomerSummaryReportJob;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.kafka.support.KafkaHeaders;
@@ -44,38 +44,40 @@ public class JobNotifier {
             @Header(value = "jobrunr-job-id", required = true) String jobrunrJobId,
             Acknowledgment acknowledgment) {
 
-        JobResult result;
-        try {
-            JobRequest jobRequest = record.value();
+        JobRequest jobRequest = record.value();
 
-            log.info("""
-                    📥 JobExecutor: Received Job Request:
-                    Job ID: {}
-                    JobRunr Job ID: {}
-                    Business Domain: {}
-                    Target Job: {}
-                    Priority: {}
-                    Correlation ID: {}
-                    """,
-                    jobRequest.getJobId(),
-                    jobrunrJobId,
-                    businessDomain,
-                    targetJob,
-                    priority,
-                    correlationId
-            );
-            if (jobRequest.getJobId() == null) {
-                jobRequest.setJobId(jobrunrJobId);
-            }
+        log.info("""
+                📥 JobExecutor: Received Job Request:
+                Job ID: {}
+                JobRunr Job ID: {}
+                Business Domain: {}
+                Target Job: {}
+                Priority: {}
+                Correlation ID: {}
+                """,
+                jobRequest.getJobId(),
+                jobrunrJobId,
+                businessDomain,
+                targetJob,
+                priority,
+                correlationId
+        );
+        if (jobRequest.getJobId() == null) {
+            jobRequest.setJobId(jobrunrJobId);
+        }
+        if (jobRequest.getCorrelationId() == null) {
+            jobRequest.setCorrelationId(correlationId);
+        }
+        try {
 
             // 1. Publicar estado IN_PROGRESS
             kafkaPublisher.publishJobStatus(jobRequest, JobStatusEnum.IN_PROGRESS, null,
-                    correlationId, jobrunrJobId, "JobExecutor: remote Job execution started");
+                    "JobExecutor: remote Job execution started");
             // Confirmar offset
             acknowledgment.acknowledge();
 
             // 2. Ejecutar el job
-            result = jobExecutionService.executeJob(jobRequest, extractHeaders(record));
+            JobResult result = jobExecutionService.executeJob(jobRequest);
 
             // 3. Publicar resultado final
             kafkaPublisher.publishJobResult(result, correlationId, jobrunrJobId);
@@ -90,12 +92,11 @@ public class JobNotifier {
 
             // Publicar estado FAILED si hay jobRequest
             if (record != null && record.value() != null) {
-                JobRequest jobRequest = record.value();
+                jobRequest = record.value();
                 kafkaPublisher.publishJobStatus(jobRequest, JobStatusEnum.FAILED, e,
-                        correlationId, jobrunrJobId, "Job execution failed: " + e.getMessage());
+                        "Job execution failed: " + e.getMessage());
             }
-
-            // No confirmar para que se reintente
+            // No confirmar para que se reintente la publicación
         }
     }
 
@@ -104,10 +105,11 @@ public class JobNotifier {
     /**
      * Extraer headers
      */
-    private Map<String, String> extractHeaders(ConsumerRecord<String, JobRequest> record) {
+    private Map<String, String> logHeaders(ConsumerRecord<String, JobRequest> record) {
         Map<String, String> headers = new HashMap<>();
         record.headers().forEach(header -> {
             headers.put(header.key(), new String(header.value()));
+            log.debug("header.key: " + header.key() + " , header.value: " + header.value());
         });
         return headers;
     }

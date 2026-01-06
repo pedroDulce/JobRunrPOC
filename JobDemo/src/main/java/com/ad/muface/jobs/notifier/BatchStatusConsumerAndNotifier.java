@@ -1,11 +1,10 @@
-package org.example.batch.notifier;
+package com.ad.muface.jobs.notifier;
 
 import common.batch.dto.JobRequest;
 import common.batch.dto.JobStatusEnum;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.aspectj.weaver.ast.Not;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.JobExecution;
 import org.springframework.batch.core.JobParameters;
@@ -44,11 +43,9 @@ public class BatchStatusConsumerAndNotifier {
             @Header(value = "jobrunr-job-id", required = true) String jobrunrJobId,
             @Payload Map<String, Object> payload,
             Acknowledgment acknowledgment) {
+        JobRequest jobRequest = record.value();
 
-        try {
-            JobRequest jobRequest = record.value();
-
-            log.info("""
+        log.info("""
                     📥 JobExecutor: Received Batch Request:
                     Job ID: {}
                     JobRunr Job ID: {}
@@ -57,17 +54,24 @@ public class BatchStatusConsumerAndNotifier {
                     Priority: {}
                     Correlation ID: {}
                     """,
-                    jobRequest.getJobId(),
-                    jobrunrJobId,
-                    businessDomain,
-                    targetBatch,
-                    priority,
-                    correlationId
-            );
+                jobRequest.getJobId(),
+                jobrunrJobId,
+                businessDomain,
+                targetBatch,
+                priority,
+                correlationId
+        );
+        if (jobRequest.getJobId() == null) {
+            jobRequest.setJobId(jobrunrJobId);
+        }
+        if (jobRequest.getCorrelationId() == null) {
+            jobRequest.setCorrelationId(correlationId);
+        }
 
+        try {
             // 1. Publicar estado IN_PROGRESS
             kafkaPublisher.publishJobStatus(jobRequest, JobStatusEnum.IN_PROGRESS, null,
-                    correlationId, jobrunrJobId, "JobExecutor: remote Batch execution started");
+                    "JobExecutor: remote Batch execution started");
 
             // 2. Confirmar offset
             acknowledgment.acknowledge();
@@ -83,9 +87,9 @@ public class BatchStatusConsumerAndNotifier {
 
             // Publicar estado FAILED si hay jobRequest
             if (record != null && record.value() != null) {
-                JobRequest jobRequest = record.value();
+                jobRequest = record.value();
                 kafkaPublisher.publishJobStatus(jobRequest, JobStatusEnum.FAILED, e,
-                        correlationId, jobrunrJobId, "Batch execution failed: " + e.getMessage());
+                        "Batch execution failed: " + e.getMessage());
             }
 
             // No confirmar para que se reintente

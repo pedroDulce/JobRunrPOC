@@ -1,6 +1,6 @@
-package org.example.batch.repository;
+package com.ad.muface.jobs.demobatch.repository;
 
-import org.example.batch.model.CustomerTransaction;
+import com.ad.muface.jobs.demobatch.model.CustomerTransaction;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
