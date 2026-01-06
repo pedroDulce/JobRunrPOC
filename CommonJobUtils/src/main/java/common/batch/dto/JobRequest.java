@@ -22,6 +22,7 @@ public class JobRequest implements Serializable {
     private String correlationId;
     private Map<String, String> parameters;
     private LocalDateTime scheduledAt;
+    private Integer heartBeatLapse = 5; // en segundos, valor por defecto para la PoC
 
     // Campos para routing/filtrado
     private String jobType;           // Ej: "SYNCRONOUS" o "ASYNCRONOUS"

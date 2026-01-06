@@ -8,6 +8,7 @@ Write-Host "`Programando Spring Batch con enfoque asincrono en su ejecucion..." 
 $scheduleBody = @{
     jobName = "springBatchSample"
     businessDomain = "job-executor-service"
+    heartBeatLapse = "7"
     jobType = "BATCH_PROCESSING"
     priority = "MEDIUM"
     cronExpression = "0 */2 * * * *"

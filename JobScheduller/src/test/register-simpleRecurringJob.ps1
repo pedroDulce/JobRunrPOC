@@ -8,6 +8,7 @@ Write-Host "Programando job con enfoque asincrono en su ejecución..." -Foregrou
 $scheduleBody = @{
     jobName = "ResumenDiarioClientesAsync"
     businessDomain = "job-executor-service"
+    heartBeatLapse = "7"
     jobType = "SIMPLE_JOB"
     priority = "MEDIUM"
     cronExpression = "0 */2 * * * *"

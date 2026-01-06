@@ -51,7 +51,7 @@ public class HeartbeatService implements ApplicationListener<ContextClosedEvent>
 
         ScheduledFuture<?> future = sharedExecutor.scheduleAtFixedRate(
                 () -> sendHeartbeat(fulljobId, jobId, jobRequest),
-                0, 25, TimeUnit.SECONDS
+                0, jobRequest.getHeartBeatLapse(), TimeUnit.SECONDS
         );
 
         heartbeatTasks.put(fulljobId, future);
