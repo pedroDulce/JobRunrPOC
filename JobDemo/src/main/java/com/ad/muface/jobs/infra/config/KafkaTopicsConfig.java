@@ -1,4 +1,4 @@
-package com.ad.muface.jobs.config;
+package com.ad.muface.jobs.infra.config;
 
 import org.apache.kafka.clients.admin.NewTopic;
 import org.springframework.beans.factory.annotation.Value;

@@ -1,4 +1,4 @@
-package com.ad.muface.jobs.config;
+package com.ad.muface.jobs.infra.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import common.batch.dto.JobRequest;

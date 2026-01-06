@@ -1,6 +1,6 @@
 package com.ad.muface.jobs.infra;
 
-import com.ad.muface.jobs.notifier.KafkaPublisher;
+import com.ad.muface.jobs.infra.notifier.KafkaPublisher;
 import common.batch.dto.JobRequest;
 import common.batch.dto.JobResult;
 import common.batch.dto.JobStatusEnum;

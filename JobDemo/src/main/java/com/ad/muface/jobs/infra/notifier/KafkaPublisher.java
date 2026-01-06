@@ -1,4 +1,4 @@
-package com.ad.muface.jobs.notifier;
+package com.ad.muface.jobs.infra.notifier;
 
 import common.batch.dto.JobRequest;
 import common.batch.dto.JobResult;

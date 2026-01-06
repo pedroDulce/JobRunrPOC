@@ -1,4 +1,4 @@
-package com.ad.muface.jobs.notifier;
+package com.ad.muface.jobs.infra.notifier;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
