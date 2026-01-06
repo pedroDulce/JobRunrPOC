@@ -1,7 +1,6 @@
 package com.company.batchscheduler.remotesender;
 
 import common.batch.dto.JobRequest;
-import common.batch.dto.JobStatusEnum;
 import common.batch.dto.JobType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,7 +16,6 @@ import org.springframework.stereotype.Component;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
-import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 @RequiredArgsConstructor
@@ -37,8 +35,12 @@ public class JobOrderInitRemoteBatch {
         jobContext.saveMetadata("nombre-Job", request.getJobName());
 
         request.setScheduledAt(LocalDateTime.now());
-        UUID jobExecutionId = jobContext.getJobId();
-        this.sendToRemoteWorker(jobExecutionId, request);
+        if (request.getJobId() == null) {
+            request.setJobId(jobContext.getJobId().toString());
+        } else if (!request.getJobId().contentEquals(jobContext.getJobId().toString())) {
+            throw new RuntimeException("Atención: Discrepancia entre el requestId y el jobContextId!");
+        }
+        this.sendToRemoteWorker(request);
 
         // Guardar metadata para tracking
         jobContext.saveMetadata("progress", 25);
@@ -48,7 +50,7 @@ public class JobOrderInitRemoteBatch {
         jobContext.saveMetadata("expectedCompletion",
                 LocalDateTime.now().plusHours(2).toString());
 
-        log.info("Job {} is IN_PROGRESS", jobExecutionId);
+        log.info("Job {} is IN_PROGRESS", request.getJobId());
 
     }
 
@@ -56,20 +58,19 @@ public class JobOrderInitRemoteBatch {
     /**
      * Construye mensaje con headers de routing para filtrado
      */
-    private void sendToRemoteWorker(UUID jobExecutionId, JobRequest request) {
+    private void sendToRemoteWorker(JobRequest request) {
 
-        String correlationId = generateCorrelationId();
-        String jobRunrJobId = jobExecutionId.toString();
+        String correlationId = "job-del-padre";
 
-        log.info("🎯 JobRunr Job created - For Executor Job with ID: {}", jobRunrJobId);
+        log.info("🎯 JobRunr Job created - For Executor Job with ID: {}", request.getJobId());
 
         Message<JobRequest> message = MessageBuilder
                 .withPayload(request)
                 // Headers principales para routing
                 .setHeader(KafkaHeaders.TOPIC, jobRequestsTopic)
-                .setHeader(KafkaHeaders.KEY, jobRunrJobId)
+                .setHeader(KafkaHeaders.KEY, request.getJobId())
                 .setHeader("job-id", request.getJobId())
-                .setHeader("jobrunr-job-id", jobRunrJobId)
+                .setHeader("jobrunr-job-id", request.getJobId())
                 // Headers de routing/filtrado
                 .setHeader("job-type", request.getJobType())          // "ASYNCRONOUS"
                 .setHeader("business-domain", request.getBusinessDomain()) // Ej: "application-job-demo"
@@ -98,9 +99,9 @@ public class JobOrderInitRemoteBatch {
 
         future.whenComplete((result, ex) -> {
             if (ex != null) {
-                handlePublishFailure(jobExecutionId, ex);
+                handlePublishFailure(request.getJobId(), ex);
             } else {
-                handlePublishSuccess(jobExecutionId, result);
+                handlePublishSuccess(request.getJobId(), result);
             }
         });
     }
@@ -108,7 +109,7 @@ public class JobOrderInitRemoteBatch {
     /**
      * Maneja éxito en publicación
      */
-    private void handlePublishSuccess(UUID jobId, SendResult<String, JobRequest> result) {
+    private void handlePublishSuccess(String jobId, SendResult<String, JobRequest> result) {
         log.info("""
                 Job {} published to Kafka successfully.
                 Topic: {}
@@ -127,16 +128,8 @@ public class JobOrderInitRemoteBatch {
     /**
      * Maneja fallo en publicación
      */
-    private void handlePublishFailure(UUID jobId, Throwable ex) {
+    private void handlePublishFailure(String jobId, Throwable ex) {
         log.error("Failed to publish job {} to Kafka: {}", jobId, ex.getMessage());
-    }
-
-    /**
-     * Genera correlation ID para tracing
-     */
-    private String generateCorrelationId() {
-        return "corr-" + System.currentTimeMillis() + "-" +
-                java.util.UUID.randomUUID().toString().substring(0, 8);
     }
 
 
