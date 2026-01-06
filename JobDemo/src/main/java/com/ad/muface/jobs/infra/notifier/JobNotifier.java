@@ -80,7 +80,7 @@ public class JobNotifier {
             JobResult result = jobExecutionService.executeJob(jobRequest);
 
             // 3. Publicar resultado final
-            kafkaPublisher.publishJobResult(result, correlationId, jobrunrJobId);
+            kafkaPublisher.publishJobResult(result, correlationId, jobRequest.getJobId());
 
             // 4. Confirmar offset
             acknowledgment.acknowledge();
