@@ -124,11 +124,8 @@ public class JobResultConsumer {
                 ? (String) job.getMetadata().get("nombre-Job")
                 : jobResult.getJobName();
         job.getMetadata().put("nombre-Job", jobName);
-        existingLabels.add(jobName + " EN EJECUCIÓN" +
-                ((job.getMetadata().get("progress") == null)
-                        ? " (iniciado el " + DateTimeUtil.formatear(jobResult.getStartedAt()) + ")"
-                        : ""));
-        existingLabels.add("Progreso: " + job.getMetadata().get("progress") + "%");
+        existingLabels.add(jobName.length() > 33 ? jobName.substring(0, 32) : jobName + " EN EJECUCIÓN");
+        existingLabels.add("Comienzo: " + DateTimeUtil.formatear(jobResult.getStartedAt()));
         existingLabels.add("Último latido: " + DateTimeUtil.formatNow());
 
         job.getMetadata().put("lastHeartbeat", DateTimeUtil.formatNow());
@@ -160,7 +157,7 @@ public class JobResultConsumer {
                 : jobResult.getJobName();
         job.getMetadata().put("nombre-Job", jobName);
         List<String> existingLabels =  new ArrayList<>();
-        existingLabels.add(jobName.substring(0, 33) + " COMPLETADO"); // 11 + jobName.length hasta un total de 45
+        existingLabels.add(jobName.length() > 33 ? jobName.substring(0, 32) : jobName + " COMPLETADO");
         existingLabels.add("Finalizado en " + DateTimeUtil.formatNow());
         existingLabels.add("Duración (seg.): " + jobResult.getDurationMs() / 1000);
         job.setLabels(existingLabels);
@@ -190,7 +187,7 @@ public class JobResultConsumer {
         job.getMetadata().put("nombre-Job", jobName);
 
         List<String> existingLabels = job.getLabels();
-        existingLabels.add(jobName.substring(0, 33) + " HA FALLADO");
+        existingLabels.add(jobName.length() > 33 ? jobName.substring(0, 32) : jobName + " HA FALLADO");
         existingLabels.add("Error: " + jobResult.getMessage() + ". Detalle Error: " + jobResult.getErrorDetails());
         existingLabels.add("Finalizado en: " + DateTimeUtil.formatear(jobResult.getCompletedAt()));
         job.setLabels(existingLabels);

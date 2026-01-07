@@ -8,7 +8,7 @@ Write-Host "Programando job inmediato con enfoque asincrono en su ejecución..."
 $scheduleBody = @{
     jobName = "ResumenDiarioClientesAsync"
     businessDomain = "job-executor-service"
-    heartBeatLapse = "10"
+    heartBeatLapse = "5"
     jobType = "SIMPLE_JOB"
     priority = "MEDIUM"
     parameters = @{
