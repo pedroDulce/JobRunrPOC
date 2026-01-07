@@ -21,16 +21,22 @@ public class DataSourceConfig {
         return new DataSourceProperties();
     }
 
-    @Bean(name = "batchDataSource")
+    @Bean(name = "dataSource")
     @Primary
     @ConfigurationProperties("spring.datasource.batch.hikari")
     public DataSource batchDataSource(@Qualifier("batchDataSourceProperties") DataSourceProperties props) {
         return props.initializeDataSourceBuilder().build();
     }
 
-    @Bean(name = "batchTransactionManager")
+    @Bean(name = "transactionManager")
     @Primary
-    public DataSourceTransactionManager batchTransactionManager(@Qualifier("batchDataSource") DataSource dataSource) {
+    public DataSourceTransactionManager batchTransactionManager(@Qualifier("dataSource") DataSource dataSource) {
+        return new DataSourceTransactionManager(dataSource);
+    }
+
+    // Si necesitas uno para JDBC puro sobre la base de negocio
+    @Bean(name = "businessJdbcTransactionManager")
+    public DataSourceTransactionManager businessJdbcTransactionManager(@Qualifier("businessDataSource") DataSource dataSource) {
         return new DataSourceTransactionManager(dataSource);
     }
 
@@ -47,9 +53,5 @@ public class DataSourceConfig {
         return props.initializeDataSourceBuilder().build();
     }
 
-    @Bean(name = "businessTransactionManager")
-    public DataSourceTransactionManager businessTransactionManager(@Qualifier("businessDataSource") DataSource dataSource) {
-        return new DataSourceTransactionManager(dataSource);
-    }
 }
 

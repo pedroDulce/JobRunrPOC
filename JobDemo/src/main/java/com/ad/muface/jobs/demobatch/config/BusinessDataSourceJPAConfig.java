@@ -34,10 +34,11 @@ public class BusinessDataSourceJPAConfig {
                 .build();
     }
 
-    @Bean(name = "businessTransactionManager")
+
+    @Bean(name = "businessTransactionManager") // este es el JPA TransactionManager
     public PlatformTransactionManager businessTransactionManager(
             @Qualifier("businessEntityManagerFactory") EntityManagerFactory entityManagerFactory) {
-
         return new JpaTransactionManager(entityManagerFactory);
     }
+
 }
