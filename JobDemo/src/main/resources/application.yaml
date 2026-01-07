@@ -50,15 +50,6 @@ spring:
           max-size: 20
           queue-capacity: 500
 
-app:
-  batch:
-    chunk-size: 100
-    grid-size: 4
-    partition-size: 1000
-    mail:
-      enabled: false # Cambiar a true cuando configures email
-
-
   kafka:
     bootstrap-servers: localhost:9092
 
@@ -87,6 +78,14 @@ kafka:
     business-domains: ${spring.application.name}
     target-jobs: "ResumenDiarioClientesAsync"     # Solo procesar este
     target-batches: "springBatchSample"         # Solo procesar este
+
+app:
+  batch:
+    chunk-size: 100
+    grid-size: 4
+    partition-size: 1000
+    mail:
+      enabled: false # Cambiar a true cuando configures email
 
 # Logging específico para Kafka
 logging:
