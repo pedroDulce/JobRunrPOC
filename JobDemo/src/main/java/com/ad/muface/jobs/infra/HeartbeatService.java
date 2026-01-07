@@ -40,8 +40,8 @@ public class HeartbeatService implements ApplicationListener<ContextClosedEvent>
         );
     }
 
-    public void startHeartbeat(String jobId, JobRequest jobRequest) {
-        String fulljobId = jobId + "-" + instanceIdentifier.getInstanceId();
+    public void startHeartbeat(JobRequest jobRequest) {
+        String fulljobId = jobRequest.getJobId() + "-" + instanceIdentifier.getInstanceId();
 
         stopHeartbeat(fulljobId);
 
@@ -50,14 +50,14 @@ public class HeartbeatService implements ApplicationListener<ContextClosedEvent>
         }
 
         ScheduledFuture<?> future = sharedExecutor.scheduleAtFixedRate(
-                () -> sendHeartbeat(fulljobId, jobId, jobRequest),
+                () -> sendHeartbeat(fulljobId, jobRequest.getJobId(), jobRequest),
                 0, jobRequest.getHeartBeatLapse(), TimeUnit.SECONDS
         );
 
         heartbeatTasks.put(fulljobId, future);
 
         // Enviar heartbeat inmediatamente
-        sendHeartbeat(fulljobId, jobId, jobRequest);
+        sendHeartbeat(fulljobId, jobRequest.getJobId(), jobRequest);
     }
 
     public void stopHeartbeat(String fulljobId) {

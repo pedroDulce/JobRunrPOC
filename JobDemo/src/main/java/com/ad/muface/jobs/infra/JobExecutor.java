@@ -7,7 +7,6 @@ import lombok.Data;
 @Data
 public abstract class JobExecutor {
     protected final HeartbeatService heartbeatService;
-    protected String jobId;
 
     protected JobExecutor(HeartbeatService heartbeatService) {
         this.heartbeatService = heartbeatService;
@@ -15,10 +14,10 @@ public abstract class JobExecutor {
 
     public JobResult executeJob(JobRequest jobRequest) {
         try {
-            heartbeatService.startHeartbeat(jobId, jobRequest);
+            heartbeatService.startHeartbeat(jobRequest);
             return executeJob(jobRequest);
         } finally {
-            heartbeatService.stopHeartbeat(jobId);
+            heartbeatService.stopHeartbeat(jobRequest.getJobId());
         }
     }
 

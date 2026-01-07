@@ -29,7 +29,6 @@ public class CustomerSummaryReportJob extends JobExecutor {
 
         long mills = Calendar.getInstance().getTimeInMillis();
         String jobId = jobRequest.getJobId();
-        this.setJobId(jobId);
         try {
             LocalDateTime processDateTime = jobRequest.getScheduledAt();
             String emailRecipient = jobRequest.getParameters().get("emailRecipient");
