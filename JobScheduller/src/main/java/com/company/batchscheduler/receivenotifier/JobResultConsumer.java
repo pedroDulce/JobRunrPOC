@@ -120,7 +120,10 @@ public class JobResultConsumer {
             job.getMetadata().put("progress", progresoActual);
         }
         List<String> existingLabels = new ArrayList<>();
-        existingLabels.add(job.getMetadata().get("nombre-Job") + " EN EJECUCIÓN" +
+        String jobName = job.getJobName() == null || "".contentEquals(job.getJobName())
+                ? (String) job.getMetadata().get("nombre-Job")
+                : job.getJobName();
+        existingLabels.add(jobName + " EN EJECUCIÓN" +
                 ((job.getMetadata().get("progress") == null)
                         ? " (iniciado el " + DateTimeUtil.formatear(jobResult.getStartedAt()) + ")"
                         : ""));
@@ -151,8 +154,11 @@ public class JobResultConsumer {
         job.getMetadata().put("inicio", DateTimeUtil.formatear(jobResult.getStartedAt()));
         job.getMetadata().put("fin", DateTimeUtil.formatear(jobResult.getCompletedAt()));
 
+        String jobName = job.getJobName() == null || "".contentEquals(job.getJobName())
+                ? (String) job.getMetadata().get("nombre-Job")
+                : job.getJobName();
         List<String> existingLabels =  new ArrayList<>();
-        existingLabels.add(job.getMetadata().get("nombre-Job") + " COMPLETADO SIN ERRORES");
+        existingLabels.add(jobName + " COMPLETADO SIN ERRORES");
         existingLabels.add("Finalizado en " + DateTimeUtil.formatNow());
         existingLabels.add("Duración (seg.): " + jobResult.getDurationMs() / 1000);
         job.setLabels(existingLabels);
@@ -176,8 +182,11 @@ public class JobResultConsumer {
         job.getMetadata().put("inicio", DateTimeUtil.formatear(jobResult.getStartedAt()));
         job.getMetadata().put("fin", DateTimeUtil.formatear(jobResult.getCompletedAt()));
 
+        String jobName = job.getJobName() == null || "".contentEquals(job.getJobName())
+                ? (String) job.getMetadata().get("nombre-Job")
+                : job.getJobName();
         List<String> existingLabels = job.getLabels();
-        existingLabels.add(job.getMetadata().get("nombre-Job") + " FINALIZADO CON ERRORES");
+        existingLabels.add(jobName + " FINALIZADO CON ERRORES");
         existingLabels.add("Error: " + jobResult.getMessage() + ". Detalle Error: " + jobResult.getErrorDetails());
         existingLabels.add("Finalizado en: " + DateTimeUtil.formatear(jobResult.getCompletedAt()));
         job.setLabels(existingLabels);

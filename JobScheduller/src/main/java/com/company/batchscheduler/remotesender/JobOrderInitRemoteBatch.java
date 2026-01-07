@@ -15,7 +15,6 @@ import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.stereotype.Component;
 
-import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.concurrent.CompletableFuture;
 
@@ -33,9 +32,6 @@ public class JobOrderInitRemoteBatch {
     @Job(name= "Async Job")
     public void dispararJobRemoto(JobRequest request, JobContext jobContext) {
 
-        jobContext.saveMetadata("remote", "true");
-        jobContext.saveMetadata("nombre-Job", request.getJobName());
-
         request.setScheduledAt(LocalDateTime.now());
         if (request.getJobId() == null) {
             request.setJobId(jobContext.getJobId().toString());
@@ -43,14 +39,6 @@ public class JobOrderInitRemoteBatch {
             throw new RuntimeException("Atención: Discrepancia entre el requestId y el jobContextId!");
         }
         this.sendToRemoteWorker(request);
-
-        // Guardar metadata para tracking
-        jobContext.saveMetadata("progress", 25);
-        jobContext.saveMetadata("progressMessage", "Processing data...");
-        jobContext.saveMetadata("lastUpdate", Instant.now());
-        jobContext.saveMetadata("remoteWorkerNotified", true);
-        jobContext.saveMetadata("expectedCompletion",
-                LocalDateTime.now().plusHours(2).toString());
 
         log.info("Job {} is IN_PROGRESS", request.getJobId());
 

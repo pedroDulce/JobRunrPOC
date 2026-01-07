@@ -5,7 +5,6 @@ import com.ad.muface.jobs.infra.HeartbeatService;
 import com.ad.muface.jobs.infra.JobExecutor;
 import common.batch.dto.JobRequest;
 import common.batch.dto.JobResult;
-import common.batch.dto.JobStatusEnum;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
@@ -52,20 +51,8 @@ public class CustomerSummaryReportJob extends JobExecutor {
 
             log.info("✅ Job {} completado exitosamente", jobId);
 
-            JobResult resultado = JobResult.builder()
-                    .jobId(jobRequest.getJobId())
-                    .jobName(jobRequest.getJobName())
-                    .status(JobStatusEnum.COMPLETED)
-                    .message("Proceso ha enviado el correo con toda la info solicitada en fecha " + processDate)
-                    .startedAt(LocalDateTime.now())
-                    .completedAt(LocalDateTime.now())
-                    .errorDetails(null)
-                    .durationMs(millsTerminado - mills)
-                    .correlationId(jobRequest.getCorrelationId())
-                    .jobrunrJobId(jobRequest.getJobId())  // IMPORTANTE: ID de JobRunr
-                    .build();
-
-            return resultado;
+            return buildJobResult(jobRequest, (millsTerminado - mills),
+                    "Proceso ha enviado el correo con toda la info solicitada en fecha " + processDate);
 
         } catch (Exception e) {
             log.error("❌ Error en job {}: {}", jobId, e.getMessage(), e);
