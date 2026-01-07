@@ -36,8 +36,11 @@ public class CustomerSummaryReportJob extends JobExecutor {
 
             // Convertir String a LocalDate
             LocalDate processDate = processDateTime.toLocalDate();
-            log.info("Procesando resumen para fecha-parameter-informe: {}", processDate);
+            log.info("Procesando resumen1 para fecha-parameter-informe: {}", processDate);
             Thread.sleep(20000); // 20 segundos
+
+            log.info("Procesando resumen2 para fecha-parameter-informe: {}", processDate);
+            Thread.sleep(22000); // 20 segundos
 
             log.info("...procesado resumen para fecha-parameter-informe: {}", processDate);
             if (emailRecipient != null) {
