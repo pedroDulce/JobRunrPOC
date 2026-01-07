@@ -23,6 +23,7 @@ public abstract class JobExecutor {
         }
     }
 
+
     public abstract JobResult executeJobLogic(JobRequest jobRequest);
 
 }

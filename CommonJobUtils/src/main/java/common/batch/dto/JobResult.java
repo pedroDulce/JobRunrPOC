@@ -22,9 +22,9 @@ public class JobResult {
     private JobStatusEnum status;
     private String message;
     private Object resultData;
-    private Instant startedAt;
-    private Instant completedAt;
-    private Instant lastHeartBeat;
+    private LocalDateTime startedAt;
+    private LocalDateTime completedAt;
+    private LocalDateTime lastHeartBeat;
     private Long durationMs;
     private String errorDetails;
     private Map<String, Object> metadata;
@@ -33,7 +33,7 @@ public class JobResult {
     private Boolean asyncJob;
     private Integer estimatedCompletionMinutes;
 
-    public JobResult(String jobId, JobStatusEnum status, String result, Instant completedAt) {
+    public JobResult(String jobId, JobStatusEnum status, String result, LocalDateTime completedAt) {
         this.completedAt = completedAt;
         this.status = status;
         this.message = result;

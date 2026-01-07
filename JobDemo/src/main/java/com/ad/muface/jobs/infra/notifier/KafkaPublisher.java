@@ -59,9 +59,9 @@ public class KafkaPublisher {
                     .jobName(jobRequest.getJobName())
                     .status(status)
                     .message(message)
-                    .startedAt(Instant.now())
+                    .startedAt(LocalDateTime.now())
                     .completedAt(status.compareTo(JobStatusEnum.COMPLETED) == 0 || status.compareTo(JobStatusEnum.FAILED) == 0
-                            ? Instant.now() : null)
+                            ? LocalDateTime.now() : null)
                     .errorDetails(error != null ? error.getMessage() : null)
                     .correlationId(jobRequest.getCorrelationId())
                     .jobrunrJobId(jobRequest.getJobId())  // IMPORTANTE: ID de JobRunr
