@@ -120,14 +120,15 @@ public class JobResultConsumer {
             job.getMetadata().put("progress", progresoActual);
         }
         List<String> existingLabels = new ArrayList<>();
-        String jobName = job.getJobName() == null || "".contentEquals(job.getJobName())
+        String jobName = jobResult.getJobName() == null || "".contentEquals(jobResult.getJobName())
                 ? (String) job.getMetadata().get("nombre-Job")
-                : job.getJobName();
+                : jobResult.getJobName();
+        job.getMetadata().put("nombre-Job", jobName);
         existingLabels.add(jobName + " EN EJECUCIÓN" +
                 ((job.getMetadata().get("progress") == null)
                         ? " (iniciado el " + DateTimeUtil.formatear(jobResult.getStartedAt()) + ")"
                         : ""));
-        existingLabels.add("Progreso: " + (Integer) job.getMetadata().get("progress") + "%");
+        existingLabels.add("Progreso: " + job.getMetadata().get("progress") + "%");
         existingLabels.add("Último latido: " + DateTimeUtil.formatNow());
 
         job.getMetadata().put("lastHeartbeat", DateTimeUtil.formatNow());
@@ -154,9 +155,10 @@ public class JobResultConsumer {
         job.getMetadata().put("inicio", DateTimeUtil.formatear(jobResult.getStartedAt()));
         job.getMetadata().put("fin", DateTimeUtil.formatear(jobResult.getCompletedAt()));
 
-        String jobName = job.getJobName() == null || "".contentEquals(job.getJobName())
+        String jobName = jobResult.getJobName() == null || "".contentEquals(jobResult.getJobName())
                 ? (String) job.getMetadata().get("nombre-Job")
-                : job.getJobName();
+                : jobResult.getJobName();
+        job.getMetadata().put("nombre-Job", jobName);
         List<String> existingLabels =  new ArrayList<>();
         existingLabels.add(jobName + " COMPLETADO SIN ERRORES");
         existingLabels.add("Finalizado en " + DateTimeUtil.formatNow());
@@ -182,9 +184,11 @@ public class JobResultConsumer {
         job.getMetadata().put("inicio", DateTimeUtil.formatear(jobResult.getStartedAt()));
         job.getMetadata().put("fin", DateTimeUtil.formatear(jobResult.getCompletedAt()));
 
-        String jobName = job.getJobName() == null || "".contentEquals(job.getJobName())
+        String jobName = jobResult.getJobName() == null || "".contentEquals(jobResult.getJobName())
                 ? (String) job.getMetadata().get("nombre-Job")
-                : job.getJobName();
+                : jobResult.getJobName();
+        job.getMetadata().put("nombre-Job", jobName);
+
         List<String> existingLabels = job.getLabels();
         existingLabels.add(jobName + " FINALIZADO CON ERRORES");
         existingLabels.add("Error: " + jobResult.getMessage() + ". Detalle Error: " + jobResult.getErrorDetails());
