@@ -22,6 +22,7 @@
     <module>JobDemo</module>
     <module>JobScheduller</module>
     <module>CommonJobUtils</module>
+      <module>SpringBatchDemo</module>
   </modules>
 
   <properties>
