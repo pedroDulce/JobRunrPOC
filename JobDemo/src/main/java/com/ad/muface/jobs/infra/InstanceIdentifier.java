@@ -17,7 +17,7 @@ public class InstanceIdentifier {
             try {
                 hostname = InetAddress.getLocalHost().getHostName();
             } catch (UnknownHostException exc) {
-                this.instanceId = hostname + "-" + UUID.randomUUID().toString().substring(0, 8);
+                this.instanceId = "instanceId-remoteHost-" + UUID.randomUUID().toString().substring(0, 8);
             }
         }
         this.instanceId = "instanceId-" + hostname + "-" + UUID.randomUUID().toString().substring(0, 8);

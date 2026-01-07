@@ -9,7 +9,6 @@ import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ContextClosedEvent;
 import org.springframework.stereotype.Component;
 
-import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
@@ -42,8 +41,7 @@ public class HeartbeatService implements ApplicationListener<ContextClosedEvent>
 
     public void startHeartbeat(JobRequest jobRequest) {
         String fulljobId = jobRequest.getJobId() + "-" + instanceIdentifier.getInstanceId();
-
-        stopHeartbeat(fulljobId);
+        jobRequest.setJobRunnerId(fulljobId);
 
         if (shuttingDown.get()) {
             throw new IllegalStateException("Service is shutting down");
@@ -70,7 +68,7 @@ public class HeartbeatService implements ApplicationListener<ContextClosedEvent>
     private void sendHeartbeat(String fulljobId, String serviceType, JobRequest jobRequest) {
         try {
             Map<String, Object> metadata = new HashMap<>();
-            metadata.put("instanceId", instanceIdentifier.getInstanceId());
+            metadata.put("instanceId", fulljobId);
             metadata.put("serviceType", serviceType);
             metadata.put("timestamp", System.currentTimeMillis());
             metadata.put("thread", Thread.currentThread().getName());

@@ -19,7 +19,7 @@ public abstract class JobExecutor {
         } catch (Exception e) {
             throw e;
         } finally {
-            heartbeatService.stopHeartbeat(jobRequest.getJobId());
+            heartbeatService.stopHeartbeat(jobRequest.getJobRunnerId());
         }
     }
 

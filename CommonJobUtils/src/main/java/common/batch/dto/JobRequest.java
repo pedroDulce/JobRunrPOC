@@ -38,6 +38,8 @@ public class JobRequest implements Serializable {
 
     private Map<String, Object> metadata;
 
+    private String jobRunnerId;
+
     public JobRequest(String jobId, String jobType, Map<String, String> parameters) {
         this.jobId = jobId;
         this.jobType = jobType;
