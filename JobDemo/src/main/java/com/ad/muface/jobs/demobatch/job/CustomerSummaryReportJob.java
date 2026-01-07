@@ -19,9 +19,9 @@ public class CustomerSummaryReportJob extends JobExecutor {
 
     private final DailySummaryRepository dailySummaryRepository;
 
-    protected CustomerSummaryReportJob(String jobId, HeartbeatService heartbeatService,
+    public CustomerSummaryReportJob(HeartbeatService heartbeatService,
                                        DailySummaryRepository dailySummaryRepository) {
-        super(jobId, heartbeatService);
+        super(heartbeatService);
         this.dailySummaryRepository = dailySummaryRepository;
     }
 
@@ -29,6 +29,7 @@ public class CustomerSummaryReportJob extends JobExecutor {
 
         long mills = Calendar.getInstance().getTimeInMillis();
         String jobId = jobRequest.getJobId();
+        this.setJobId(jobId);
         try {
             LocalDateTime processDateTime = jobRequest.getScheduledAt();
             String emailRecipient = jobRequest.getParameters().get("emailRecipient");

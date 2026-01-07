@@ -2,13 +2,14 @@ package com.ad.muface.jobs.infra;
 
 import common.batch.dto.JobRequest;
 import common.batch.dto.JobResult;
+import lombok.Data;
 
+@Data
 public abstract class JobExecutor {
     protected final HeartbeatService heartbeatService;
-    protected final String jobId;
+    protected String jobId;
 
-    protected JobExecutor(String jobId, HeartbeatService heartbeatService) {
-        this.jobId = jobId;
+    protected JobExecutor(HeartbeatService heartbeatService) {
         this.heartbeatService = heartbeatService;
     }
 
