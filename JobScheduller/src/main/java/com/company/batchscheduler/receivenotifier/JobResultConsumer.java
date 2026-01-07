@@ -131,7 +131,7 @@ public class JobResultConsumer {
             job.getMetadata().put("progress", progresoActual);
         }
         List<String> existingLabels = new ArrayList<>();
-        existingLabels.add("EN EJECUCIÓN" +
+        existingLabels.add(job.getJobName() + " EN EJECUCIÓN" +
                 ((job.getMetadata().get("progress") == null)
                         ? " (iniciado el " + DateTimeUtil.formatear(jobResult.getStartedAt()) + ")"
                         : ""));
@@ -165,7 +165,7 @@ public class JobResultConsumer {
         job.getMetadata().put("fin", DateTimeUtil.formatear(jobResult.getCompletedAt()));
 
         List<String> existingLabels =  new ArrayList<>();
-        existingLabels.add("COMPLETADO SIN ERRORES");
+        existingLabels.add(job.getJobName() + " COMPLETADO SIN ERRORES");
         existingLabels.add("Finalizado en " + DateTimeUtil.formatNow());
         existingLabels.add("Duración (seg.): " + jobResult.getDurationMs() / 1000);
         job.setLabels(existingLabels);
@@ -190,7 +190,7 @@ public class JobResultConsumer {
         job.getMetadata().put("fin", DateTimeUtil.formatear(jobResult.getCompletedAt()));
 
         List<String> existingLabels = job.getLabels();
-        existingLabels.add("TRABAJO FALLIDO");
+        existingLabels.add(job.getJobName() + " FINALIZADO CON ERRORES");
         existingLabels.add("Error: " + jobResult.getMessage() + ". Detalle Error: " + jobResult.getErrorDetails());
         existingLabels.add("Finalizado en: " + DateTimeUtil.formatear(jobResult.getCompletedAt()));
         job.setLabels(existingLabels);
