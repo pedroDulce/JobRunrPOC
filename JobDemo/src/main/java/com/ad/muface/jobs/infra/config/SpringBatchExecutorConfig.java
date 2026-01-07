@@ -44,6 +44,8 @@ public class SpringBatchExecutorConfig {
     @Qualifier("businessDataSource")
     private final DataSource businessDataSource;
 
+    private final JobRepository jobRepository;   // Spring Batch lo coge automáticamente del batchDataSource
+    private final PlatformTransactionManager transactionManager; // el batchTransactionManager
     private final EmailReporter emailReporter;
     private final NotifierProgress notifierProgress;
 

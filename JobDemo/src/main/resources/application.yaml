@@ -9,7 +9,7 @@ spring:
   datasource:
     # Configuración del DataSource para SPRING BATCH
     batch:
-      jdbc-url: jdbc:postgresql://localhost:5432/spring_batch_db
+      url: jdbc:postgresql://localhost:5432/spring_batch_db
       username: spring_batch_user
       password: spring_batch_password
       driver-class-name: org.postgresql.Driver
@@ -23,7 +23,7 @@ spring:
 
     # Configuración del DataSource para BBDD Negocio , la principal de este microservicio
     business:
-      jdbc-url: jdbc:postgresql://localhost:5432/job_demo_database
+      url: jdbc:postgresql://localhost:5432/job_demo_database
       username: postgres
       password: postgres
       driver-class-name: org.postgresql.Driver
@@ -33,22 +33,13 @@ spring:
 
   # Configuración JPA para el DataSource BBDD
   jpa:
+    hibernate:
+      ddl-auto: update    # crea/actualiza tablas automáticamente
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
-        default_schema: public
-        jdbc:
-          batch_size: 20
-        order_inserts: true
-        order_updates: true
-    hibernate:
-      ddl-auto: validate  # validate, update, create, create-drop, none
-    show-sql: false
-    open-in-view: false
-
 
   batch:
-
     jdbc:
       initialize-schema: always # Crea las tablas BATCH_* la primera vez
     # Configuración del pool
