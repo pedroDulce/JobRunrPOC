@@ -28,13 +28,14 @@ public class CustomerSummaryReportJob extends JobExecutor {
 
         long mills = Calendar.getInstance().getTimeInMillis();
         String jobId = jobRequest.getJobId();
+        LocalDateTime processDateTime = jobRequest.getScheduledAt();
+        LocalDate processDate = processDateTime.toLocalDate();
         try {
-            LocalDateTime processDateTime = jobRequest.getScheduledAt();
+
             String emailRecipient = jobRequest.getParameters().get("emailRecipient");
             log.info("🚀 Iniciando job {} con fecha: {} y tipo: {}", jobId, processDateTime, jobRequest.getJobType());
 
             // Convertir String a LocalDate
-            LocalDate processDate = processDateTime.toLocalDate();
             log.info("Procesando resumen1 para fecha-parameter-informe: {}", processDate);
             Thread.sleep(20000); // 20 segundos
 
@@ -51,12 +52,14 @@ public class CustomerSummaryReportJob extends JobExecutor {
 
             log.info("✅ Job {} completado exitosamente", jobId);
 
-            return buildJobResult(jobRequest, (millsTerminado - mills),
-                    "Proceso ha enviado el correo con toda la info solicitada en fecha " + processDate);
+            return buildJobSuccessResult(jobRequest, (millsTerminado - mills),
+           "Proceso ha enviado el correo con toda la info solicitada en fecha " + processDate);
 
         } catch (Exception e) {
+            long millsTerminado = Calendar.getInstance().getTimeInMillis();
             log.error("❌ Error en job {}: {}", jobId, e.getMessage(), e);
-            throw new RuntimeException("❌ Error en job {}: {}", e);
+            return buildJobFailedResult(jobRequest, (millsTerminado - mills),
+                    "Error en job " + processDate, "Exception: " + e.getMessage());
         }
     }
 
