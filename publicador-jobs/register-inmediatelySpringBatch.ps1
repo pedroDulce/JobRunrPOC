@@ -1,17 +1,16 @@
 
-Write-Host "PRUEBAS en MODO ASINCRONO - Batch Scheduler" -ForegroundColor Cyan
+Write-Host "PRUEBAS en MODO ASINCRONO - Job Scheduler" -ForegroundColor Cyan
 Write-Host "==========================================="
 
 $baseUrl = "http://localhost:8080"
 
-Write-Host "`Programando Spring Batch con enfoque asincrono en su ejecucion..." -ForegroundColor Yellow
+Write-Host "Programando spring batch inmediato con enfoque asincrono en su ejecución..." -ForegroundColor Yellow
 $scheduleBody = @{
     jobName = "springBatchSample"
     businessDomain = "job-executor-service"
     heartBeatLapse = "5"
     jobType = "BATCH_PROCESSING"
     priority = "MEDIUM"
-    cronExpression = "0 */2 * * * *"
     parameters = @{
         "processDate" = "2025-12-15"
         "emailRecipient" = "admin@company.com"
@@ -20,13 +19,12 @@ $scheduleBody = @{
 } | ConvertTo-Json
 
 try {
-    $response = Invoke-RestMethod -Uri "$baseUrl/api/v1/jobs/schedule-remote-async" `
+    $response = Invoke-RestMethod -Uri "$baseUrl/api/v1/jobs/inmediate-remote-async" `
         -Method POST `
         -Headers @{"Content-Type" = "application/json"} `
         -Body $scheduleBody
 
-    Write-Host "  OK - Job programado: $($response.jobId)" -ForegroundColor Green
-    Write-Host "  Cron: $($response.cronExpression)" -ForegroundColor Green
+    Write-Host "  OK - Job de lanzamiento inmediato: $($response.jobId)" -ForegroundColor Green
 
 } catch {
     Write-Host "  ERROR: $($_.Exception.Message)" -ForegroundColor Red
@@ -37,15 +35,15 @@ try {
 
 
 # 4. Dashboard
-Write-Host "`n4. URLs del sistema..." -ForegroundColor Yellow
-Write-Host "   Dashboard JobRunr: http://localhost:8000" -ForegroundColor Cyan
-Write-Host "   API Docs: http://localhost:8080/swagger-ui.html" -ForegroundColor Cyan
+Write-Host "URLs del sistema..." -ForegroundColor Yellow
+Write-Host "  Dashboard JobRunr: http://localhost:8000/dashboard" -ForegroundColor Cyan
+Write-Host "  API Docs: http://localhost:8080/swagger-ui.html" -ForegroundColor Cyan
 
 # 5. Esperar y verificar
-Write-Host "`n5. Esperando 3 segundos..." -ForegroundColor Yellow
-Start-Sleep -Seconds 3
+Write-Host "`Esperando 2 segundos..." -ForegroundColor Yellow
+Start-Sleep -Seconds 2
 
-Write-Host "`n===========================================" -ForegroundColor Cyan
+Write-Host "===========================================" -ForegroundColor Cyan
 Write-Host "REGISTRO COMPLETADO" -ForegroundColor Green
 Write-Host ""
 Write-Host "Pasos siguientes:" -ForegroundColor Yellow

@@ -1,4 +1,4 @@
-package com.example.batch;
+package com.example.batch.api;
 
 import org.springframework.batch.core.*;
 import org.springframework.batch.core.explore.JobExplorer;

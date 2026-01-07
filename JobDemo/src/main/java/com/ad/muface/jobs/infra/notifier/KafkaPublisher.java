@@ -27,17 +27,7 @@ public class KafkaPublisher {
     /**
      * Publicar resultado final
      */
-    public void publishJobResult(JobResult result,
-                                 String correlationId,
-                                 String jobrunrJobId) {
-
-        // Asegurar que tiene el jobrunrJobId
-        if (jobrunrJobId != null) {
-            result.setJobrunrJobId(jobrunrJobId);
-        }
-        if (correlationId != null) {
-            result.setCorrelationId(correlationId);
-        }
+    public void publishJobResult(JobResult result) {
 
         publishToResultsTopic(result);
 
