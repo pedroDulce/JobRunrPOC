@@ -10,6 +10,7 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.SendResult;
 import org.springframework.stereotype.Component;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.concurrent.CompletableFuture;
 
@@ -58,9 +59,9 @@ public class KafkaPublisher {
                     .jobName(jobRequest.getJobName())
                     .status(status)
                     .message(message)
-                    .startedAt(LocalDateTime.now())
+                    .startedAt(Instant.now())
                     .completedAt(status.compareTo(JobStatusEnum.COMPLETED) == 0 || status.compareTo(JobStatusEnum.FAILED) == 0
-                            ? LocalDateTime.now() : null)
+                            ? Instant.now() : null)
                     .errorDetails(error != null ? error.getMessage() : null)
                     .correlationId(jobRequest.getCorrelationId())
                     .jobrunrJobId(jobRequest.getJobId())  // IMPORTANTE: ID de JobRunr

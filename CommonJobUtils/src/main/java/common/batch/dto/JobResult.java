@@ -6,6 +6,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.Map;
 
@@ -21,9 +22,9 @@ public class JobResult {
     private JobStatusEnum status;
     private String message;
     private Object resultData;
-    private LocalDateTime startedAt;
-    private LocalDateTime completedAt;
-    private LocalDateTime lastHeartBeat;
+    private Instant startedAt;
+    private Instant completedAt;
+    private Instant lastHeartBeat;
     private Long durationMs;
     private String errorDetails;
     private Map<String, Object> metadata;
@@ -32,7 +33,7 @@ public class JobResult {
     private Boolean asyncJob;
     private Integer estimatedCompletionMinutes;
 
-    public JobResult(String jobId, JobStatusEnum status, String result, LocalDateTime completedAt) {
+    public JobResult(String jobId, JobStatusEnum status, String result, Instant completedAt) {
         this.completedAt = completedAt;
         this.status = status;
         this.message = result;

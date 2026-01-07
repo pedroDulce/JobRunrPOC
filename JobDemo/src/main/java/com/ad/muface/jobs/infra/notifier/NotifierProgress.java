@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.Map;
 
@@ -26,7 +27,7 @@ public class NotifierProgress {
                 .jobName("jobRequest.getJobName()")
                 .status(JobStatusEnum.IN_PROGRESS)
                 .message(message)
-                .startedAt(LocalDateTime.now())
+                .startedAt(Instant.now())
                 .completedAt(null)
                 .errorDetails(null)
                 .correlationId("correlationId")
@@ -52,7 +53,7 @@ public class NotifierProgress {
                 .jobName("jobRequest.getJobName()")
                 .status(JobStatusEnum.IN_PROGRESS)
                 .message(message)
-                .startedAt(LocalDateTime.now())
+                .startedAt(Instant.now())
                 .completedAt(null)
                 .errorDetails(null)
                 .correlationId("correlationId")
@@ -82,8 +83,8 @@ public class NotifierProgress {
                 .jobName("jobRequest.getJobName()")
                 .status(JobStatusEnum.COMPLETED)
                 .message(message)
-                .startedAt(LocalDateTime.now())
-                .completedAt(LocalDateTime.now())
+                .startedAt(Instant.now())
+                .completedAt(Instant.now())
                 .errorDetails(null)
                 .correlationId("correlationId")
                 .metadata(report != null ? report : Map.of("stage", "COMPLETED"))

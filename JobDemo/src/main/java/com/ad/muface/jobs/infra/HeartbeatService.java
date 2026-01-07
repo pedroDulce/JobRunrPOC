@@ -9,6 +9,7 @@ import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ContextClosedEvent;
 import org.springframework.stereotype.Component;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
@@ -63,8 +64,6 @@ public class HeartbeatService implements ApplicationListener<ContextClosedEvent>
         ScheduledFuture<?> task = heartbeatTasks.remove(fulljobId);
         if (task != null) {
             task.cancel(false);
-            // Enviar último heartbeat indicando shutdown
-            sendShutdownHeartbeat(fulljobId);
         }
     }
 
@@ -82,7 +81,7 @@ public class HeartbeatService implements ApplicationListener<ContextClosedEvent>
 
             JobResult heartbeat = new JobResult();
             heartbeat.setJobId(fulljobId);
-            heartbeat.setLastHeartBeat(LocalDateTime.now());
+            heartbeat.setLastHeartBeat(Instant.now());
             heartbeat.setStatus(JobStatusEnum.IN_PROGRESS);
             heartbeat.setMetadata(metadata);
 
@@ -97,7 +96,7 @@ public class HeartbeatService implements ApplicationListener<ContextClosedEvent>
         try {
             JobResult shutdownHeartbeat = new JobResult();
             shutdownHeartbeat.setJobId(fulljobId);
-            shutdownHeartbeat.setLastHeartBeat(LocalDateTime.now());
+            shutdownHeartbeat.setLastHeartBeat(Instant.now());
             shutdownHeartbeat.setStatus(JobStatusEnum.FAILED);
             shutdownHeartbeat.setMessage("Service instance shutting down");
 

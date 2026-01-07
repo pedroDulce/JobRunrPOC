@@ -9,6 +9,7 @@ import common.batch.dto.JobStatusEnum;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Calendar;
@@ -57,8 +58,8 @@ public class CustomerSummaryReportJob extends JobExecutor {
                     .jobName(jobRequest.getJobName())
                     .status(JobStatusEnum.COMPLETED)
                     .message("Proceso ha enviado el correo con toda la info solicitada en fecha " + processDate)
-                    .startedAt(LocalDateTime.now())
-                    .completedAt(LocalDateTime.now())
+                    .startedAt(Instant.now())
+                    .completedAt(Instant.now())
                     .errorDetails(null)
                     .durationMs(millsTerminado - mills)
                     .correlationId(jobRequest.getCorrelationId())

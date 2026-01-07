@@ -20,7 +20,7 @@ public class InstanceIdentifier {
                 this.instanceId = hostname + "-" + UUID.randomUUID().toString().substring(0, 8);
             }
         }
-        this.instanceId = hostname + "-" + UUID.randomUUID().toString().substring(0, 8);
+        this.instanceId = "instanceId-" + hostname + "-" + UUID.randomUUID().toString().substring(0, 8);
     }
 
     public String getInstanceId() {

@@ -16,6 +16,8 @@ public abstract class JobExecutor {
         try {
             heartbeatService.startHeartbeat(jobRequest);
             return executeJobLogic(jobRequest);
+        } catch (Exception e) {
+            throw e;
         } finally {
             heartbeatService.stopHeartbeat(jobRequest.getJobId());
         }
