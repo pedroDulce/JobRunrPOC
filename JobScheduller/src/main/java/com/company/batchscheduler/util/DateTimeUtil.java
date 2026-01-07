@@ -18,26 +18,26 @@ public class DateTimeUtil {
 
     // Para el momento actual
     public static String ahora() {
-        return DD_MM_YYYY_HH_MM_SS.format(Instant.now());
+        return DD_MM_YYYY_HH_MM_SS.format(LocalDateTime.now());
     }
 
     // Solo fecha
     public static String fechaActual() {
-        return DD_MM_YYYY.format(Instant.now());
+        return DD_MM_YYYY.format(LocalDateTime.now());
     }
 
     // Solo hora
     public static String horaActual() {
-        return HH_MM_SS.format(Instant.now());
+        return HH_MM_SS.format(LocalDateTime.now());
     }
 
     // Formatear con formato personalizado
-    public static String formatear(Instant dateTime, String formato) {
+    public static String formatear(LocalDateTime dateTime, String formato) {
         return DateTimeFormatter.ofPattern(formato).format(dateTime);
     }
 
     // Formatear con el formato estándar
-    public static String formatear(Instant dateTime) {
+    public static String formatear(LocalDateTime dateTime) {
         return DD_MM_YYYY_HH_MM_SS.format(dateTime);
     }
 
