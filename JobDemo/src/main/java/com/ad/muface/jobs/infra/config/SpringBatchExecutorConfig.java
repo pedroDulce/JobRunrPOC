@@ -2,10 +2,10 @@ package com.ad.muface.jobs.infra.config;
 
 import com.ad.muface.jobs.demobatch.model.CustomerTransaction;
 import com.ad.muface.jobs.demobatch.model.ProcessedTransaction;
+import com.ad.muface.jobs.infra.notifier.EmailReporter;
 import com.ad.muface.jobs.infra.notifier.NotifierProgress;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import com.ad.muface.jobs.infra.notifier.EmailReporter;
 import org.springframework.batch.core.*;
 import org.springframework.batch.core.configuration.annotation.EnableBatchProcessing;
 import org.springframework.batch.core.configuration.annotation.StepScope;
@@ -21,6 +21,7 @@ import org.springframework.batch.item.ItemReader;
 import org.springframework.batch.item.ItemWriter;
 import org.springframework.batch.item.database.JdbcCursorItemReader;
 import org.springframework.batch.item.database.builder.JdbcCursorItemReaderBuilder;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -40,12 +41,11 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class SpringBatchExecutorConfig {
 
-    private final DataSource dataSource;
-    private final JobRepository jobRepository;
-    private final PlatformTransactionManager transactionManager;
+    @Qualifier("businessDataSource")
+    private final DataSource businessDataSource;
+
     private final EmailReporter emailReporter;
     private final NotifierProgress notifierProgress;
-
 
     @Value("${app.batch.chunk-size:100}")
     private int chunkSize;
@@ -56,29 +56,31 @@ public class SpringBatchExecutorConfig {
     @Value("${app.batch.partition-size:1000}")
     private int partitionSize;
 
-    // ============= PARTITIONER =============
+
     @Bean
     public Partitioner transactionPartitioner() {
-        return gridSize -> {
-            Map<String, ExecutionContext> partitions = new HashMap<>();
-            LocalDate processDate = LocalDate.now().minusDays(1);
+        return new Partitioner() {
+            @Override
+            public Map<String, ExecutionContext> partition(int gridSize) {
+                Map<String, ExecutionContext> partitions = new HashMap<>();
+                LocalDate processDate = LocalDate.now().minusDays(1);
 
-            for (int i = 0; i < gridSize; i++) {
-                ExecutionContext context = new ExecutionContext();
-                context.put("partitionNumber", i);
-                context.put("startId", i * partitionSize);
-                context.put("endId", (i + 1) * partitionSize - 1);
-                context.put("processDate", processDate);
+                for (int i = 0; i < gridSize; i++) {
+                    ExecutionContext context = new ExecutionContext();
+                    context.putLong("startId", (long) i * partitionSize);
+                    context.putLong("endId", (long) ((i + 1) * partitionSize - 1));
+                    context.putInt("partitionNumber", i);
+                    context.put("processDate", processDate);
 
-                partitions.put("partition-" + i, context);
+                    partitions.put("partition-" + i, context);
+                }
+                return partitions;
             }
-
-            log.info("Creadas {} particiones para procesamiento paralelo", gridSize);
-            return partitions;
         };
     }
 
-    // ============= READER POR PARTICIÓN =============
+
+    // ================= READER =================
     @Bean
     @StepScope
     public JdbcCursorItemReader<CustomerTransaction> partitionedTransactionReader(
@@ -88,14 +90,14 @@ public class SpringBatchExecutorConfig {
 
         return new JdbcCursorItemReaderBuilder<CustomerTransaction>()
                 .name("partitionedTransactionReader")
-                .dataSource(dataSource)
+                .dataSource(businessDataSource)
                 .sql("""
-                    SELECT id, transaction_id, customer_id, amount, 
+                    SELECT id, transaction_id, customer_id, amount,
                            currency, transaction_date, status, source_file, created_at
-                    FROM customer_transactions 
+                    FROM customer_transactions
                     WHERE status = 'PENDING'
-                    AND transaction_date = ?
-                    AND id BETWEEN ? AND ?
+                      AND transaction_date = ?
+                      AND id BETWEEN ? AND ?
                     ORDER BY id
                     """)
                 .rowMapper(new BeanPropertyRowMapper<>(CustomerTransaction.class))
@@ -108,117 +110,82 @@ public class SpringBatchExecutorConfig {
                 .build();
     }
 
-    // ============= PROCESSOR =============
+    // ================= PROCESSOR =================
     @Bean
     @StepScope
     public ItemProcessor<CustomerTransaction, ProcessedTransaction> transactionProcessor(
             @Value("#{stepExecutionContext['partitionNumber']}") Integer partitionNumber) {
 
-        return transaction -> {
-            // Aquí va tu lógica de procesamiento
+        return tx -> {
             ProcessedTransaction processed = new ProcessedTransaction();
-            processed.setTransactionId(transaction.getTransactionId());
-            processed.setCustomerId(transaction.getCustomerId());
-            processed.setAmount(transaction.getAmount());
-            processed.setCurrency(transaction.getCurrency());
+            processed.setTransactionId(tx.getTransactionId());
+            processed.setCustomerId(tx.getCustomerId());
+            processed.setAmount(tx.getAmount());
+            processed.setCurrency(tx.getCurrency());
             processed.setStatus("PROCESSED");
             processed.setPartitionNumber(partitionNumber);
-
             return processed;
         };
     }
 
-    // ============= WRITER =============
+    // ================= WRITER =================
     @Bean
     public ItemWriter<ProcessedTransaction> transactionWriter() {
-        return transactions -> {
-            // Writer que procesa el chunk completo
-            log.info("Escribiendo lote de {} transacciones procesadas", transactions.size());
-
-            // Aquí normalmente guardarías en BD o enviarías a otro sistema
-            // Por ahora solo logueamos
-            transactions.forEach(t ->
-                    log.debug("Transacción procesada: {}", t.getTransactionId())
-            );
-        };
+        return items -> log.info("Escribiendo {} transacciones procesadas", items.size());
     }
 
-    // ============= STEP DEL WORKER =============
     @Bean
-    @StepScope
     public Step workerStep(
-            ItemReader<CustomerTransaction> reader,
-            ItemProcessor<CustomerTransaction, ProcessedTransaction> processor,
-            ItemWriter<ProcessedTransaction> writer,
-            @Value("#{stepExecutionContext['partitionNumber']}") Integer partitionNumber) {
+            JobRepository jobRepository,
+            PlatformTransactionManager transactionManager,
+            ItemReader<CustomerTransaction> partitionedTransactionReader,  // Cambiado a interfaz
+            ItemProcessor<CustomerTransaction, ProcessedTransaction> transactionProcessor,
+            ItemWriter<ProcessedTransaction> transactionWriter) {
 
-        return new StepBuilder("workerStep-" + partitionNumber, jobRepository)
+        return new StepBuilder("workerStep", jobRepository)
                 .<CustomerTransaction, ProcessedTransaction>chunk(chunkSize, transactionManager)
-                .reader(reader)
-                .processor(processor)
-                .writer(writer)
-                .listener(new StepExecutionListener() {
-                    @Override
-                    public void beforeStep(StepExecution stepExecution) {
-                        log.info("🚀 Iniciando partición {}", partitionNumber);
-                    }
-
-                    @Override
-                    public ExitStatus afterStep(StepExecution stepExecution) {
-                        log.info("✅ Partición {} completada. Procesados: {}",
-                                partitionNumber, stepExecution.getWriteCount());
-                        return ExitStatus.COMPLETED;
-                    }
-                })
+                .reader(partitionedTransactionReader)  // Usar directamente
+                .processor(transactionProcessor)
+                .writer(transactionWriter)
                 .build();
     }
 
-    // ============= PARTITION HANDLER =============
+    // ================= PARTITION HANDLER =================
     @Bean
-    public PartitionHandler partitionHandler() {
+    public PartitionHandler partitionHandler(Step workerStep, TaskExecutor batchTaskExecutor) {
         TaskExecutorPartitionHandler handler = new TaskExecutorPartitionHandler();
-        handler.setTaskExecutor(batchTaskExecutor());
-        handler.setStep(workerStep(null, null, null, 0)); // Dummy para inicialización
+        handler.setTaskExecutor(batchTaskExecutor);
+        handler.setStep(workerStep);
         handler.setGridSize(gridSize);
         return handler;
     }
 
-    // ============= STEP MASTER =============
+    // ================= MASTER STEP =================
     @Bean
-    public Step masterStep(Partitioner partitioner, PartitionHandler partitionHandler) {
-        return new StepBuilder("masterStep", jobRepository)
-                .partitioner("workerStep", partitioner)
-                .partitionHandler(partitionHandler)
-                .listener(new StepExecutionListener() {
-                    @Override
-                    public void beforeStep(StepExecution stepExecution) {
-                        // Extraer jobId del contexto y notificar inicio
-                        String jobId = stepExecution.getJobParameters().getString("externalJobId");
-                        if (jobId != null) {
-                            notifierProgress.notifyProgress(
-                                    jobId, "Iniciando procesamiento batch", 0
-                            );
-                        }
-                    }
+    public Step masterStep(
+            JobRepository jobRepository,
+            Partitioner transactionPartitioner,
+            PartitionHandler partitionHandler) {
 
-                    @Override
-                    public ExitStatus afterStep(StepExecution stepExecution) {
-                        // Notificar progreso
-                        String jobId = stepExecution.getJobParameters().getString("externalJobId");
-                        if (jobId != null) {
-                            int progress = (int) ((stepExecution.getWriteCount() * 100) /
-                                    Math.max(1, stepExecution.getReadCount()));
-                            notifierProgress.notifyProgress(
-                                    jobId, "Procesando...", progress
-                            );
-                        }
-                        return ExitStatus.COMPLETED;
-                    }
-                })
+        return new StepBuilder("masterStep", jobRepository)
+                .partitioner("workerStep", transactionPartitioner)
+                .partitionHandler(partitionHandler)
                 .build();
     }
 
-    // ============= TASK EXECUTOR =============
+    // ================= JOB =================
+    @Bean
+    public Job dailyTransactionBatchJob(
+            JobRepository jobRepository,
+            Step masterStep) {
+
+        return new JobBuilder("dailyTransactionBatchJob", jobRepository)
+                .start(masterStep)
+                .listener(batchJobExecutionListener())
+                .build();
+    }
+
+    // ================= TASK EXECUTOR =================
     @Bean
     public TaskExecutor batchTaskExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
@@ -230,29 +197,16 @@ public class SpringBatchExecutorConfig {
         return executor;
     }
 
-    // ============= JOB PRINCIPAL =============
-    @Bean
-    public Job dailyTransactionBatchJob(Step masterStep) {
-        return new JobBuilder("dailyTransactionBatchJob", jobRepository)
-                .start(masterStep)
-                .listener(batchJobExecutionListener())
-                .build();
-    }
-
-    // ============= LISTENER PARA NOTIFICACIONES =============
+    // ================= JOB LISTENER =================
     @Bean
     public JobExecutionListener batchJobExecutionListener() {
         return new JobExecutionListener() {
-            private final NotifierProgress notifier = notifierProgress;
 
             @Override
             public void beforeJob(JobExecution jobExecution) {
                 String jobId = jobExecution.getJobParameters().getString("externalJobId");
-                log.info("🚀 Iniciando batch job para job externo: {}", jobId);
-
-                // Notificar INICIO al Job Scheduler
                 if (jobId != null) {
-                    notifier.notifyStart(jobId, "Batch job iniciado");
+                    notifierProgress.notifyStart(jobId, "Batch job iniciado");
                 }
             }
 
@@ -261,51 +215,21 @@ public class SpringBatchExecutorConfig {
                 String jobId = jobExecution.getJobParameters().getString("externalJobId");
 
                 if (jobExecution.getStatus() == BatchStatus.COMPLETED) {
-                    log.info("✅ Batch job completado exitosamente para: {}", jobId);
+                    Map<String, Object> report = new HashMap<>();
+                    report.put("readCount", jobExecution.getStepExecutions()
+                            .stream().mapToLong(StepExecution::getReadCount).sum());
+                    report.put("writeCount", jobExecution.getStepExecutions()
+                            .stream().mapToLong(StepExecution::getWriteCount).sum());
 
-                    // Generar informe
-                    Map<String, Object> report = generateReport(jobExecution);
+                    notifierProgress.notifyCompletion(
+                            jobId, "SUCCEEDED", "Batch completado", report);
 
-                    // Notificar COMPLETADO con informe
-                    if (jobId != null) {
-                        notifier.notifyCompletion(
-                                jobId,
-                                "SUCCEEDED",
-                                "Procesamiento batch completado",
-                                report
-                        );
-
-                        // Enviar email con informe
-                        emailReporter.sendEmailReport(jobId, report);
-                    }
+                    emailReporter.sendEmailReport(jobId, report);
 
                 } else {
-                    log.error("❌ Batch job falló para: {}", jobId);
-
-                    if (jobId != null) {
-                        notifier.notifyCompletion(
-                                jobId,
-                                "FAILED",
-                                "Error en procesamiento batch",
-                                null
-                        );
-                    }
+                    notifierProgress.notifyCompletion(
+                            jobId, "FAILED", "Batch fallido", null);
                 }
-            }
-
-            private Map<String, Object> generateReport(JobExecution execution) {
-                Map<String, Object> report = new HashMap<>();
-                report.put("jobExecutionId", execution.getId());
-                report.put("jobName", execution.getJobInstance().getJobName());
-                report.put("status", execution.getStatus().toString());
-                report.put("startTime", execution.getStartTime());
-                report.put("endTime", execution.getEndTime());
-                report.put("readCount", execution.getStepExecutions().stream()
-                        .mapToLong(StepExecution::getReadCount).sum());
-                report.put("writeCount", execution.getStepExecutions().stream()
-                        .mapToLong(StepExecution::getWriteCount).sum());
-                report.put("partitions", execution.getStepExecutions().size());
-                return report;
             }
         };
     }
