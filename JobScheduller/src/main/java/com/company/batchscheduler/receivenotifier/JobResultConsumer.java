@@ -14,6 +14,7 @@ import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -177,8 +178,10 @@ public class JobResultConsumer {
 
         job.getMetadata().put("finalizado", "Con errores: " + jobResult.getMessage());
         job.getMetadata().put("errorDetails", jobResult.getErrorDetails());
-        job.getMetadata().put("duración (ms)", jobResult.getDurationMs());
-        job.getMetadata().put("fin", DateTimeUtil.formatear(jobResult.getCompletedAt()));
+        job.getMetadata().put("duración (ms)", jobResult.getDurationMs() == null ? "..." : jobResult.getDurationMs());
+        job.getMetadata().put("fin", DateTimeUtil.formatear(jobResult.getCompletedAt() == null
+                ? LocalDateTime.now()
+                : jobResult.getCompletedAt()));
 
         String jobName = jobResult.getJobName() == null || "".contentEquals(jobResult.getJobName())
                 ? (String) job.getMetadata().get("nombre-Job")
@@ -188,7 +191,9 @@ public class JobResultConsumer {
         List<String> existingLabels = job.getLabels();
         existingLabels.add(jobName.length() > 33 ? jobName.substring(0, 32) : jobName + " HA FALLADO");
         existingLabels.add("Error: " + jobResult.getMessage() + ".Detalle Error: " + jobResult.getErrorDetails());
-        existingLabels.add("Finalización: " + DateTimeUtil.formatear(jobResult.getCompletedAt()));
+        existingLabels.add("Finalización: " + DateTimeUtil.formatear(jobResult.getCompletedAt() == null
+                ? LocalDateTime.now()
+                : jobResult.getCompletedAt()));
         job.setLabels(existingLabels);
         // 3. Guardar
         storageProvider.save(job);

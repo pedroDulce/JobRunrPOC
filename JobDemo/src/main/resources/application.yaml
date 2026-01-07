@@ -6,23 +6,50 @@ spring:
   application:
     name: job-executor-service
 
-  batch:
-    job:
-      enabled: true
-      # Spring Batch creará sus tablas automáticamente
-      initialize-schema: always
-    jdbc:
-      initialize-schema: always
-
+  # Configuración del DataSource para BBDD Negocio , la principal de este microservicio
   datasource:
     url: jdbc:postgresql://localhost:5432/job_demo_database
     username: postgres
     password: postgres
-
+  # Configuración JPA para el DataSource principal
   jpa:
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        default_schema: public
+        jdbc:
+          batch_size: 20
+        order_inserts: true
+        order_updates: true
     hibernate:
-      ddl-auto: update
-    show-sql: true
+      ddl-auto: validate  # validate, update, create, create-drop, none
+    show-sql: false
+    open-in-view: false
+
+  # Configuración del DataSource para SPRING BATCH
+  batch:
+    datasource:
+      jdbc-url: jdbc:postgresql://localhost:5432/spring_batch_db
+      username: ${BATCH_DB_USER:spring_batch_user }
+      password: ${BATCH_DB_PASSWORD:spring_batch_password}
+      driver-class-name: org.postgresql.Driver
+      hikari:
+        maximum-pool-size: 5
+        minimum-idle: 2
+        connection-timeout: 30000
+        idle-timeout: 600000
+        max-lifetime: 1800000
+        pool-name: HikariPool-Batch
+    # Configuración Spring Batch
+    jdbc:
+      initialize-schema: always  # 'never' porque creamos tablas manualmente
+      #table-prefix: batch_schema.BATCH_  # Si usas schema
+      table-prefix: BATCH_             # Si NO usas schema
+    job:
+      enabled: false  # Deshabilitar auto-start de jobs
+      name: ${spring.application.name}-batch-job
+      # Spring Batch creará sus tablas automáticamente
+      #initialize-schema: always
 
   kafka:
     bootstrap-servers: localhost:9092
@@ -32,6 +59,12 @@ spring:
       auto-offset-reset: earliest
       enable-auto-commit: false
       max-poll-interval-ms: 300000  # 5 minutos para jobs normales
+      # Tiempo para detectar consumidor muerto
+      session.timeout.ms: 45000      # 45 segundos (debe ser > 3 * heartbeat)
+      # Frecuencia de heartbeats
+      heartbeat.interval.ms: 3000    # 3 segundos
+      # Máximo de registros por poll
+      max.poll.records: 50
 
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
