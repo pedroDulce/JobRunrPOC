@@ -37,10 +37,9 @@ public class JobResultConsumer {
 
         try {
             // Usar jobrunrJobId del header o del objeto
-            String jobrunrJobIdStr = jobrunrJobIdHeader != null ?
-                    jobrunrJobIdHeader : result.getJobId();
+            String jobrunrJobIdStr = jobrunrJobIdHeader != null ? jobrunrJobIdHeader : result.getJobId();
             //filtrar ID trabajo, eliminando el ID de instancia:
-            int indexHasta = jobrunrJobIdStr.indexOf("instanceId-");
+            int indexHasta = jobrunrJobIdStr.indexOf("instanceId");
             if (indexHasta != -1) {
                 jobrunrJobIdStr = jobrunrJobIdStr.substring(0, indexHasta - 1);
             }
@@ -66,7 +65,7 @@ public class JobResultConsumer {
      */
     private void updateJobRunrStatus(String jobrunrJobIdStr, JobResult result) {
         try {
-            int indexHasta = jobrunrJobIdStr.indexOf("instanceId-");
+            int indexHasta = jobrunrJobIdStr.indexOf("instanceId");
             if (indexHasta != -1) {
                 jobrunrJobIdStr = jobrunrJobIdStr.substring(0, indexHasta - 1);
             }
@@ -154,8 +153,6 @@ public class JobResultConsumer {
     private void handleCompleted(Job job, JobResult jobResult) {
 
         log.info("✅ Job {} completed successfully - {}", job.getId(), jobResult.getMessage());
-
-        UUID jobUuid = job.getId();
 
         job.getMetadata().put("progress", 100);
         job.getMetadata().put("lastHeartbeat", DateTimeUtil.formatNow());

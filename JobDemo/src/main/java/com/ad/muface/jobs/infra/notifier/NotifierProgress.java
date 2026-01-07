@@ -24,7 +24,7 @@ public class NotifierProgress {
 
         JobResult statusResult = JobResult.builder()
                 .jobId(jobId)
-                .jobName("jobRequest.getJobName()")
+                .jobName("")
                 .status(JobStatusEnum.IN_PROGRESS)
                 .message(message)
                 .startedAt(LocalDateTime.now())
@@ -50,7 +50,7 @@ public class NotifierProgress {
 
         JobResult statusResult = JobResult.builder()
                 .jobId(jobId)
-                .jobName("jobRequest.getJobName()")
+                .jobName("")
                 .status(JobStatusEnum.IN_PROGRESS)
                 .message(message)
                 .startedAt(LocalDateTime.now())
@@ -80,7 +80,7 @@ public class NotifierProgress {
 
         JobResult statusResult = JobResult.builder()
                 .jobId(jobId)
-                .jobName("jobRequest.getJobName()")
+                .jobName("")
                 .status(JobStatusEnum.COMPLETED)
                 .message(message)
                 .startedAt(LocalDateTime.now())

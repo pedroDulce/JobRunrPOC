@@ -16,7 +16,6 @@ import java.util.Map;
 @AllArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class JobResult {
-
     private String jobId;
     private String jobName;
     private JobStatusEnum status;
