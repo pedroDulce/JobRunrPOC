@@ -36,7 +36,7 @@ try {
 
 # 4. Dashboard
 Write-Host "URLs del sistema..." -ForegroundColor Yellow
-Write-Host "  Dashboard JobRunr: http://localhost:8000" -ForegroundColor Cyan
+Write-Host "  Dashboard JobRunr: http://localhost:8000/dashboard" -ForegroundColor Cyan
 Write-Host "  API Docs: http://localhost:8080/swagger-ui.html" -ForegroundColor Cyan
 
 # 5. Esperar y verificar
@@ -44,7 +44,7 @@ Write-Host "`Esperando 2 segundos..." -ForegroundColor Yellow
 Start-Sleep -Seconds 2
 
 Write-Host "===========================================" -ForegroundColor Cyan
-Write-Host "PRUEBAS COMPLETADAS" -ForegroundColor Green
+Write-Host "REGISTRO COMPLETADO" -ForegroundColor Green
 Write-Host ""
 Write-Host "Pasos siguientes:" -ForegroundColor Yellow
 Write-Host "   1. Abre http://localhost:8000 para ver el dashboard" -ForegroundColor White
