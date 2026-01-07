@@ -36,23 +36,27 @@ public class JobResultConsumer {
             @Header(value = "jobrunr-job-id", required = false) String jobrunrJobIdHeader) {
 
         try {
-            // Usar jobrunrJobId del header o del objeto
+            // Usar jobrunrJobId presente en el header o el del objeto
             String jobrunrJobIdStr = jobrunrJobIdHeader != null ? jobrunrJobIdHeader : result.getJobId();
             //filtrar ID trabajo, eliminando el ID de instancia:
             int indexHasta = jobrunrJobIdStr.indexOf("instanceId");
             if (indexHasta != -1) {
                 jobrunrJobIdStr = jobrunrJobIdStr.substring(0, indexHasta - 1);
             }
-
-            log.info("📨 Received job {} for JobRunr Job ID: {}, result: {}, Status: {}",
-                    result.getJobName(), executorJobId,
-                    result.getStatus().toString().contentEquals(JobStatusEnum.FAILED.toString()) ? result.getErrorDetails() : result.getMessage(),
-                    result.getStatus());
-
-            if (jobrunrJobIdStr != null && !jobrunrJobIdStr.isEmpty()) {
-                updateJobRunrStatus(jobrunrJobIdStr, result);
+            UUID uuid = UUID.fromString(jobrunrJobIdStr == null ? "unknown" : jobrunrJobIdStr);
+            Job job = storageProvider.getJobById(new JobId(uuid));
+            if (job == null) {
+                log.warn("JobRunr job {} not found in storage or was deleted", jobrunrJobIdStr);
             } else {
-                log.warn("No JobRunr Job ID found for job {}", jobrunrJobIdStr);
+                log.info("📨 Received job {} for JobRunr Job ID: {}, result: {}, Status: {}",
+                        job.getJobName(), executorJobId,
+                        result.getStatus().toString().contentEquals(JobStatusEnum.FAILED.toString())
+                                ? result.getErrorDetails()
+                                : result.getMessage(),
+                        result.getStatus());
+
+               updateJobRunrStatus(job, result);
+
             }
 
         } catch (Exception e) {
@@ -63,50 +67,36 @@ public class JobResultConsumer {
     /**
      * Actualizar estado en JobRunr según tu JobResult
      */
-    private void updateJobRunrStatus(String jobrunrJobIdStr, JobResult result) {
+    private void updateJobRunrStatus(Job job, JobResult result) {
         try {
-            int indexHasta = jobrunrJobIdStr.indexOf("instanceId");
-            if (indexHasta != -1) {
-                jobrunrJobIdStr = jobrunrJobIdStr.substring(0, indexHasta - 1);
-            }
-            UUID uuid = UUID.fromString(jobrunrJobIdStr);
-            Job job = storageProvider.getJobById(new JobId(uuid));
+            switch (result.getStatus()) {
+                case IN_PROGRESS:
+                    handleInProgress(job, result);
+                    break;
 
-            if (job != null) {
-                log.debug("Found JobRunr job {} with state: {}", uuid, job.getState());
+                case COMPLETED:
+                    // Marcar como exitoso
+                    handleCompleted(job, result);
+                    break;
 
-                switch (result.getStatus()) {
-                    case IN_PROGRESS:
-                        handleInProgress(job, result);
-                        break;
+                case FAILED:
+                    // Marcar como fallido
+                    handleFailed(job, result);
+                    break;
 
-                    case COMPLETED:
-                        // Marcar como exitoso
-                        handleCompleted(job, result);
-                        break;
+                case CANCELLED:
+                    // Eliminar de JobRunr
+                    handleCancelled(job);
+                    break;
 
-                    case FAILED:
-                        // Marcar como fallido
-                        handleFailed(job, result);
-                        break;
-
-                    case CANCELLED:
-                        // Eliminar de JobRunr
-                        handleCancelled(job);
-                        break;
-
-                    default:
-                        log.warn("Unknown status {} for job {}", result.getStatus(), job.getId());
-                }
-            } else {
-                log.warn("JobRunr job {} not found in storage", job.getId());
+                default:
+                    log.warn("Unknown status {} for job {}", result.getStatus(), job.getId());
             }
 
         } catch (IllegalArgumentException e) {
-            log.error("Invalid JobRunr Job ID format: {} - {}", jobrunrJobIdStr, e.getMessage());
+            log.error("Invalid JobRunr Job ID format: {} - {}", job.getId(), e.getMessage());
         } catch (Exception e) {
-            log.error("Failed to update JobRunr status for {}: {}",
-                    jobrunrJobIdStr, e.getMessage(), e);
+            log.error("Failed to update JobRunr status for {}: {}", job.getId(), e.getMessage(), e);
         }
     }
 
