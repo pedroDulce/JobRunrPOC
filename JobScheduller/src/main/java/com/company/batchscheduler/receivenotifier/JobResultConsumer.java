@@ -160,7 +160,7 @@ public class JobResultConsumer {
                 : jobResult.getJobName();
         job.getMetadata().put("nombre-Job", jobName);
         List<String> existingLabels =  new ArrayList<>();
-        existingLabels.add(jobName + " COMPLETADO SIN ERRORES");
+        existingLabels.add(jobName.substring(0, 33) + " COMPLETADO"); // 11 + jobName.length hasta un total de 45
         existingLabels.add("Finalizado en " + DateTimeUtil.formatNow());
         existingLabels.add("Duración (seg.): " + jobResult.getDurationMs() / 1000);
         job.setLabels(existingLabels);
@@ -190,7 +190,7 @@ public class JobResultConsumer {
         job.getMetadata().put("nombre-Job", jobName);
 
         List<String> existingLabels = job.getLabels();
-        existingLabels.add(jobName + " FINALIZADO CON ERRORES");
+        existingLabels.add(jobName.substring(0, 33) + " HA FALLADO");
         existingLabels.add("Error: " + jobResult.getMessage() + ". Detalle Error: " + jobResult.getErrorDetails());
         existingLabels.add("Finalizado en: " + DateTimeUtil.formatear(jobResult.getCompletedAt()));
         job.setLabels(existingLabels);
