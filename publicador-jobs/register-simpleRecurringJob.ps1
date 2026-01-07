@@ -46,7 +46,7 @@ Write-Host "`Esperando 2 segundos..." -ForegroundColor Yellow
 Start-Sleep -Seconds 2
 
 Write-Host "===========================================" -ForegroundColor Cyan
-Write-Host "PRUEBAS COMPLETADAS" -ForegroundColor Green
+Write-Host "REGISTRO COMPLETADO" -ForegroundColor Green
 Write-Host ""
 Write-Host "Pasos siguientes:" -ForegroundColor Yellow
 Write-Host "   1. Abre http://localhost:8000 para ver el dashboard" -ForegroundColor White
