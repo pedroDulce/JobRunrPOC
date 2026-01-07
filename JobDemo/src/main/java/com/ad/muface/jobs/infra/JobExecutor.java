@@ -15,11 +15,12 @@ public abstract class JobExecutor {
     public JobResult executeJob(JobRequest jobRequest) {
         try {
             heartbeatService.startHeartbeat(jobRequest);
-            return executeJob(jobRequest);
+            return executeJobLogic(jobRequest);
         } finally {
             heartbeatService.stopHeartbeat(jobRequest.getJobId());
         }
     }
 
     public abstract JobResult executeJobLogic(JobRequest jobRequest);
+
 }
