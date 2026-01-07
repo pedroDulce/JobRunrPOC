@@ -90,21 +90,6 @@ public class HeartbeatService implements ApplicationListener<ContextClosedEvent>
         }
     }
 
-    private void sendShutdownHeartbeat(String fulljobId) {
-        try {
-            JobResult shutdownHeartbeat = new JobResult();
-            shutdownHeartbeat.setJobId(fulljobId);
-            shutdownHeartbeat.setLastHeartBeat(LocalDateTime.now());
-            shutdownHeartbeat.setStatus(JobStatusEnum.FAILED);
-            shutdownHeartbeat.setMessage("Service instance shutting down");
-
-            kafkaPublisher.publishJobHeartBeat(fulljobId, shutdownHeartbeat);
-
-        } catch (Exception e) {
-            log.warn("Failed to send shutdown heartbeat", e);
-        }
-    }
-
     @Override
     public void onApplicationEvent(ContextClosedEvent event) {
         shuttingDown.set(true);

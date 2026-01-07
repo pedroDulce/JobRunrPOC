@@ -66,6 +66,10 @@ public class JobResultConsumer {
      */
     private void updateJobRunrStatus(String jobrunrJobIdStr, JobResult result) {
         try {
+            int indexHasta = jobrunrJobIdStr.indexOf("instanceId-");
+            if (indexHasta != -1) {
+                jobrunrJobIdStr = jobrunrJobIdStr.substring(0, indexHasta - 1);
+            }
             UUID uuid = UUID.fromString(jobrunrJobIdStr);
             Job job = storageProvider.getJobById(new JobId(uuid));
 
