@@ -1,5 +1,6 @@
 package com.company.batchscheduler.remotesender;
 
+import com.company.batchscheduler.service.JobManagementOperations;
 import common.batch.dto.JobRequest;
 import common.batch.dto.JobType;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +28,7 @@ public class JobOrderInitRemoteBatch {
     private String jobRequestsTopic;
 
     private final KafkaTemplate<String, JobRequest> kafkaTemplate;
+    private final JobManagementOperations jobManagementOperations;
 
     @Job(name= "Async Job")
     public void dispararJobRemoto(JobRequest request, JobContext jobContext) {
@@ -60,7 +62,8 @@ public class JobOrderInitRemoteBatch {
      */
     private void sendToRemoteWorker(JobRequest request) {
 
-        String correlationId = "job-del-padre";
+        // ID del JOB del ID del padre
+        String correlationId = this.jobManagementOperations.getRecurringIdJobByName(request.getJobName());
 
         log.info("🎯 JobRunr Job created - For Executor Job with ID: {}", request.getJobId());
 

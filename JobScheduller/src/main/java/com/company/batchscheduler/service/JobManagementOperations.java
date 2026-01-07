@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jobrunr.jobs.Job;
 import org.jobrunr.jobs.JobDetails;
+import org.jobrunr.jobs.RecurringJob;
 import org.jobrunr.jobs.states.ScheduledState;
 import org.jobrunr.jobs.states.StateName;
 import org.jobrunr.storage.StorageProvider;
@@ -11,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.UUID;
 
@@ -82,6 +84,23 @@ public class JobManagementOperations {
         } catch (Exception e) {
             log.error("Error deleting recurring job {}: {}", jobName, e.getMessage());
             return false;
+        }
+    }
+
+
+    public String getRecurringIdJobByName(String jobName) {
+        try {
+            Iterator<RecurringJob> iteRecurringJobs = storageProvider.getRecurringJobs().iterator();
+            while (iteRecurringJobs.hasNext()) {
+                RecurringJob recurringJob = iteRecurringJobs.next();
+                if (recurringJob.getJobName().contentEquals(jobName)) {
+                    return recurringJob.toScheduledJob().getId().toString();
+                }
+            }
+            return "inmediately-job";
+        } catch (Exception e) {
+            log.error("Error searching recurring job {}: {}", jobName, e.getMessage());
+            return "inmediately-job";
         }
     }
 
