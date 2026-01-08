@@ -12,6 +12,8 @@ public class ProcessedTransaction {
     private BigDecimal amount;
     private String currency;
     private LocalDate transactionDate;
+
+    private String originalStatus;
     private String status; // PROCESSED, ERROR, etc.
     private Integer partitionNumber;
     private String processingNotes;

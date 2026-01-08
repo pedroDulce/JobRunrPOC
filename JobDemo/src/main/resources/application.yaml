@@ -38,13 +38,12 @@ kafka:
 
   filter:
     business-domains: ${spring.application.name}
-    target-jobs: "ResumenDiarioClientesAsync"     # Solo procesar este
     target-batches: "springBatchSample"         # Solo procesar este
 
 app:
   batch:
     chunk-size: 100
-    grid-size: 4
-    partition-size: 2000
+    grid-size: 1 # esto es el num. de particiones/hilos
+    partition-size: 1000000  # Un millón, ajusta si tus IDs son más grandes
     mail:
       enabled: false # Cambiar a true cuando configures email
