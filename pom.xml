@@ -23,6 +23,7 @@
     <module>JobScheduller</module>
     <module>CommonJobUtils</module>
       <module>SpringBatchDemo</module>
+      <module>BatchSupport</module>
   </modules>
 
   <properties>
