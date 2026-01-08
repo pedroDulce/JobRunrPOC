@@ -6,10 +6,11 @@ spring:
   application:
     name: job-executor-service
 
-  datasource:
-    # Configuración del DataSource para SPRING BATCH
-    batch:
-      url: jdbc:postgresql://localhost:5432/spring_batch_db
+  batch:
+    jdbc:
+      initialize-schema: always # Crea las tablas BATCH_* la primera vez
+    datasource:
+      jdbc-url: jdbc:postgresql://localhost:5432/spring_batch_db
       username: spring_batch_user
       password: spring_batch_password
       driver-class-name: org.postgresql.Driver
@@ -19,17 +20,28 @@ spring:
         connection-timeout: 30000
         idle-timeout: 600000
         max-lifetime: 1800000
-        pool-name: HikariPool-Batch
+        pool-name: Batch-Hikari
+    # Configuración del pool
+    task:
+      execution:
+        pool:
+          core-size: 10
+          max-size: 20
+          queue-capacity: 500
 
-    # Configuración del DataSource para BBDD Negocio , la principal de este microservicio
+  datasource:
     business:
-      url: jdbc:postgresql://localhost:5432/job_demo_database
+      jdbc-url: jdbc:postgresql://localhost:5432/job_demo_database
       username: postgres
       password: postgres
       driver-class-name: org.postgresql.Driver
       hikari:
         maximum-pool-size: 10
-        minimum-idle: 2
+        minimum-idle: 5
+        connection-timeout: 30000
+        idle-timeout: 600000
+        max-lifetime: 1800000
+        pool-name: Business-Hikari
 
   # Configuración JPA para el DataSource BBDD
   jpa:
@@ -38,17 +50,6 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
-
-  batch:
-    jdbc:
-      initialize-schema: always # Crea las tablas BATCH_* la primera vez
-    # Configuración del pool
-    task:
-      execution:
-        pool:
-          core-size: 10
-          max-size: 20
-          queue-capacity: 500
 
   kafka:
     bootstrap-servers: localhost:9092
