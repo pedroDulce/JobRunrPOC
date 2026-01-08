@@ -1,4 +1,4 @@
-package com.ad.muface.batch.config;
+package com.ad.muface.batch.scheduler.config;
 
 import com.ad.muface.batch.dto.JobResult;
 import org.springframework.context.annotation.Bean;

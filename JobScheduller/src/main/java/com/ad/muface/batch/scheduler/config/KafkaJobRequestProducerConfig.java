@@ -1,4 +1,4 @@
-package com.ad.muface.batch.config;
+package com.ad.muface.batch.scheduler.config;
 
 import com.ad.muface.batch.dto.JobRequest;
 import org.apache.kafka.clients.producer.ProducerConfig;
@@ -21,7 +21,7 @@ public class KafkaJobRequestProducerConfig {
     private String bootstrapServers;
 
     @Bean
-    public ProducerFactory<String, JobRequest> jobResultProducerFactory() {
+    public ProducerFactory<String, JobRequest> jobRequestProducerFactory() {
         Map<String, Object> configProps = new HashMap<>();
 
         configProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
@@ -45,7 +45,7 @@ public class KafkaJobRequestProducerConfig {
      */
     @Bean
     public KafkaTemplate<String, JobRequest> jobRequestKafkaTemplate() {
-        return new KafkaTemplate<>(jobResultProducerFactory());
+        return new KafkaTemplate<>(jobRequestProducerFactory());
     }
 
 }
