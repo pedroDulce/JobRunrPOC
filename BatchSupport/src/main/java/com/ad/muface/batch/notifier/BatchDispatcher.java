@@ -1,7 +1,6 @@
 package com.ad.muface.batch.notifier;
 
 import com.ad.muface.batch.dto.JobRequest;
-import com.ad.muface.batch.service.HeartbeatService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.batch.core.Job;
@@ -24,8 +23,6 @@ public abstract class BatchDispatcher {
     protected JobLauncher jobLauncher;
     @Autowired
     protected KafkaPublisher notifierProgress;
-    @Autowired
-    protected HeartbeatService heartbeatService;
 
     @KafkaListener(
             topics = "${kafka.topics.job-requests}",
@@ -77,25 +74,18 @@ public abstract class BatchDispatcher {
 
     private void launch(JobRequest jobRequest, Acknowledgment acknowledgment) {
         try {
-            heartbeatService.startHeartbeat(jobRequest);
             lanzarBatch(jobRequest, acknowledgment);
         } catch (Exception e) {
             throw e;
-        } finally {
-            heartbeatService.stopHeartbeat(jobRequest.getJobRunnerId());
         }
     }
 
     protected void lanzarBatch(JobRequest jobRequest, Acknowledgment acknowledgment) {
-        // Construir parámetros del job
-        JobParametersBuilder paramsBuilder = new JobParametersBuilder();
-
-        addJobRequestParameters(paramsBuilder, jobRequest);
-
-        JobParameters jobParameters = paramsBuilder.toJobParameters();
-
         try {
-            // Ejecutar el batch
+            // 1: Construir parámetros del job
+            JobParameters jobParameters = createJobRequestParameters(jobRequest);
+
+            // 2: Ejecutar el batch
             JobExecution execution = jobLauncher.run(getJobToExecute(), jobParameters);
 
             log.info("✅ Batch job lanzado {}. Execution ID: {}, Status: {}", jobRequest.getJobName(),
@@ -118,7 +108,8 @@ public abstract class BatchDispatcher {
     protected abstract Job getJobToExecute();
 
 
-    private void addJobRequestParameters(JobParametersBuilder paramsBuilder, JobRequest jobRequest) {
+    private JobParameters createJobRequestParameters(JobRequest jobRequest) {
+        JobParametersBuilder paramsBuilder = new JobParametersBuilder();
         if (jobRequest.getParameters() != null && !jobRequest.getParameters().isEmpty()) {
             for (Map.Entry<String, String> entry : jobRequest.getParameters().entrySet()) {
                 paramsBuilder.addString(entry.getKey(), entry.getValue());
@@ -130,6 +121,7 @@ public abstract class BatchDispatcher {
                 .addString("jobCorrelationId", jobRequest.getCorrelationId())
                 .addString("executionTime", LocalDateTime.now().toString())
                 .addLong("timestamp", System.currentTimeMillis(), true);
+        return paramsBuilder.toJobParameters();
     }
 
     /**

@@ -1,15 +1,15 @@
 package com.ad.muface.batch.service;
 
+import com.ad.muface.batch.dto.JobResult;
 import com.ad.muface.batch.dto.JobStatusEnum;
 import com.ad.muface.batch.notifier.KafkaPublisher;
-import com.ad.muface.batch.dto.JobRequest;
-import com.ad.muface.batch.dto.JobResult;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ContextClosedEvent;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.*;
@@ -19,73 +19,62 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @Slf4j
 public class HeartbeatService implements ApplicationListener<ContextClosedEvent> {
     private final KafkaPublisher kafkaPublisher;
-    private final InstanceIdentifier instanceIdentifier;
     private final ScheduledExecutorService sharedExecutor;
     private final Map<String, ScheduledFuture<?>> heartbeatTasks;
     private final AtomicBoolean shuttingDown = new AtomicBoolean(false);
 
-    public HeartbeatService(KafkaPublisher kafkaPublisher, InstanceIdentifier instanceIdentifier) {
+    public HeartbeatService(KafkaPublisher kafkaPublisher) {
         this.kafkaPublisher = kafkaPublisher;
-        this.instanceIdentifier = instanceIdentifier;
         this.heartbeatTasks = new ConcurrentHashMap<>();
-
         this.sharedExecutor = Executors.newScheduledThreadPool(
                 2, // Pool pequeño - solo para heartbeats
                 r -> {
-                    Thread t = new Thread(r, "heartbeat-" + instanceIdentifier.getInstanceId());
+                    Thread t = new Thread(r, "heartbeat-" + Calendar.getInstance().getTime());
                     t.setDaemon(true);
                     return t;
                 }
         );
     }
 
-    public void startHeartbeat(JobRequest jobRequest) {
-        String fulljobId = jobRequest.getJobId() + "-" + instanceIdentifier.getInstanceId();
-        jobRequest.setJobRunnerId(fulljobId);
+    public void startHeartbeat(String jobId, String jobName, String correlationId) {
 
         if (shuttingDown.get()) {
             throw new IllegalStateException("Service is shutting down");
         }
 
         ScheduledFuture<?> future = sharedExecutor.scheduleAtFixedRate(
-                () -> sendHeartbeat(fulljobId, jobRequest.getJobId(), jobRequest),
-                0, jobRequest.getHeartBeatLapse(), TimeUnit.SECONDS
+                () -> sendHeartbeat(jobId, jobName, correlationId),
+                0, 5, TimeUnit.SECONDS
         );
 
-        heartbeatTasks.put(fulljobId, future);
+        heartbeatTasks.put(jobId, future);
 
         // Enviar heartbeat inmediatamente
-        sendHeartbeat(fulljobId, jobRequest.getJobId(), jobRequest);
+        sendHeartbeat(jobId, jobName, correlationId);
     }
 
-    public void stopHeartbeat(String fulljobId) {
-        ScheduledFuture<?> task = heartbeatTasks.remove(fulljobId);
+    public void stopHeartbeat(String jobId) {
+        ScheduledFuture<?> task = heartbeatTasks.remove(jobId);
         if (task != null) {
             task.cancel(false);
         }
     }
 
-    private void sendHeartbeat(String fulljobId, String serviceType, JobRequest jobRequest) {
+    private void sendHeartbeat(String jobId, String jobName, String correlationId) {
         try {
             Map<String, Object> metadata = new HashMap<>();
-            metadata.put("instanceId", fulljobId);
-            metadata.put("serviceType", serviceType);
+            metadata.put("instanceId", jobId);
             metadata.put("timestamp", System.currentTimeMillis());
             metadata.put("thread", Thread.currentThread().getName());
 
-            if (jobRequest != null && jobRequest.getMetadata() != null) {
-                metadata.putAll(jobRequest.getMetadata());
-            }
-
             JobResult heartbeat = new JobResult();
-            heartbeat.setJobId(fulljobId);
-            heartbeat.setJobrunrJobId(fulljobId);
+            heartbeat.setJobId(jobId);
+            heartbeat.setJobrunrJobId(jobId);
             heartbeat.setLastHeartBeat(LocalDateTime.now());
             heartbeat.setStatus(JobStatusEnum.IN_PROGRESS);
             heartbeat.setMetadata(metadata);
 
-            kafkaPublisher.notifyProgress(fulljobId, jobRequest.getJobName(), jobRequest.getCorrelationId(),
-                    "job en ejecución...", heartbeat);
+            kafkaPublisher.notifyProgress(jobId, jobName, correlationId,"job en ejecución...", heartbeat);
 
         } catch (Exception e) {
             log.warn("Error creating heartbeat", e);

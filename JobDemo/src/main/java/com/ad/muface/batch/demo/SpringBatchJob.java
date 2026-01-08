@@ -4,6 +4,7 @@ import com.ad.muface.batch.demo.model.CustomerTransaction;
 import com.ad.muface.batch.demo.model.ProcessedTransaction;
 import com.ad.muface.batch.notifier.EmailReporter;
 import com.ad.muface.batch.notifier.KafkaPublisher;
+import com.ad.muface.batch.service.HeartbeatService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.*;
@@ -21,6 +22,7 @@ import org.springframework.batch.item.ItemReader;
 import org.springframework.batch.item.ItemWriter;
 import org.springframework.batch.item.database.JdbcCursorItemReader;
 import org.springframework.batch.item.database.builder.JdbcCursorItemReaderBuilder;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -44,6 +46,8 @@ public class SpringBatchJob {
     @Qualifier("businessDataSource")
     private final DataSource businessDataSource;
 
+    private final HeartbeatService heartbeatService;
+
     private final EmailReporter emailReporter;
     private final KafkaPublisher notifierProgress;
 
@@ -58,6 +62,7 @@ public class SpringBatchJob {
 
 
     @Bean
+    @StepScope
     public Partitioner transactionPartitioner(@Value("#{jobParameters['processDate']}") String processDateParam,
                                               @Value("#{jobParameters['emailRecipient']}") String emailRecipient,
                                               @Value("#{jobParameters['customerFilter']}") String customerFilter) {
@@ -95,6 +100,12 @@ public class SpringBatchJob {
             @Value("#{stepExecutionContext['endId']}") Long endId,
             @Value("#{stepExecutionContext['processDate']}") LocalDate processDate) {
         log.debug("processDate : " + java.sql.Date.valueOf(processDate));
+        try {
+            log.debug("Simulamos carga de procesamiento elevada antes de devolver el control al scheduler...");
+            Thread.sleep(30000);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
         return new JdbcCursorItemReaderBuilder<CustomerTransaction>()
                 .name("partitionedTransactionReader")
                 .dataSource(businessDataSource)
@@ -217,6 +228,10 @@ public class SpringBatchJob {
                             jobExecution.getJobParameters().getString("jobName"),
                             jobExecution.getJobParameters().getString("jobCorrelationId"),
                             "Batch job iniciado", jobExecution);
+                    heartbeatService.startHeartbeat(
+                            jobId,
+                            jobExecution.getJobParameters().getString("jobName"),
+                            jobExecution.getJobParameters().getString("jobCorrelationId"));
                 }
             }
 
@@ -224,19 +239,14 @@ public class SpringBatchJob {
             public void afterJob(JobExecution jobExecution) {
                 String jobId = jobExecution.getJobParameters().getString("externalJobId");
 
+                heartbeatService.stopHeartbeat(jobId);
+
                 if (jobExecution.getStatus() == BatchStatus.COMPLETED) {
                     Map<String, Object> report = new HashMap<>();
                     report.put("readCount", jobExecution.getStepExecutions()
                             .stream().mapToLong(StepExecution::getReadCount).sum());
                     report.put("writeCount", jobExecution.getStepExecutions()
                             .stream().mapToLong(StepExecution::getWriteCount).sum());
-
-                    try {
-                        log.debug("Simulamos carga de procesamiento elevada antes de devolver el control al scheduler...");
-                        Thread.sleep(3000);
-                    } catch (InterruptedException e) {
-                        throw new RuntimeException(e);
-                    }
 
                     notifierProgress.notifyCompletion(
                             jobId,

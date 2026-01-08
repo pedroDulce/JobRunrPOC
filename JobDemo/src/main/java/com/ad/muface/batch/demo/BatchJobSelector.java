@@ -7,9 +7,8 @@ import org.springframework.batch.core.Job;
 import org.springframework.stereotype.Component;
 
 @Component
-@Slf4j
 @RequiredArgsConstructor
-public class BatchInitizalizer extends BatchDispatcher {
+public class BatchJobSelector extends BatchDispatcher {
 
     /**
      * Debe coincidir el nombre de la variable job con el método @Bean en la clase SpringBatchJob:
