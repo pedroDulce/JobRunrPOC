@@ -67,4 +67,29 @@
 
     </dependencies>
 
+    <build>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <includes>
+                    <include>**/*</include>
+                </includes>
+            </resource>
+        </resources>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <!--version>3.x.x</version--> <!-- Sustituye por la versión que estés usando -->
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>repackage</goal> <!-- Empaquetará todas las dependencias -->
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
 </project>
