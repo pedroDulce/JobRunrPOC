@@ -1,8 +1,7 @@
-package com.ad.muface.batch.demo.springbatch;
+package com.ad.muface.batch.demo;
 
 import com.ad.muface.batch.demo.model.CustomerTransaction;
 import com.ad.muface.batch.demo.model.ProcessedTransaction;
-import com.ad.muface.batch.dto.JobStatusEnum;
 import com.ad.muface.batch.notifier.EmailReporter;
 import com.ad.muface.batch.notifier.KafkaPublisher;
 import lombok.RequiredArgsConstructor;
@@ -40,7 +39,7 @@ import java.util.Map;
 @Configuration
 @EnableBatchProcessing
 @RequiredArgsConstructor
-public class SpringBatchExecutor {
+public class SpringBatchJob {
 
     @Qualifier("businessDataSource")
     private final DataSource businessDataSource;
