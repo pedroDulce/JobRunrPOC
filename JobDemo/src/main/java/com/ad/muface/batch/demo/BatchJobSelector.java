@@ -1,8 +1,7 @@
 package com.ad.muface.batch.demo;
 
-import com.ad.muface.batch.notifier.BatchDispatcher;
+import com.ad.muface.batch.dispatcher.BatchDispatcher;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.Job;
 import org.springframework.stereotype.Component;
 

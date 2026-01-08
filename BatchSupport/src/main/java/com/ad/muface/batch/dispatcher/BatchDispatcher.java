@@ -1,6 +1,7 @@
-package com.ad.muface.batch.notifier;
+package com.ad.muface.batch.dispatcher;
 
 import com.ad.muface.batch.dto.JobRequest;
+import com.ad.muface.batch.notifier.KafkaPublisher;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.batch.core.Job;
