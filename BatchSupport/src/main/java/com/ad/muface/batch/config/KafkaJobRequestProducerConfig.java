@@ -1,4 +1,4 @@
-package com.ad.muface.batch.scheduler.config;
+package com.ad.muface.batch.config;
 
 import com.ad.muface.batch.dto.JobRequest;
 import org.apache.kafka.clients.producer.ProducerConfig;
@@ -15,7 +15,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Configuration
-public class KafkaRequestOrderProducerConfig {
+public class KafkaJobRequestProducerConfig {
 
     @Value("${spring.kafka.bootstrap-servers:localhost:9092}")
     private String bootstrapServers;

@@ -1,8 +1,8 @@
 package com.ad.muface.batch.demo.job;
 
 import com.ad.muface.batch.demo.repository.DailySummaryRepository;
-import com.ad.muface.batch.HeartbeatService;
-import com.ad.muface.batch.JobExecutor;
+import com.ad.muface.batch.service.HeartbeatService;
+import com.ad.muface.batch.service.JobExecutor;
 import com.ad.muface.batch.dto.JobRequest;
 import com.ad.muface.batch.dto.JobResult;
 import lombok.extern.slf4j.Slf4j;

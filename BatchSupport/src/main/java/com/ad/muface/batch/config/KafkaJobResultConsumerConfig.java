@@ -1,4 +1,4 @@
-package com.ad.muface.batch.scheduler.config;
+package com.ad.muface.batch.config;
 
 import com.ad.muface.batch.dto.JobResult;
 import org.springframework.context.annotation.Bean;
@@ -7,7 +7,7 @@ import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
 import org.springframework.kafka.core.ConsumerFactory;
 
 @Configuration
-public class KafkaJobNotifierConsumerConfig {
+public class KafkaJobResultConsumerConfig {
 
     @Bean
     public ConcurrentKafkaListenerContainerFactory<String, JobResult> kafkaListenerContainerFactory(

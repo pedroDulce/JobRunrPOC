@@ -1,4 +1,4 @@
-package com.ad.muface.batch;
+package com.ad.muface.batch.service;
 
 import org.springframework.stereotype.Component;
 

@@ -1,4 +1,4 @@
-package com.ad.muface.batch;
+package com.ad.muface.batch.service;
 
 import com.ad.muface.batch.dto.JobStatusEnum;
 import com.ad.muface.batch.notifier.KafkaPublisher;

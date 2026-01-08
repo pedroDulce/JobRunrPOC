@@ -2,6 +2,11 @@ server:
   port: 8080
 
 spring:
+  autoconfigure:
+    exclude:
+      - com.ad.muface.batch.config.DataSourceConfig
+      - org.springframework.boot.autoconfigure.batch.BatchAutoConfiguration
+
   application:
     name: batch-scheduler-service
   datasource:
