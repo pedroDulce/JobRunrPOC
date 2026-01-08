@@ -40,7 +40,6 @@ public class JobNotifier {
             groupId = "${spring.kafka.consumer.group-id}",
             id = "job-request-consumer"
     )
-    @Transactional
     public void consumeJobRequest(
             ConsumerRecord<String, JobRequest> record,
             @Header(KafkaHeaders.RECEIVED_KEY) String key,
