@@ -88,18 +88,13 @@ public abstract class BatchDispatcher {
 
     protected void lanzarBatch(JobRequest jobRequest, Acknowledgment acknowledgment) {
         // Construir parámetros del job
-        JobParametersBuilder paramsBuilder = new JobParametersBuilder()
-                .addString("externalJobId", jobRequest.getJobId())
-                .addString("jobName", jobRequest.getJobName())
-                .addString("executionTime", LocalDateTime.now().toString())
-                .addLong("timestamp", System.currentTimeMillis(), true);
+        JobParametersBuilder paramsBuilder = new JobParametersBuilder();
 
-        logJobRequestParameters(jobRequest.getParameters());
+        addJobRequestParameters(paramsBuilder, jobRequest);
 
         JobParameters jobParameters = paramsBuilder.toJobParameters();
 
         try {
-
             // Ejecutar el batch
             JobExecution execution = jobLauncher.run(getJobToExecute(), jobParameters);
 
@@ -123,12 +118,18 @@ public abstract class BatchDispatcher {
     protected abstract Job getJobToExecute();
 
 
-    private void addJobRequestParameters(JobParametersBuilder paramsBuilder, Map<String, String> parameters) {
-        if (parameters != null && !parameters.isEmpty()) {
-            for (Map.Entry<String, String> entry : parameters.entrySet()) {
+    private void addJobRequestParameters(JobParametersBuilder paramsBuilder, JobRequest jobRequest) {
+        if (jobRequest.getParameters() != null && !jobRequest.getParameters().isEmpty()) {
+            for (Map.Entry<String, String> entry : jobRequest.getParameters().entrySet()) {
                 paramsBuilder.addString(entry.getKey(), entry.getValue());
+                log.debug("param.key:: " + entry.getKey() + " - param.value:: " + entry.getValue());
             }
         }
+        paramsBuilder.addString("externalJobId", jobRequest.getJobId())
+                .addString("jobName", jobRequest.getJobName())
+                .addString("jobCorrelationId", jobRequest.getCorrelationId())
+                .addString("executionTime", LocalDateTime.now().toString())
+                .addLong("timestamp", System.currentTimeMillis(), true);
     }
 
     /**

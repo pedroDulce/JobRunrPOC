@@ -213,9 +213,9 @@ public class SpringBatchJob {
             public void beforeJob(JobExecution jobExecution) {
                 String jobId = jobExecution.getJobParameters().getString("externalJobId");
                 if (jobId != null) {
-                    notifierProgress.notifyStart(jobExecution.getJobParameters().getString("jobId"),
-                            jobExecution.getJobParameters().getString("jobname"),
-                            jobExecution.getJobParameters().getString("correlationId"),
+                    notifierProgress.notifyStart(jobId,
+                            jobExecution.getJobParameters().getString("jobName"),
+                            jobExecution.getJobParameters().getString("jobCorrelationId"),
                             "Batch job iniciado", jobExecution);
                 }
             }
@@ -239,18 +239,18 @@ public class SpringBatchJob {
                     }
 
                     notifierProgress.notifyCompletion(
-                            jobExecution.getJobParameters().getString("jobId"),
-                            jobExecution.getJobParameters().getString("jobname"),
-                            jobExecution.getJobParameters().getString("correlationId"),
+                            jobId,
+                            jobExecution.getJobParameters().getString("jobName"),
+                            jobExecution.getJobParameters().getString("jobCorrelationId"),
                             "Batch completado con éxito",
                             report, jobExecution);
 
                     emailReporter.sendEmailReport(jobId, report);
 
                 } else {
-                    notifierProgress.notifyFailure(jobExecution.getJobParameters().getString("jobId"),
-                            jobExecution.getJobParameters().getString("jobname"),
-                            jobExecution.getJobParameters().getString("correlationId"),
+                    notifierProgress.notifyFailure(jobId,
+                            jobExecution.getJobParameters().getString("jobName"),
+                            jobExecution.getJobParameters().getString("jobCorrelationId"),
                             "Batch completado con éxito", jobExecution);
                 }
             }
