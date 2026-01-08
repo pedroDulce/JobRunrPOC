@@ -137,10 +137,6 @@ public class SpringBatchJob {
 
                 try {
                     JdbcTemplate businessJdbcTemplate = new JdbcTemplate(businessDataSource);
-                    Long count = businessJdbcTemplate.queryForObject(
-                            "SELECT COUNT(*) FROM customer_transactions",
-                            Long.class
-                    );
 
                     // queryForObject puede lanzar EmptyResultDataAccessException si no hay resultados
                     Long minId = businessJdbcTemplate.queryForObject(sql, Long.class, java.sql.Date.valueOf(date));
