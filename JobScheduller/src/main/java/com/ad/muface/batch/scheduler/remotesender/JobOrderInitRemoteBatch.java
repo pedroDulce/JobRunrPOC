@@ -1,7 +1,6 @@
 package com.ad.muface.batch.scheduler.remotesender;
 
 import com.ad.muface.batch.dto.JobRequest;
-import com.ad.muface.batch.dto.JobType;
 import com.ad.muface.batch.scheduler.service.JobManagementOperations;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -65,9 +64,7 @@ public class JobOrderInitRemoteBatch {
                 // Headers de routing/filtrado
                 .setHeader("job-type", request.getJobType())          // "ASYNCRONOUS"
                 .setHeader("business-domain", request.getBusinessDomain()) // Ej: "application-job-demo"
-                .setHeader((JobType.BATCH_PROCESSING.name().contentEquals(request.getJobType()) ? "target-batch"
-                        : "target-job"),
-                        request.getJobName()) // Ej: "ResumenDiarioClientesAsync"
+                .setHeader("target-batch", request.getJobName()) // Ej: "ResumenDiarioClientesAsync"
 
                 // Headers de procesamiento
                 .setHeader("priority", request.getPriority())         // Ej: "HIGH", "MEDIUM", "LOW"

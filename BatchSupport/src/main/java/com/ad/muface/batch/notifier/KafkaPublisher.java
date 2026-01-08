@@ -2,15 +2,18 @@ package com.ad.muface.batch.notifier;
 
 import com.ad.muface.batch.dto.JobResult;
 import com.ad.muface.batch.dto.JobStatusEnum;
-import com.ad.muface.batch.dto.JobRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.batch.core.JobExecution;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.SendResult;
 import org.springframework.stereotype.Component;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.Calendar;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 @Component
@@ -23,67 +26,119 @@ public class KafkaPublisher {
 
     private final KafkaTemplate<String, JobResult> kafkaTemplate;
 
-    /**
-     * Publicar resultado final
-     */
-    public void publishJobResult(JobResult result) {
+    public void notifyProgress(String jobId, String jobname, String correlationId,
+                               String message, JobResult statusResult) {
 
-        publishToResultsTopic(result);
+        statusResult.setJobName(jobname);
+        statusResult.setMessage(message);
+        statusResult.setCorrelationId(correlationId);
+
+        // Asegurar que tiene el jobrunrJobId
+        if (jobId != null) {
+            statusResult.setJobrunrJobId(jobId);
+        }
+        this.publishToResultsTopic(statusResult);
+
+        log.debug("📤 Notificado PROGRESO del batch job {}", jobId, jobname);
+    }
+
+    /**
+     * Notifica inicio del batch job
+     */
+    public void notifyStart(String jobId, String jobname, String correlationId, String message, JobExecution jobExecution) {
+
+        JobResult statusResult = JobResult.builder()
+                .jobId(jobId)
+                .jobName(jobname)
+                .status(JobStatusEnum.IN_PROGRESS)
+                .message(message)
+                .startedAt(jobExecution.getStartTime())
+                .lastHeartBeat(jobExecution.getLastUpdated())
+                .completedAt(null)
+                .errorDetails(null)
+                .correlationId(correlationId)
+                .jobrunrJobId(jobId)
+                .build();
+
+        // Asegurar que tiene el jobrunrJobId
+        if (jobId != null) {
+            statusResult.setJobrunrJobId(jobId);
+        }
+        this.publishToResultsTopic(statusResult);
 
         log.info("📤 JobExecutor: Published final result for job {} with status {}",
-                result.getJobId(), result.getStatus());
+                statusResult.getJobId(), JobStatusEnum.IN_PROGRESS);
+
+        log.info("📤 Notificado INICIO del batch job: {}  {}", jobId, jobname);
     }
 
-    /**
-     * Publicar estado del job al scheduler
-     */
-    public void publishJobStatus(JobRequest jobRequest,
-                                 JobStatusEnum status,
-                                 Exception error,
-                                 String message) {
 
-        try {
-            JobResult statusResult = JobResult.builder()
-                    .jobId(jobRequest.getJobId())
-                    .jobName(jobRequest.getJobName())
-                    .status(status)
-                    .message(message)
-                    .startedAt(LocalDateTime.now())
-                    .completedAt(status.compareTo(JobStatusEnum.COMPLETED) == 0 || status.compareTo(JobStatusEnum.FAILED) == 0
-                            ? LocalDateTime.now() : null)
-                    .errorDetails(error != null ? error.getMessage() : null)
-                    .correlationId(jobRequest.getCorrelationId())
-                    .jobrunrJobId(jobRequest.getJobId())  // IMPORTANTE: ID de JobRunr
-                    .build();
+    public void notifyFailure(String jobId, String jobname, String correlationId,
+                              String message, JobExecution jobExecution) {
 
-            publishToResultsTopic(statusResult);
-
-            log.debug("📤 JobExecutor: Published job status: {} for job {}", status, jobRequest.getJobId());
-
-        } catch (Exception e) {
-            log.error("JobExecutor: Failed to publish job status for {}: {}",
-                    jobRequest.getJobId(), e.getMessage());
+        long durationSeconds = 0L;
+        if (jobExecution != null) {
+            durationSeconds = Duration.between(
+                    jobExecution.getStartTime(),
+                    jobExecution.getEndTime()
+            ).getSeconds();
         }
-    }
 
-    public void publishJobHeartBeat(String jobId, JobResult statusResult) {
+        JobResult statusResult = JobResult.builder()
+                .jobId(jobId)
+                .jobName(jobname)
+                .status(JobStatusEnum.FAILED)
+                .message(message)
+                .completedAt(LocalDateTime.now())
+                .durationSeconds(durationSeconds)
+                .errorDetails(message)
+                .correlationId(correlationId)
+                .jobrunrJobId(jobId)
+                .build();
 
-        try {
-
-            publishToResultsTopic(statusResult);
-
-            log.debug("📤 JobExecutor: Published job status: {} for job {}", statusResult.getStatus(), jobId);
-
-        } catch (Exception e) {
-            log.error("JobExecutor: Failed to publish job status for {}: {}", jobId, e.getMessage());
+        // Asegurar que tiene el jobrunrJobId
+        if (jobId != null) {
+            statusResult.setJobrunrJobId(jobId);
         }
+        this.publishToResultsTopic(statusResult);
+
+        log.info("📤 Notificado FAILED batch, job {}: {}", jobId, jobname);
     }
 
+    public void notifyCompletion(String jobId, String jobname, String correlationId, String message,
+                                 Map<String, Object> report, JobExecution jobExecution) {
+
+        long durationSeconds = Duration.between(
+                jobExecution.getStartTime(),
+                jobExecution.getEndTime()
+        ).getSeconds();
+
+        JobResult statusResult = JobResult.builder()
+                .jobId(jobId)
+                .jobName(jobname)
+                .status(JobStatusEnum.COMPLETED)
+                .message(message)
+                .completedAt(LocalDateTime.now())
+                .durationSeconds(durationSeconds)
+                .errorDetails(null)
+                .correlationId(correlationId)
+                .metadata(report != null ? report : Map.of("stage", "COMPLETED"))
+                .jobrunrJobId(jobId)  // IMPORTANTE: ID de JobRunr
+                .build();
+
+        // Asegurar que tiene el jobrunrJobId
+        if (jobId != null) {
+            statusResult.setJobrunrJobId(jobId);
+        }
+        this.publishToResultsTopic(statusResult);
+
+        log.info("📤 Notificado COMPLETADO del batch job {}: {}", jobId, jobname);
+    }
 
     /**
      * Publicar al topic de resultados
      */
-    public void publishToResultsTopic(JobResult result) {
+    private void publishToResultsTopic(JobResult result) {
         String key = result.getJobId();
 
         CompletableFuture<SendResult<String, JobResult>> future =

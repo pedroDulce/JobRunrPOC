@@ -2,8 +2,9 @@ package com.ad.muface.batch.demo.springbatch;
 
 import com.ad.muface.batch.demo.model.CustomerTransaction;
 import com.ad.muface.batch.demo.model.ProcessedTransaction;
-import com.ad.muface.batch.notifier.NotifierProgress;
+import com.ad.muface.batch.dto.JobStatusEnum;
 import com.ad.muface.batch.notifier.EmailReporter;
+import com.ad.muface.batch.notifier.KafkaPublisher;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.*;
@@ -45,7 +46,7 @@ public class SpringBatchExecutor {
     private final DataSource businessDataSource;
 
     private final EmailReporter emailReporter;
-    private final NotifierProgress notifierProgress;
+    private final KafkaPublisher notifierProgress;
 
     @Value("${app.batch.chunk-size:100}")
     private int chunkSize;
@@ -58,12 +59,18 @@ public class SpringBatchExecutor {
 
 
     @Bean
-    public Partitioner transactionPartitioner() {
+    public Partitioner transactionPartitioner(@Value("#{jobParameters['processDate']}") String processDateParam,
+                                              @Value("#{jobParameters['emailRecipient']}") String emailRecipient,
+                                              @Value("#{jobParameters['customerFilter']}") String customerFilter) {
         return new Partitioner() {
             @Override
             public Map<String, ExecutionContext> partition(int gridSize) {
                 Map<String, ExecutionContext> partitions = new HashMap<>();
-                LocalDate processDate = LocalDate.now().minusDays(1);
+                LocalDate processDate = LocalDate.parse(processDateParam);
+                log.info("procesando trabajo con los jobparameters recibidos de la JobRequest: ");
+                log.info("processDateParam: " + processDateParam);
+                log.info("emailRecipient: " + emailRecipient);
+                log.info("customerFilter: " + customerFilter);
 
                 for (int i = 0; i < gridSize; i++) {
                     ExecutionContext context = new ExecutionContext();
@@ -71,7 +78,8 @@ public class SpringBatchExecutor {
                     context.putLong("endId", (long) ((i + 1) * partitionSize - 1));
                     context.putInt("partitionNumber", i);
                     context.put("processDate", processDate);
-
+                    context.put("emailRecipient", emailRecipient);
+                    context.put("customerFilter", customerFilter);
                     partitions.put("partition-" + i, context);
                 }
                 return partitions;
@@ -87,7 +95,7 @@ public class SpringBatchExecutor {
             @Value("#{stepExecutionContext['startId']}") Long startId,
             @Value("#{stepExecutionContext['endId']}") Long endId,
             @Value("#{stepExecutionContext['processDate']}") LocalDate processDate) {
-
+        log.debug("processDate : " + java.sql.Date.valueOf(processDate));
         return new JdbcCursorItemReaderBuilder<CustomerTransaction>()
                 .name("partitionedTransactionReader")
                 .dataSource(businessDataSource)
@@ -96,9 +104,9 @@ public class SpringBatchExecutor {
                            currency, transaction_date, status, source_file, created_at
                     FROM customer_transactions
                     WHERE status = 'PENDING'
-                      AND transaction_date = ?
-                      AND id BETWEEN ? AND ?
-                    ORDER BY id
+                    AND transaction_date = ?
+                    AND id BETWEEN ? AND ?
+                     ORDER BY id
                     """)
                 .rowMapper(new BeanPropertyRowMapper<>(CustomerTransaction.class))
                 .preparedStatementSetter(ps -> {
@@ -206,7 +214,10 @@ public class SpringBatchExecutor {
             public void beforeJob(JobExecution jobExecution) {
                 String jobId = jobExecution.getJobParameters().getString("externalJobId");
                 if (jobId != null) {
-                    notifierProgress.notifyStart(jobId, "Batch job iniciado");
+                    notifierProgress.notifyStart(jobExecution.getJobParameters().getString("jobId"),
+                            jobExecution.getJobParameters().getString("jobname"),
+                            jobExecution.getJobParameters().getString("correlationId"),
+                            "Batch job iniciado", jobExecution);
                 }
             }
 
@@ -221,16 +232,27 @@ public class SpringBatchExecutor {
                     report.put("writeCount", jobExecution.getStepExecutions()
                             .stream().mapToLong(StepExecution::getWriteCount).sum());
 
+                    try {
+                        log.debug("Simulamos carga de procesamiento elevada antes de devolver el control al scheduler...");
+                        Thread.sleep(3000);
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+
                     notifierProgress.notifyCompletion(
-                            jobId, "SUCCEEDED", "Batch completado", report,
-                            jobExecution.getJobParameters().getLong("timestamp"));
+                            jobExecution.getJobParameters().getString("jobId"),
+                            jobExecution.getJobParameters().getString("jobname"),
+                            jobExecution.getJobParameters().getString("correlationId"),
+                            "Batch completado con éxito",
+                            report, jobExecution);
 
                     emailReporter.sendEmailReport(jobId, report);
 
                 } else {
-                    notifierProgress.notifyCompletion(
-                            jobId, "FAILED", "Batch fallido", null,
-                            jobExecution.getJobParameters().getLong("timestamp"));
+                    notifierProgress.notifyFailure(jobExecution.getJobParameters().getString("jobId"),
+                            jobExecution.getJobParameters().getString("jobname"),
+                            jobExecution.getJobParameters().getString("correlationId"),
+                            "Batch completado con éxito", jobExecution);
                 }
             }
         };

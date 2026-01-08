@@ -151,7 +151,7 @@ public class JobResultConsumer {
         job.getMetadata().put("progress", 100);
         job.getMetadata().put("lastHeartbeat", DateTimeUtil.formatNow());
         job.getMetadata().put("finalizado", "De forma exitosa. " + jobResult.getMessage());
-        job.getMetadata().put("duracionMs", String.valueOf(jobResult.getDurationMs()));
+        job.getMetadata().put("duracionMs", String.valueOf(jobResult.getDurationSeconds()));
         job.getMetadata().put("fin", DateTimeUtil.formatear(jobResult.getCompletedAt()));
 
         String jobName = jobResult.getJobName() == null || "".contentEquals(jobResult.getJobName())
@@ -161,7 +161,7 @@ public class JobResultConsumer {
         List<String> existingLabels =  new ArrayList<>();
         existingLabels.add(jobName.length() > 33 ? jobName.substring(0, 32) : jobName + " COMPLETADO");
         existingLabels.add("Finalización: " + DateTimeUtil.formatNow());
-        existingLabels.add("Duración (seg.): " + jobResult.getDurationMs() / 1000);
+        existingLabels.add("Duración (seg.): " + jobResult.getDurationSeconds() / 1000);
         job.setLabels(existingLabels);
 
         // 3. Guardar
@@ -179,7 +179,7 @@ public class JobResultConsumer {
 
         job.getMetadata().put("finalizado", "Con errores: " + jobResult.getMessage());
         job.getMetadata().put("errorDetails", jobResult.getErrorDetails());
-        job.getMetadata().put("duración (ms)", jobResult.getDurationMs() == null ? "..." : jobResult.getDurationMs());
+        job.getMetadata().put("duración (ms)", jobResult.getDurationSeconds() == null ? "..." : jobResult.getDurationSeconds());
         job.getMetadata().put("fin", DateTimeUtil.formatear(jobResult.getCompletedAt() == null
                 ? LocalDateTime.now()
                 : jobResult.getCompletedAt()));

@@ -45,6 +45,6 @@ app:
   batch:
     chunk-size: 100
     grid-size: 4
-    partition-size: 1000
+    partition-size: 2000
     mail:
       enabled: false # Cambiar a true cuando configures email

@@ -12,7 +12,7 @@ $scheduleBody = @{
     jobType = "BATCH_PROCESSING"
     priority = "MEDIUM"
     parameters = @{
-        "processDate" = "2025-12-15"
+        "processDate" = "2025-12-22"
         "emailRecipient" = "admin@company.com"
         "customerFilter" = "*"
     }

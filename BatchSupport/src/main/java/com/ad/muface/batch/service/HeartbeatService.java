@@ -79,11 +79,13 @@ public class HeartbeatService implements ApplicationListener<ContextClosedEvent>
 
             JobResult heartbeat = new JobResult();
             heartbeat.setJobId(fulljobId);
+            heartbeat.setJobrunrJobId(fulljobId);
             heartbeat.setLastHeartBeat(LocalDateTime.now());
             heartbeat.setStatus(JobStatusEnum.IN_PROGRESS);
             heartbeat.setMetadata(metadata);
 
-            kafkaPublisher.publishJobHeartBeat(fulljobId, heartbeat);
+            kafkaPublisher.notifyProgress(fulljobId, jobRequest.getJobName(), jobRequest.getCorrelationId(),
+                    "job en ejecución...", heartbeat);
 
         } catch (Exception e) {
             log.warn("Error creating heartbeat", e);
@@ -113,4 +115,6 @@ public class HeartbeatService implements ApplicationListener<ContextClosedEvent>
     public boolean isHealthy() {
         return !shuttingDown.get() && !sharedExecutor.isShutdown();
     }
+
+
 }
