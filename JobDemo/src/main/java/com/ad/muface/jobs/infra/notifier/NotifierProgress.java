@@ -6,8 +6,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
+import java.util.Calendar;
 import java.util.Map;
 
 @Slf4j
@@ -76,15 +78,15 @@ public class NotifierProgress {
      * Notifica finalización del batch job
      */
     public void notifyCompletion(String jobId, String status, String message,
-                                 Map<String, Object> report) {
+                                 Map<String, Object> report, Long startTimeInMils) {
 
         JobResult statusResult = JobResult.builder()
                 .jobId(jobId)
                 .jobName("")
                 .status(JobStatusEnum.COMPLETED)
                 .message(message)
-                .startedAt(LocalDateTime.now())
                 .completedAt(LocalDateTime.now())
+                .durationMs(Calendar.getInstance().getTimeInMillis() - startTimeInMils)
                 .errorDetails(null)
                 .correlationId("correlationId")
                 .metadata(report != null ? report : Map.of("stage", "COMPLETED"))

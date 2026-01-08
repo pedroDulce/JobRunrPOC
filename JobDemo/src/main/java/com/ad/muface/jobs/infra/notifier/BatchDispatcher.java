@@ -1,29 +1,29 @@
-package com.ad.muface.jobs.demobatch.dispatcher;
+package com.ad.muface.jobs.infra.notifier;
 
 import com.ad.muface.jobs.infra.notifier.KafkaPublisher;
 import com.ad.muface.jobs.infra.notifier.NotifierProgress;
 import common.batch.dto.JobRequest;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.batch.core.launch.JobLauncher;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.messaging.handler.annotation.Header;
-import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
 import java.util.Map;
 
-@Component
-@RequiredArgsConstructor
 @Slf4j
 public abstract class BatchDispatcher {
 
-    protected final JobLauncher jobLauncher;
-    protected final KafkaPublisher kafkaPublisher;
-    protected final NotifierProgress notifierProgress;
+    @Autowired
+    protected JobLauncher jobLauncher;
+    @Autowired
+    protected KafkaPublisher kafkaPublisher;
+    @Autowired
+    protected NotifierProgress notifierProgress;
 
     @KafkaListener(
             topics = "${kafka.topics.job-requests}",

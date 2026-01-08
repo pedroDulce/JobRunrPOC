@@ -145,7 +145,8 @@ public class JobResultConsumer {
      */
     private void handleCompleted(Job job, JobResult jobResult) {
 
-        log.info("✅ Job {} completed successfully - {}", job.getId(), jobResult.getMessage());
+        log.info("✅ Trabajo Remoto {} - {} completado de forma satisfactoria - {}", job.getJobName(),
+                job.getId(), jobResult.getMessage());
 
         job.getMetadata().put("progress", 100);
         job.getMetadata().put("lastHeartbeat", DateTimeUtil.formatNow());

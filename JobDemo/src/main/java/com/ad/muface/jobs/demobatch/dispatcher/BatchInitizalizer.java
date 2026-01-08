@@ -1,7 +1,7 @@
-package com.ad.muface.jobs.infra.notifier;
+package com.ad.muface.jobs.demobatch.dispatcher;
 
-import com.ad.muface.jobs.demobatch.dispatcher.BatchDispatcher;
 import com.ad.muface.jobs.demobatch.job.CustomerSummaryReportJob;
+import com.ad.muface.jobs.infra.notifier.BatchDispatcher;
 import common.batch.dto.JobRequest;
 import common.batch.dto.JobResult;
 import common.batch.dto.JobStatusEnum;
@@ -10,7 +10,6 @@ import org.springframework.batch.core.Job;
 import org.springframework.batch.core.JobExecution;
 import org.springframework.batch.core.JobParameters;
 import org.springframework.batch.core.JobParametersBuilder;
-import org.springframework.batch.core.launch.JobLauncher;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.stereotype.Component;
@@ -27,9 +26,6 @@ public class BatchInitizalizer extends BatchDispatcher {
     @Autowired
     private CustomerSummaryReportJob jobExecutionService;
 
-    public BatchInitizalizer(JobLauncher jobLauncher, KafkaPublisher kafkaPublisher, NotifierProgress notifierProgress) {
-        super(jobLauncher, kafkaPublisher, notifierProgress);
-    }
 
     protected void lanzarJob(JobRequest jobRequest, Acknowledgment acknowledgment) {
         try {
@@ -62,6 +58,15 @@ public class BatchInitizalizer extends BatchDispatcher {
 
     protected void lanzarBatch(JobRequest jobRequest, Acknowledgment acknowledgment) {
 
+        // Construir parámetros del job
+        JobParametersBuilder paramsBuilder = new JobParametersBuilder()
+                .addString("externalJobId", jobRequest.getJobId())
+                .addString("jobName", jobRequest.getJobName())
+                .addString("executionTime", LocalDateTime.now().toString())
+                .addLong("timestamp", System.currentTimeMillis(), true);
+
+        JobParameters jobParameters = paramsBuilder.toJobParameters();
+
         try {
             // 1. Publicar estado IN_PROGRESS
             kafkaPublisher.publishJobStatus(jobRequest, JobStatusEnum.IN_PROGRESS, null,
@@ -71,27 +76,11 @@ public class BatchInitizalizer extends BatchDispatcher {
             acknowledgment.acknowledge();
 
             // 3. Ejecutar el batch
-            // Construir parámetros del job
-            JobParametersBuilder paramsBuilder = new JobParametersBuilder()
-                    .addString("externalJobId", jobRequest.getJobId())
-                    .addString("jobName", jobRequest.getJobName())
-                    .addString("executionTime", LocalDateTime.now().toString())
-                    .addLong("timestamp", System.currentTimeMillis(), true);
-
-            JobParameters jobParameters = paramsBuilder.toJobParameters();
-            // Agregar parámetros adicionales
-            if (jobParameters != null) {
-                jobParameters.getParameters().forEach((key, value) -> {
-                    paramsBuilder.addString(key, String.valueOf(value));
-                });
-            }
-
-            // Ejecutar el job
             JobExecution execution = jobLauncher.run(dailyTransactionBatchJob, jobParameters);
 
             log.info("✅ Batch job lanzado. Execution ID: {}, Status: {}", execution.getId(), execution.getStatus());
 
-            log.info("✅ JobExecutor: Batch {} executed successfully", jobRequest.getJobId());
+            log.info("✅ JobExecutor: Batch {} executed successfully", jobRequest.getJobName());
 
         } catch (Exception e) {
             log.error("❌ JobExecutor: Error processing Batch request: {}", e.getMessage(), e);
@@ -100,7 +89,8 @@ public class BatchInitizalizer extends BatchDispatcher {
                     jobRequest.getJobId(),
                     "FAILED",
                     "Error iniciando batch: " + e.getMessage(),
-                    null
+                    null,
+                    jobParameters.getLong("timestamp")
             );
             // Publicar estado FAILED si hay jobRequest
             if (jobRequest != null) {
@@ -110,6 +100,5 @@ public class BatchInitizalizer extends BatchDispatcher {
             // No confirmar para que se reintente
         }
     }
-
 
 }

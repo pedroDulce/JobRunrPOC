@@ -2,8 +2,6 @@ package com.ad.muface.jobs.infra.config;
 
 import com.zaxxer.hikari.HikariDataSource;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.batch.core.repository.JobRepository;
-import org.springframework.batch.core.repository.support.JobRepositoryFactoryBean;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.jdbc.DataSourceBuilder;
@@ -85,18 +83,6 @@ public class DataSourceConfig {
 
         initializer.setDatabasePopulator(populator);
         return initializer;
-    }
-
-    @Bean
-    public JobRepository jobRepository(@Qualifier("batchDataSource") DataSource batchDataSource) throws Exception {
-        JobRepositoryFactoryBean factory = new JobRepositoryFactoryBean();
-        factory.setDataSource(batchDataSource);
-        factory.setTransactionManager(batchTransactionManager(batchDataSource));
-        factory.setDatabaseType("POSTGRES");
-        factory.setTablePrefix("BATCH_");
-        factory.setMaxVarCharLength(1000);
-        factory.afterPropertiesSet();
-        return factory.getObject();
     }
 
     @Bean

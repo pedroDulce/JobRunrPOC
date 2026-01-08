@@ -32,6 +32,7 @@ import org.springframework.transaction.PlatformTransactionManager;
 
 import javax.sql.DataSource;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -224,13 +225,15 @@ public class SpringBatchExecutor {
                             .stream().mapToLong(StepExecution::getWriteCount).sum());
 
                     notifierProgress.notifyCompletion(
-                            jobId, "SUCCEEDED", "Batch completado", report);
+                            jobId, "SUCCEEDED", "Batch completado", report,
+                            jobExecution.getJobParameters().getLong("timestamp"));
 
                     emailReporter.sendEmailReport(jobId, report);
 
                 } else {
                     notifierProgress.notifyCompletion(
-                            jobId, "FAILED", "Batch fallido", null);
+                            jobId, "FAILED", "Batch fallido", null,
+                            jobExecution.getJobParameters().getLong("timestamp"));
                 }
             }
         };
