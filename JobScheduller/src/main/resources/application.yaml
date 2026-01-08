@@ -4,16 +4,23 @@ server:
 spring:
   autoconfigure:
     exclude:
-      - com.ad.muface.batch.config.DataSourceConfig
       - org.springframework.boot.autoconfigure.batch.BatchAutoConfiguration
 
   application:
     name: batch-scheduler-service
+
   datasource:
     url: jdbc:postgresql://localhost:5432/batch-scheduler
     username: batch_user
     password: batch_password
     driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 5
+      minimum-idle: 2
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      pool-name: Batch-Hikari
 
   kafka:
     bootstrap-servers: localhost:9092
@@ -74,8 +81,6 @@ resilience4j.circuitbreaker:
 
 logging:
   level:
-    org.jobrunr.storage.ConcurrentJobModificationException: OFF
-    org.jobrunr.storage.sql.commondb.ConcurrentSqlModificationException: OFF
-    org.jobrunr.server.BackgroundJobPerformer: OFF
+    org.jobrunr: DEBUG
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{40} - %msg%n%ex{0}" # Sin stack trace

@@ -4,9 +4,19 @@ import io.swagger.v3.oas.annotations.OpenAPIDefinition;
 import io.swagger.v3.oas.annotations.info.Info;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.FilterType;
 import org.springframework.scheduling.annotation.EnableAsync;
 
+
 @SpringBootApplication
+@ComponentScan(
+        basePackages = "com.ad.muface.batch.scheduler",
+        excludeFilters = @ComponentScan.Filter(
+                type = FilterType.ASSIGNABLE_TYPE,
+                classes = com.ad.muface.batch.config.DataSourceConfig.class
+        )
+)
 @EnableAsync
 @OpenAPIDefinition(
         info = @Info(
