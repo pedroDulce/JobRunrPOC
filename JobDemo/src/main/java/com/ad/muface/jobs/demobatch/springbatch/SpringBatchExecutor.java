@@ -1,4 +1,4 @@
-package com.ad.muface.jobs.infra.config;
+package com.ad.muface.jobs.demobatch.springbatch;
 
 import com.ad.muface.jobs.demobatch.model.CustomerTransaction;
 import com.ad.muface.jobs.demobatch.model.ProcessedTransaction;
@@ -39,7 +39,7 @@ import java.util.Map;
 @Configuration
 @EnableBatchProcessing
 @RequiredArgsConstructor
-public class SpringBatchExecutorConfig {
+public class SpringBatchExecutor {
 
     @Qualifier("businessDataSource")
     private final DataSource businessDataSource;
