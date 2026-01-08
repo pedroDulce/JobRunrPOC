@@ -35,7 +35,6 @@ public abstract class BatchDispatcher {
             @Header(KafkaHeaders.RECEIVED_PARTITION) Integer partition,
             @Header(KafkaHeaders.RECEIVED_TOPIC) String topic,
             @Header(value = "business-domain", required = true) String businessDomain,
-            @Header(value = "target-job", required = false) String targetJob,
             @Header(value = "target-batch", required = false) String targetBatch,
             @Header(value = "priority", defaultValue = "MEDIUM") String priority,
             @Header(value = "correlation-id", required = true) String correlationId,
@@ -49,7 +48,6 @@ public abstract class BatchDispatcher {
                         Job ID: {}
                         JobRunr Job ID: {}
                         Business Domain: {}
-                        Target Job: {}
                         Target Batch: {}
                         Priority: {}
                         Correlation ID: {}
@@ -57,7 +55,6 @@ public abstract class BatchDispatcher {
                 jobRequest.getJobId(),
                 jobrunrJobId,
                 businessDomain,
-                targetJob,
                 targetBatch,
                 priority,
                 correlationId
@@ -71,12 +68,8 @@ public abstract class BatchDispatcher {
 
         if (targetBatch != null) {
             lanzarBatch(jobRequest, acknowledgment);
-        } else if (targetBatch != null) {
-            lanzarJob(jobRequest, acknowledgment);
         }
     }
-
-    protected abstract void lanzarJob(JobRequest jobRequest, Acknowledgment acknowledgment);
 
     protected abstract void lanzarBatch(JobRequest jobRequest, Acknowledgment acknowledgment);
 

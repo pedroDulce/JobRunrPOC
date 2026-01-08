@@ -1,10 +1,8 @@
-package com.ad.muface.batch.demo.dispatcher;
+package com.ad.muface.batch.dispatcher;
 
-import com.ad.muface.batch.demo.job.CustomerSummaryReportJob;
-import com.ad.muface.batch.notifier.BatchDispatcher;
 import com.ad.muface.batch.dto.JobRequest;
-import com.ad.muface.batch.dto.JobResult;
 import com.ad.muface.batch.dto.JobStatusEnum;
+import com.ad.muface.batch.notifier.BatchDispatcher;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.JobExecution;
@@ -22,39 +20,6 @@ public class BatchInitizalizer extends BatchDispatcher {
 
     @Autowired
     private Job dailyTransactionBatchJob;
-
-    @Autowired
-    private CustomerSummaryReportJob jobExecutionService;
-
-
-    protected void lanzarJob(JobRequest jobRequest, Acknowledgment acknowledgment) {
-        try {
-
-            // 1. Publicar estado IN_PROGRESS
-            kafkaPublisher.publishJobStatus(jobRequest, JobStatusEnum.IN_PROGRESS, null,
-                    "JobExecutor: remote Job execution started");
-            // Confirmar offset
-            acknowledgment.acknowledge();
-
-            // 2. Ejecutar el job
-            JobResult result = jobExecutionService.executeJob(jobRequest);
-
-            // 3. Publicar resultado final
-            kafkaPublisher.publishJobResult(result);
-
-            // 4. Confirmar offset
-            acknowledgment.acknowledge();
-
-            log.info("✅ JobExecutor: Job {} executed successfully", jobRequest.getJobId());
-
-        } catch (Exception e) {
-            log.error("❌ JobExecutor: Error processing job request: {}", e.getMessage(), e);
-
-            kafkaPublisher.publishJobStatus(jobRequest, JobStatusEnum.FAILED, e,
-                    "Job execution failed: " + e.getMessage());
-            // No confirmar para que se reintente la publicación
-        }
-    }
 
     protected void lanzarBatch(JobRequest jobRequest, Acknowledgment acknowledgment) {
 

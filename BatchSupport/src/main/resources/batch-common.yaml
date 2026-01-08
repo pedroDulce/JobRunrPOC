@@ -44,6 +44,14 @@ spring:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
 
+
+kafka:
+  topics:
+    job-requests: job-requests-topic
+    job-results: job-results-topic
+  filter:
+    business-domains: ${spring.application.name}
+
 # Logging específico para Kafka
 logging:
   level:
