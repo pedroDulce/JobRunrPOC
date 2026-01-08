@@ -9,6 +9,7 @@
     </option>
     <option name="ignoredFiles">
       <set>
+        <option value="$PROJECT_DIR$/CommonJobUtils/pom.xml" />
         <option value="$PROJECT_DIR$/SpringBatchDemo/pom.xml" />
       </set>
     </option>

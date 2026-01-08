@@ -1,8 +1,5 @@
 spring:
 
-  application:
-    name: job-executor-service
-
   batch:
     jdbc:
       initialize-schema: always # Crea las tablas BATCH_* la primera vez
@@ -15,18 +12,6 @@ spring:
           queue-capacity: 500
 
   datasource:
-    business:
-      jdbc-url: jdbc:postgresql://localhost:5432/job_demo_database
-      username: postgres
-      password: postgres
-      driver-class-name: org.postgresql.Driver
-      hikari:
-        maximum-pool-size: 10
-        minimum-idle: 5
-        connection-timeout: 30000
-        idle-timeout: 600000
-        max-lifetime: 1800000
-        pool-name: Business-Hikari
     batch:
       jdbc-url: jdbc:postgresql://localhost:5432/spring_batch_db
       username: spring_batch_user
@@ -39,14 +24,6 @@ spring:
         idle-timeout: 600000
         max-lifetime: 1800000
         pool-name: Batch-Hikari
-
-  # Configuración JPA para el DataSource BBDD
-  jpa:
-    hibernate:
-      ddl-auto: update    # crea/actualiza tablas automáticamente
-    properties:
-      hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
 
   kafka:
     bootstrap-servers: localhost:9092
@@ -66,24 +43,6 @@ spring:
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
-
-kafka:
-  topics:
-    job-requests: job-requests-topic
-    job-results: job-results-topic
-
-  filter:
-    business-domains: ${spring.application.name}
-    target-jobs: "ResumenDiarioClientesAsync"     # Solo procesar este
-    target-batches: "springBatchSample"         # Solo procesar este
-
-app:
-  batch:
-    chunk-size: 100
-    grid-size: 4
-    partition-size: 1000
-    mail:
-      enabled: false # Cambiar a true cuando configures email
 
 # Logging específico para Kafka
 logging:

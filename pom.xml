@@ -21,9 +21,8 @@
   <modules>
     <module>JobDemo</module>
     <module>JobScheduller</module>
-    <module>CommonJobUtils</module>
-      <module>SpringBatchDemo</module>
-      <module>BatchSupport</module>
+    <module>SpringBatchDemo</module>
+    <module>BatchSupport</module>
   </modules>
 
   <properties>
@@ -112,7 +111,24 @@
 
   </dependencies>
 
+
   <build>
+
+    <resources>
+      <resource>
+        <directory>src/main/resources</directory>
+        <includes>
+          <include>**/*</include>
+        </includes>
+      </resource>
+      <resource>
+        <directory>${project.build.directory}/generated-classes/jaxws</directory>
+        <includes>
+          <include>**/*.class</include>
+        </includes>
+      </resource>
+    </resources>
+
     <plugins>
       <plugin>
         <groupId>org.springframework.boot</groupId>
