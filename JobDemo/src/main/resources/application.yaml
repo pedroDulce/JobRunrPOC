@@ -9,18 +9,6 @@ spring:
   batch:
     jdbc:
       initialize-schema: always # Crea las tablas BATCH_* la primera vez
-    datasource:
-      jdbc-url: jdbc:postgresql://localhost:5432/spring_batch_db
-      username: spring_batch_user
-      password: spring_batch_password
-      driver-class-name: org.postgresql.Driver
-      hikari:
-        maximum-pool-size: 5
-        minimum-idle: 2
-        connection-timeout: 30000
-        idle-timeout: 600000
-        max-lifetime: 1800000
-        pool-name: Batch-Hikari
     # Configuración del pool
     task:
       execution:
@@ -42,6 +30,18 @@ spring:
         idle-timeout: 600000
         max-lifetime: 1800000
         pool-name: Business-Hikari
+    batch:
+      jdbc-url: jdbc:postgresql://localhost:5432/spring_batch_db
+      username: spring_batch_user
+      password: spring_batch_password
+      driver-class-name: org.postgresql.Driver
+      hikari:
+        maximum-pool-size: 5
+        minimum-idle: 2
+        connection-timeout: 30000
+        idle-timeout: 600000
+        max-lifetime: 1800000
+        pool-name: Batch-Hikari
 
   # Configuración JPA para el DataSource BBDD
   jpa:

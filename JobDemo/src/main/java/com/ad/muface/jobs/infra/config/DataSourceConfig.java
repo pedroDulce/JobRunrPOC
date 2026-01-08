@@ -1,5 +1,7 @@
 package com.ad.muface.jobs.infra.config;
 
+import com.zaxxer.hikari.HikariDataSource;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.batch.core.repository.support.JobRepositoryFactoryBean;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -17,20 +19,55 @@ import org.springframework.transaction.PlatformTransactionManager;
 import javax.sql.DataSource;
 
 @Configuration
+@Slf4j
 public class DataSourceConfig {
 
+    /**
+     * DataSource PRIMARIO para la base de datos de negocio
+     * Se marca como @Primary para que sea el DataSource por defecto
+     */
     @Primary
     @Bean(name = "businessDataSource")
     @ConfigurationProperties(prefix = "spring.datasource.business")
     public DataSource businessDataSource() {
-        return DataSourceBuilder.create().build();
+        log.info("🔧 Creando businessDataSource...");
+        return DataSourceBuilder.create()
+                .type(HikariDataSource.class)
+                .build();
     }
 
-    // DataSource para Spring Batch
+    /**
+     * DataSource para Spring Batch
+     */
     @Bean(name = "batchDataSource")
-    @ConfigurationProperties(prefix = "spring.batch.datasource")
+    @ConfigurationProperties(prefix = "spring.datasource.batch")
     public DataSource batchDataSource() {
-        return DataSourceBuilder.create().build();
+        log.info("🔧 Creando batchDataSource...");
+        return DataSourceBuilder.create()
+                .type(HikariDataSource.class)
+                .build();
+    }
+
+    /**
+     * Bean 'dataSource' (nombre requerido por Spring Batch)
+     * Este es un ALIAS para batchDataSource
+     * Spring Batch internamente busca un bean llamado 'dataSource'
+     */
+    @Bean(name = "dataSource")
+    public DataSource dataSource() {
+        log.info("🔧 Creando bean 'dataSource' (alias para batchDataSource)...");
+        return batchDataSource();  // Devolvemos el mismo DataSource de batch
+    }
+
+    /**
+     * Bean 'transactionManager' requerido por Spring Batch.
+     * Usará el bean 'dataSource' (que es batchDataSource) para las transacciones de metadatos.
+     */
+    @Bean(name = "transactionManager")
+    @Primary
+    public PlatformTransactionManager transactionManager(DataSource dataSource) {
+        log.info("🔧 Creando transactionManager para Spring Batch...");
+        return new DataSourceTransactionManager(dataSource);
     }
 
     // Inicializador del DataSource de batch: crea las tablas
