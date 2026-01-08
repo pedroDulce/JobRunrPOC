@@ -78,9 +78,8 @@ public class BatchInitizalizer extends BatchDispatcher {
             // 3. Ejecutar el batch
             JobExecution execution = jobLauncher.run(dailyTransactionBatchJob, jobParameters);
 
-            log.info("✅ Batch job lanzado. Execution ID: {}, Status: {}", execution.getId(), execution.getStatus());
-
-            log.info("✅ JobExecutor: Batch {} executed successfully", jobRequest.getJobName());
+            log.info("✅ Batch job lanzado {}. Execution ID: {}, Status: {}", jobRequest.getJobName(),
+                    execution.getId(), execution.getStatus());
 
         } catch (Exception e) {
             log.error("❌ JobExecutor: Error processing Batch request: {}", e.getMessage(), e);
