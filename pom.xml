@@ -21,7 +21,6 @@
   <modules>
     <module>JobDemo</module>
     <module>JobScheduller</module>
-    <module>SpringBatchDemo</module>
     <module>BatchSupport</module>
   </modules>
 
