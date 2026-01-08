@@ -86,7 +86,7 @@ public class NotifierProgress {
                 .status(JobStatusEnum.COMPLETED)
                 .message(message)
                 .completedAt(LocalDateTime.now())
-                .durationMs(Calendar.getInstance().getTimeInMillis() - startTimeInMils)
+                .durationMs((Calendar.getInstance().getTimeInMillis() - startTimeInMils)/1000)
                 .errorDetails(null)
                 .correlationId("correlationId")
                 .metadata(report != null ? report : Map.of("stage", "COMPLETED"))
