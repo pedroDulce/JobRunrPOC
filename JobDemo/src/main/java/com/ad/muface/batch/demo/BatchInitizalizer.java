@@ -1,4 +1,4 @@
-package com.ad.muface.batch.dispatcher;
+package com.ad.muface.batch.demo;
 
 import com.ad.muface.batch.notifier.BatchDispatcher;
 import lombok.RequiredArgsConstructor;
@@ -11,6 +11,11 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class BatchInitizalizer extends BatchDispatcher {
 
+    /**
+     * Debe coincidir el nombre de la variable job con el método @Bean en la clase SpringBatchJob:
+     * @Bean
+     *     public Job dailyTransactionBatchJob(...)
+     */
     private final Job dailyTransactionBatchJob;
 
     protected Job getJobToExecute() {

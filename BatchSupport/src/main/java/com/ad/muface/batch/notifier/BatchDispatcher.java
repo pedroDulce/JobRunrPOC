@@ -20,7 +20,6 @@ import java.util.Map;
 
 @Slf4j
 public abstract class BatchDispatcher {
-
     @Autowired
     protected JobLauncher jobLauncher;
     @Autowired
@@ -123,6 +122,14 @@ public abstract class BatchDispatcher {
 
     protected abstract Job getJobToExecute();
 
+
+    private void addJobRequestParameters(JobParametersBuilder paramsBuilder, Map<String, String> parameters) {
+        if (parameters != null && !parameters.isEmpty()) {
+            for (Map.Entry<String, String> entry : parameters.entrySet()) {
+                paramsBuilder.addString(entry.getKey(), entry.getValue());
+            }
+        }
+    }
 
     /**
      * Tracing de los headers
