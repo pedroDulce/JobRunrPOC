@@ -39,6 +39,9 @@ spring:
       heartbeat.interval.ms: 3000    # 3 segundos
       # Máximo de registros por poll
       max.poll.records: 50
+      properties:
+        spring.json.trusted.packages: "*"
+        spring.json.value.default.type: com.ad.muface.batch.dto.JobRequest
 
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer

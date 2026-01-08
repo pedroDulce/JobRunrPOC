@@ -50,7 +50,6 @@ public class KafkaJobRequestConsumerConfig {
 
     private Set<String> allowedBusinessDomains;
     private Set<String> allowedTargetBatches;
-    private Set<String> allowedTargetJobs;
 
     @Autowired(required = false)
     private JobRecordInterceptor jobRecordInterceptor;
@@ -61,13 +60,11 @@ public class KafkaJobRequestConsumerConfig {
     private void initializeFilterSets() {
         allowedBusinessDomains = parseCommaSeparatedSet(businessDomainsConfig);
         allowedTargetBatches = parseCommaSeparatedSet(targetBatchesConfig);
-        allowedTargetJobs = parseCommaSeparatedSet(targetJobsConfig);
 
         log.info("Kafka Filter Configuration:");
         log.info("  Enabled: {}", filterEnabled);
         log.info("  Allowed Business Domains: {}", allowedBusinessDomains);
         log.info("  Allowed Target Batches: {}", allowedTargetBatches);
-        log.info("  Allowed Target Jobs: {}", allowedTargetJobs);
     }
 
     /**
@@ -170,12 +167,8 @@ public class KafkaJobRequestConsumerConfig {
             boolean targetBatchMatches = allowedTargetBatches.isEmpty() ||
                     (targetBatch != null && allowedTargetBatches.contains(targetBatch));
 
-            // Verificar target-batch
-            boolean targetJobMatches = allowedTargetJobs.isEmpty() ||
-                    (targetJob != null && allowedTargetJobs.contains(targetJob));
-
             // Si ambos criterios coinciden, NO filtrar (procesar)
-            boolean shouldProcess = businessDomainMatches && (targetJobMatches || targetBatchMatches);
+            boolean shouldProcess = businessDomainMatches && targetBatchMatches;
 
             if (!shouldProcess) {
                 log.debug("No procesamos este evento: el message contiene headers no válidas: "
