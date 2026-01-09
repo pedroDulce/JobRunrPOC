@@ -21,7 +21,7 @@ public class JobMetadataUtils {
         }
         paramsBuilder.addString("externalJobId", jobRequest.getJobId())
                 .addString("jobName", jobRequest.getJobName())
-                .addString("jobCorrelationId", jobRequest.getCorrelationId())
+                .addString("jobCorrelationId", jobRequest.getCorrelationId() == null ? "no planned job" : jobRequest.getCorrelationId())
                 .addString("executionTime", LocalDateTime.now().toString())
                 .addLong("timestamp", System.currentTimeMillis(), true);
         return paramsBuilder.toJobParameters();

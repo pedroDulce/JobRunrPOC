@@ -40,11 +40,11 @@ public class BatchController {
 
         log.info("""
                         📥 JobExecutor: Recibida Job Request via API REST:
-                        Job ID: {}
+                        Remote Job ID: {}
                         Business Domain: {}
                         Target Job Batch name: {}
                         Priority: {}
-                        Correlation ID: {}
+                        Parent Recurring Job Remote ID: {}
                         """,
                 jobRequest.getJobId(),
                 jobRequest.getBusinessDomain(),

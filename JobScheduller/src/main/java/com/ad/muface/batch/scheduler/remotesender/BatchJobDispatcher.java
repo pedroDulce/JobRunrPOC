@@ -1,6 +1,7 @@
 package com.ad.muface.batch.scheduler.remotesender;
 
 import com.ad.muface.batch.dto.JobRequest;
+import com.ad.muface.batch.scheduler.service.JobManagementOperations;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jobrunr.jobs.annotations.Job;
@@ -21,6 +22,8 @@ public class BatchJobDispatcher {
 
     private final RestTemplate restTemplate;
 
+    private final JobManagementOperations jobManagementOperations;
+
     @Value("${dispatcher.batch-runner-endpoint}")
     private String batchRunnerEndpoint;
 
@@ -35,6 +38,8 @@ public class BatchJobDispatcher {
     public String invocarJobRemoto(JobRequest jobRequest, JobContext jobContext) {
         try {
             jobRequest.setJobId(jobContext.getJobId().toString());
+            String uuidRecurringJob = jobManagementOperations.getRecurringIdJobByName(jobRequest.getJobName());
+            jobRequest.setCorrelationId(uuidRecurringJob);
 
             log.info("Enviando JobRequest al batch runner: {}", jobRequest.getJobId());
 
