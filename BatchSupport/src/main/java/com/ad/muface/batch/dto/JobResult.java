@@ -23,7 +23,7 @@ public class JobResult {
     private LocalDateTime startedAt;
     private LocalDateTime completedAt;
     private LocalDateTime lastHeartBeat;
-    private Long durationSeconds;
+    private Long executionTimeInMills;
     private String errorDetails;
     private Map<String, Object> metadata;
     private String correlationId;

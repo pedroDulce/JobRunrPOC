@@ -43,7 +43,8 @@ kafka:
 app:
   batch:
     chunk-size: 100
-    grid-size: 1 # esto es el num. de particiones/hilos
-    partition-size: 1000000  # Un millón, ajusta si tus IDs son más grandes
+    grid-size: 4 # esto es el num. de particiones/hilos
+    partition-size: 25  # Ajusta el tamanio rango de cada partition.
+    # En nuestro particionador, cuando gridSize>1, no se usa partitionSize para calcular el rango, sino idsPerPartition calculado a partir del rango total en BBDD.
     mail:
       enabled: false # Cambiar a true cuando configures email

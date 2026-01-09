@@ -12,7 +12,6 @@ import org.springframework.stereotype.Component;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.Calendar;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
@@ -81,7 +80,7 @@ public class KafkaPublisher {
             durationSeconds = Duration.between(
                     jobExecution.getStartTime(),
                     jobExecution.getEndTime()
-            ).getSeconds();
+            ).getSeconds()*1000;
         }
 
         JobResult statusResult = JobResult.builder()
@@ -90,7 +89,7 @@ public class KafkaPublisher {
                 .status(JobStatusEnum.FAILED)
                 .message(message)
                 .completedAt(LocalDateTime.now())
-                .durationSeconds(durationSeconds)
+                .executionTimeInMills(durationSeconds)
                 .errorDetails(message)
                 .correlationId(correlationId)
                 .jobrunrJobId(jobId)
@@ -111,7 +110,7 @@ public class KafkaPublisher {
         long durationSeconds = Duration.between(
                 jobExecution.getStartTime(),
                 jobExecution.getEndTime()
-        ).getSeconds();
+        ).getSeconds()*1000;
 
         JobResult statusResult = JobResult.builder()
                 .jobId(jobId)
@@ -119,7 +118,7 @@ public class KafkaPublisher {
                 .status(JobStatusEnum.COMPLETED)
                 .message(message)
                 .completedAt(LocalDateTime.now())
-                .durationSeconds(durationSeconds)
+                .executionTimeInMills(durationSeconds)
                 .errorDetails(null)
                 .correlationId(correlationId)
                 .metadata(report != null ? report : Map.of("stage", "COMPLETED"))

@@ -65,7 +65,8 @@ public class SpringBatchJob {
     public Partitioner transactionPartitioner(
             @Value("#{jobParameters['processDate'] ?: T(java.time.LocalDate).now().minusDays(1).toString()}") String processDateParam,
             @Value("#{jobParameters['emailRecipient'] ?: 'default@example.com'}") String emailRecipient,
-            @Value("#{jobParameters['customerFilter'] ?: ''}") String customerFilter) {
+            @Value("#{jobParameters['customerFilter'] ?: ''}") String customerFilter,
+            StepExecution stepExecution) {
 
         return new Partitioner() {
             @Override
@@ -128,6 +129,8 @@ public class SpringBatchJob {
                 }
 
                 log.info("Total de particiones creadas: {}", partitions.size());
+                // Guardar el número de particiones en el StepExecutionContext
+                stepExecution.getExecutionContext().putInt("numberOfPartitions", partitions.size());
                 return partitions;
             }
 
@@ -452,6 +455,17 @@ public class SpringBatchJob {
                 String jobName = jobExecution.getJobParameters().getString("jobName");
                 String correlationId = jobExecution.getJobParameters().getString("jobCorrelationId");
 
+                // Obtener el StepExecution del masterStep
+                StepExecution masterStepExecution = jobExecution.getStepExecutions().stream()
+                        .filter(step -> step.getStepName().equals("masterStep"))
+                        .findFirst()
+                        .orElse(null);
+
+                Integer numberOfPartitions = null;
+                if (masterStepExecution != null) {
+                    numberOfPartitions = masterStepExecution.getExecutionContext().getInt("numberOfPartitions", 0);
+                }
+
                 log.info("=== FINALIZANDO JOB ===");
                 log.info("Estado final: {}", jobExecution.getStatus());
                 log.info("Tiempo de ejecución: {}ms",
@@ -471,7 +485,7 @@ public class SpringBatchJob {
                     report.put("executionTime",
                             Duration.between(jobExecution.getStartTime(), jobExecution.getEndTime()).toMillis());
                     report.put("status", "COMPLETED");
-
+                    report.put("partitions", numberOfPartitions);
                     log.info("Job completado exitosamente. Leídos: {}, Escritos: {}",
                             readCount, writeCount);
 

@@ -59,7 +59,7 @@ public class EmailReporter {
                 jobId,
                 LocalDateTime.now(),
                 report.get("status"),
-                report.get("duration"),
+                report.get("executionTime"),
                 report.get("writeCount"),
                 report.get("partitions"),
                 formatReportDetails(report)
