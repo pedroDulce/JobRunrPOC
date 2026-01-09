@@ -4,7 +4,7 @@ Write-Host "==========================================="
 
 $baseUrl = "http://localhost:8080"
 
-Write-Host "Programando Spring Batch JOB inmediato con orden de ejecución por eventos Kafka (modo asincrono)..." -ForegroundColor Yellow
+Write-Host "Lanzando Spring Batch JOB remoto de forma inmediata con orden de ejecución por eventos Kafka (modo asincrono)..." -ForegroundColor Yellow
 $scheduleBody = @{
     jobName = "springBatchSample"
     businessDomain = "job-executor-service"
