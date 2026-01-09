@@ -73,15 +73,7 @@ public class KafkaPublisher {
 
 
     public void notifyFailure(String jobId, String jobname, String correlationId,
-                              String message, JobExecution jobExecution) {
-
-        long durationSeconds = 0L;
-        if (jobExecution != null) {
-            durationSeconds = Duration.between(
-                    jobExecution.getStartTime(),
-                    jobExecution.getEndTime()
-            ).getSeconds()*1000;
-        }
+                              String message, long duracionMs) {
 
         JobResult statusResult = JobResult.builder()
                 .jobId(jobId)
@@ -89,7 +81,7 @@ public class KafkaPublisher {
                 .status(JobStatusEnum.FAILED)
                 .message(message)
                 .completedAt(LocalDateTime.now())
-                .executionTimeInMills(durationSeconds)
+                .executionTimeInMills(duracionMs)
                 .errorDetails(message)
                 .correlationId(correlationId)
                 .jobrunrJobId(jobId)
@@ -105,12 +97,7 @@ public class KafkaPublisher {
     }
 
     public void notifyCompletion(String jobId, String jobname, String correlationId, String message,
-                                 Map<String, Object> report, JobExecution jobExecution) {
-
-        long durationSeconds = Duration.between(
-                jobExecution.getStartTime(),
-                jobExecution.getEndTime()
-        ).getSeconds()*1000;
+                                 Map<String, Object> report, long duracionMs) {
 
         JobResult statusResult = JobResult.builder()
                 .jobId(jobId)
@@ -118,7 +105,7 @@ public class KafkaPublisher {
                 .status(JobStatusEnum.COMPLETED)
                 .message(message)
                 .completedAt(LocalDateTime.now())
-                .executionTimeInMills(durationSeconds)
+                .executionTimeInMills(duracionMs)
                 .errorDetails(null)
                 .correlationId(correlationId)
                 .metadata(report != null ? report : Map.of("stage", "COMPLETED"))

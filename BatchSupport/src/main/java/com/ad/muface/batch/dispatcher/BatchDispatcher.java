@@ -100,7 +100,7 @@ public abstract class BatchDispatcher {
                     jobRequest.getJobId(),
                     jobRequest.getJobName(),
                     jobRequest.getCorrelationId(),
-                    "Error iniciando batch causado por " + e.getMessage(), null);
+                    "Error iniciando batch causado por " + e.getMessage(), 0L);
 
             // No confirmar para que se reintente
         }

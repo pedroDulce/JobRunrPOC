@@ -455,22 +455,11 @@ public class SpringBatchJob {
                 String jobId = jobExecution.getJobParameters().getString("externalJobId");
                 String jobName = jobExecution.getJobParameters().getString("jobName");
                 String correlationId = jobExecution.getJobParameters().getString("jobCorrelationId");
-
-                // Obtener el StepExecution del masterStep
-                StepExecution masterStepExecution = jobExecution.getStepExecutions().stream()
-                        .filter(step -> step.getStepName().equals("masterStep"))
-                        .findFirst()
-                        .orElse(null);
-
-                Integer numberOfPartitions = null;
-                if (masterStepExecution != null) {
-                    numberOfPartitions = masterStepExecution.getExecutionContext().getInt("numberOfPartitions", 0);
-                }
+                long duracionMs = Duration.between(jobExecution.getStartTime(), jobExecution.getEndTime()).toMillis();
 
                 log.info("=== FINALIZANDO JOB ===");
                 log.info("Estado final: {}", jobExecution.getStatus());
-                log.info("Tiempo de ejecución: {}ms",
-                        Duration.between(jobExecution.getStartTime(), jobExecution.getEndTime()).toMillis());
+                log.info("Tiempo de ejecución: {}ms", duracionMs);
 
                 heartbeatService.stopHeartbeat(jobId);
 
@@ -483,15 +472,14 @@ public class SpringBatchJob {
 
                     report.put("readCount", readCount);
                     report.put("writeCount", writeCount);
-                    report.put("executionTime",
-                            Duration.between(jobExecution.getStartTime(), jobExecution.getEndTime()).toMillis());
+                    report.put("executionTime", duracionMs);
                     report.put("status", "COMPLETED");
                     report.put("partitionsGridSize", gridSize);
                     log.info("Job completado exitosamente. Leídos: {}, Escritos: {}",
                             readCount, writeCount);
 
                     notifierProgress.notifyCompletion(jobId, jobName, correlationId,
-                            "Batch completado con éxito", report, jobExecution);
+                            "Batch completado con éxito", report, duracionMs);
 
                     if (emailReporter != null && readCount > 0) {
                         emailReporter.sendEmailReport(jobId, report);
@@ -502,7 +490,7 @@ public class SpringBatchJob {
                     log.error("Errores: {}", jobExecution.getAllFailureExceptions());
 
                     notifierProgress.notifyFailure(jobId, jobName, correlationId,
-                            "Batch fallido", jobExecution);
+                            "Batch fallido", duracionMs);
                 }
             }
         };
