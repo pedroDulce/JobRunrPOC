@@ -70,6 +70,35 @@ public class JobSchedulerController {
         jobScheduler.scheduleRecurrently(
                 request.getJobName(),
                 request.getCronExpression(),
+                () -> batchJobDispatcher.invocarJobRemoto(request, null)
+        );
+        Map<String, Object> response = new HashMap<>();
+        response.put("jobId", jobId);
+        response.put("jobName", request.getJobName());
+        response.put("jobType", request.getJobType());
+        response.put("business-domain", request.getBusinessDomain());
+        response.put("status", "SCHEDULED");
+        response.put("cronExpression", request.getCronExpression());
+        response.put("processDate", request.getParameters().get("processDate"));
+        response.put("message", "Job programado con éxito.");
+        response.put("dashboardUrl", "http://localhost:8000");
+
+        log.info("✅ Job programado: {} con cron: {}", jobId, request.getCronExpression());
+
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/schedule-remote-sync")
+    public ResponseEntity<Map<String, Object>> scheduleSyncviaRestRecurringJob(@RequestBody JobRequest request) {
+        validateCronExpression(request.getCronExpression());
+
+        String jobId = UUID.randomUUID().toString();
+        request.setJobId(jobId);
+
+        // JobRunr puede serializar estos parámetros String correctamente
+        jobScheduler.scheduleRecurrently(
+                request.getJobName(),
+                request.getCronExpression(),
                 () -> publisherForJobs.dispararJobRemoto(request, null)
         );
         Map<String, Object> response = new HashMap<>();
