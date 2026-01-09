@@ -2,12 +2,12 @@ package com.ad.muface.batch.dispatcher;
 
 import com.ad.muface.batch.dto.JobRequest;
 import com.ad.muface.batch.notifier.KafkaPublisher;
+import com.ad.muface.batch.utilities.JobMetadataUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.JobExecution;
 import org.springframework.batch.core.JobParameters;
-import org.springframework.batch.core.JobParametersBuilder;
 import org.springframework.batch.core.launch.JobLauncher;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -15,7 +15,6 @@ import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.messaging.handler.annotation.Header;
 
-import java.time.LocalDateTime;
 import java.util.Map;
 
 @Slf4j
@@ -69,22 +68,22 @@ public abstract class BatchDispatcher {
         }
 
         if (targetBatch != null) {
-            launch(jobRequest, acknowledgment);
+            launch(jobRequest);
         }
     }
 
-    private void launch(JobRequest jobRequest, Acknowledgment acknowledgment) {
+    private void launch(JobRequest jobRequest) {
         try {
-            lanzarBatch(jobRequest, acknowledgment);
+            lanzarBatch(jobRequest);
         } catch (Exception e) {
             throw e;
         }
     }
 
-    protected void lanzarBatch(JobRequest jobRequest, Acknowledgment acknowledgment) {
+    protected void lanzarBatch(JobRequest jobRequest) {
         try {
             // 1: Construir parámetros del job
-            JobParameters jobParameters = createJobRequestParameters(jobRequest);
+            JobParameters jobParameters = JobMetadataUtils.createJobRequestParameters(jobRequest);
 
             // 2: Ejecutar el batch
             JobExecution execution = jobLauncher.run(getJobToExecute(), jobParameters);
@@ -109,21 +108,7 @@ public abstract class BatchDispatcher {
     protected abstract Job getJobToExecute();
 
 
-    private JobParameters createJobRequestParameters(JobRequest jobRequest) {
-        JobParametersBuilder paramsBuilder = new JobParametersBuilder();
-        if (jobRequest.getParameters() != null && !jobRequest.getParameters().isEmpty()) {
-            for (Map.Entry<String, String> entry : jobRequest.getParameters().entrySet()) {
-                paramsBuilder.addString(entry.getKey(), entry.getValue());
-                log.debug("param.key:: " + entry.getKey() + " - param.value:: " + entry.getValue());
-            }
-        }
-        paramsBuilder.addString("externalJobId", jobRequest.getJobId())
-                .addString("jobName", jobRequest.getJobName())
-                .addString("jobCorrelationId", jobRequest.getCorrelationId())
-                .addString("executionTime", LocalDateTime.now().toString())
-                .addLong("timestamp", System.currentTimeMillis(), true);
-        return paramsBuilder.toJobParameters();
-    }
+
 
     /**
      * Tracing de los headers

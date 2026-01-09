@@ -23,7 +23,6 @@ import org.springframework.batch.item.database.builder.JdbcCursorItemReaderBuild
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationRunner;
-import org.springframework.boot.autoconfigure.batch.BatchProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.task.TaskExecutor;
@@ -63,7 +62,7 @@ public class SpringBatchJob {
     @Bean
     public ApplicationRunner disableBatchAutoStart(JobLauncher jobLauncher, JobRepository jobRepository) {
         return args -> {
-            log.info("Batch auto-start deshabilitado. Los jobs se ejecutarán manualmente.");
+            log.info("Batch auto-start deshabilitado. Los jobs se ejecutarán cuando se invoquen de forma síncrona o asíncrona.");
         };
     }
 
