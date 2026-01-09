@@ -60,6 +60,6 @@ kafka:
 # Logging específico para Kafka
 logging:
   level:
-    org.springframework.kafka: INFO
+    org.springframework.kafka: DEBUG
     org.apache.kafka: WARN
-    com.ad: DEBUG
+    com.ad.muface.batch: DEBUG

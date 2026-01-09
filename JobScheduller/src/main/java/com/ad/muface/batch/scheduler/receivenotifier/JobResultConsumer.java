@@ -31,15 +31,10 @@ public class JobResultConsumer {
             topics = "${kafka.topics.job-results}",
             groupId = "${spring.application.name}-results-consumer"
     )
-    public void consumeJobResult(
-            JobResult result,
-            @Header(KafkaHeaders.RECEIVED_KEY) String executorJobId,
-            @Header(value = "jobrunr-job-id", required = false) String jobrunrJobIdHeader) {
+    public void consumeJobResult(JobResult result) {
 
         try {
-            // Usar jobrunrJobId presente en el header o el del objeto
-            String jobrunrJobIdStr = jobrunrJobIdHeader != null ? jobrunrJobIdHeader : result.getJobId();
-            //filtrar ID trabajo, eliminando el ID de instancia:
+            String jobrunrJobIdStr = result.getJobId();
             int indexHasta = jobrunrJobIdStr.indexOf("instanceId");
             if (indexHasta != -1) {
                 jobrunrJobIdStr = jobrunrJobIdStr.substring(0, indexHasta - 1);
@@ -47,10 +42,10 @@ public class JobResultConsumer {
             UUID uuid = UUID.fromString(jobrunrJobIdStr == null ? "unknown" : jobrunrJobIdStr);
             Job job = storageProvider.getJobById(new JobId(uuid));
             if (job == null) {
-                log.warn("JobRunr job {} not found in storage or was deleted", jobrunrJobIdStr);
+                log.warn("JOB SCHEDULER::: JobRunr job {} not found in storage or was deleted", jobrunrJobIdStr);
             } else {
-                log.info("📨 Received job {} for JobRunr Job ID: {}, result: {}, Status: {}",
-                        job.getJobName(), executorJobId,
+                log.info("📨 JOB SCHEDULER:::Received job {} for JobRunr Job ID: {}, result: {}, Status: {}",
+                        job.getJobName(), result.getJobId(),
                         result.getStatus().toString().contentEquals(JobStatusEnum.FAILED.toString())
                                 ? result.getErrorDetails()
                                 : result.getMessage(),
@@ -61,7 +56,7 @@ public class JobResultConsumer {
             }
 
         } catch (Exception e) {
-            log.error("Error processing job result for {}: {}", jobrunrJobIdHeader, e.getMessage(), e);
+            log.error("Error processing job result for {}: {}", result.getJobId(), e.getMessage(), e);
         }
     }
 
