@@ -45,6 +45,7 @@ public class JobSchedulerController {
         Map<String, Object> response = new HashMap<>();
         response.put("jobId", jobId.toString());
         response.put("jobName", request.getJobName());
+        response.put("jobUrlBaseDestino", request.getUrlDestino());
         response.put("jobType", request.getJobType());
         response.put("business-domain", request.getBusinessDomain());
         response.put("status", "SCHEDULED");

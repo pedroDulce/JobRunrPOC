@@ -11,6 +11,7 @@ import org.springframework.batch.core.*;
 import org.springframework.batch.core.configuration.annotation.EnableBatchProcessing;
 import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.core.job.builder.JobBuilder;
+import org.springframework.batch.core.launch.JobLauncher;
 import org.springframework.batch.core.partition.PartitionHandler;
 import org.springframework.batch.core.partition.support.Partitioner;
 import org.springframework.batch.core.partition.support.TaskExecutorPartitionHandler;
@@ -21,6 +22,8 @@ import org.springframework.batch.item.database.JdbcCursorItemReader;
 import org.springframework.batch.item.database.builder.JdbcCursorItemReaderBuilder;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.ApplicationRunner;
+import org.springframework.boot.autoconfigure.batch.BatchProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.task.TaskExecutor;
@@ -42,14 +45,11 @@ import java.util.Map;
 @EnableBatchProcessing
 @RequiredArgsConstructor
 public class SpringBatchJob {
-
     @Qualifier("businessDataSource")
     private final DataSource businessDataSource;
-
     private final HeartbeatService heartbeatService;
     private final EmailReporter emailReporter;
     private final KafkaPublisher notifierProgress;
-
     @Value("${app.batch.chunk-size:100}")
     private int chunkSize;
 
@@ -58,6 +58,14 @@ public class SpringBatchJob {
 
     @Value("${app.batch.partition-size:1000}")
     private int partitionSize;
+
+    // Añade este bean para deshabilitar auto-ejecución
+    @Bean
+    public ApplicationRunner disableBatchAutoStart(JobLauncher jobLauncher, JobRepository jobRepository) {
+        return args -> {
+            log.info("Batch auto-start deshabilitado. Los jobs se ejecutarán manualmente.");
+        };
+    }
 
     // ================= PARTITIONER CORREGIDO =================
     @Bean

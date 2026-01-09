@@ -38,7 +38,7 @@ kafka:
 
   filter:
     business-domains: ${spring.application.name}
-    target-batches: "springBatchSample"         # Solo procesar este
+    target-batches: "dailyTransactionBatchJob"         # Solo procesar este
 
 app:
   batch:

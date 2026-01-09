@@ -6,7 +6,7 @@ $baseUrl = "http://localhost:8080"
 
 Write-Host "Lanzando Spring Batch JOB remoto de forma inmediata con orden de ejecución API Rest (modo sincrono)..." -ForegroundColor Yellow
 $scheduleBody = @{
-    jobName = "springBatchSample"
+    jobName = "dailyTransactionBatchJob"
     businessDomain = "job-executor-service"
     urlDestino = "http://localhost:8082"
     heartBeatLapse = "5"
