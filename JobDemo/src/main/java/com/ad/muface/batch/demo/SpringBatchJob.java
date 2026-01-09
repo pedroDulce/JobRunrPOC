@@ -486,6 +486,7 @@ public class SpringBatchJob {
                             Duration.between(jobExecution.getStartTime(), jobExecution.getEndTime()).toMillis());
                     report.put("status", "COMPLETED");
                     report.put("partitions", numberOfPartitions);
+                    report.put("partitionsGridSize", gridSize);
                     log.info("Job completado exitosamente. Leídos: {}, Escritos: {}",
                             readCount, writeCount);
 

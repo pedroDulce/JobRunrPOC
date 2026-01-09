@@ -51,6 +51,7 @@ public class EmailReporter {
             - Duración: %s
             - Registros procesados: %s
             - Particiones ejecutadas: %s
+            - Tamaño partición configurado en: %s registros
             ---------------------------------
             DETALLES:
             %s
@@ -62,6 +63,7 @@ public class EmailReporter {
                 report.get("executionTime"),
                 report.get("writeCount"),
                 report.get("partitions"),
+                report.get("partitionsGridSize"),
                 formatReportDetails(report)
         );
     }
