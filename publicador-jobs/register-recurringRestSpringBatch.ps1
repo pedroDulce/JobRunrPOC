@@ -11,6 +11,7 @@ $scheduleBody = @{
     urlDestino = "http://localhost:8082"
     heartBeatLapse = "5"
     jobType = "SYNCRONOUS"
+    cronExpression = "0 */5 * * * *"
     priority = "MEDIUM"
     parameters = @{
         "processDate" = "2025-12-04"
