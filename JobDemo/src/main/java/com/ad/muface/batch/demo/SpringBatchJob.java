@@ -65,8 +65,7 @@ public class SpringBatchJob {
     public Partitioner transactionPartitioner(
             @Value("#{jobParameters['processDate'] ?: T(java.time.LocalDate).now().minusDays(1).toString()}") String processDateParam,
             @Value("#{jobParameters['emailRecipient'] ?: 'default@example.com'}") String emailRecipient,
-            @Value("#{jobParameters['customerFilter'] ?: ''}") String customerFilter,
-            StepExecution stepExecution) {
+            @Value("#{jobParameters['customerFilter'] ?: ''}") String customerFilter) {
 
         return new Partitioner() {
             @Override
@@ -122,15 +121,13 @@ public class SpringBatchJob {
                     context.put("processDate", processDate);
                     context.put("emailRecipient", emailRecipient);
                     context.put("customerFilter", customerFilter);
-
+                    context.put("numberOfPartitions", partitions.size());
                     partitions.put("partition-" + i, context);
 
                     log.info("Partición {}: IDs {} - {}", i, startId, endId);
                 }
 
                 log.info("Total de particiones creadas: {}", partitions.size());
-                // Guardar el número de particiones en el StepExecutionContext
-                stepExecution.getExecutionContext().putInt("numberOfPartitions", partitions.size());
                 return partitions;
             }
 
@@ -240,16 +237,20 @@ public class SpringBatchJob {
 
     private Long getRecordCount(LocalDate date, Long startId, Long endId) {
         try {
-            String sql = "SELECT COUNT(*) FROM customer_transactions " +
-                    "WHERE status = 'PENDING' " +
-                    "AND transaction_date = '" + date + "' " +
-                    "AND id BETWEEN " + startId + " AND " + endId;
-            return businessDataSource.getConnection()
-                    .createStatement()
-                    .executeQuery(sql)
-                    .getLong(1);
+            JdbcTemplate businessJdbcTemplate = new JdbcTemplate(businessDataSource);
+            return businessJdbcTemplate.queryForObject(
+                    "SELECT COUNT(*) FROM customer_transactions " +
+                            "WHERE status = 'PENDING' " +
+                            "AND transaction_date = ? " +
+                            "AND id BETWEEN ? AND ?",
+                    Long.class,
+                    java.sql.Date.valueOf(date),  // Primer parámetro: date
+                    startId,                      // Segundo parámetro: startId
+                    endId                         // Tercer parámetro: endId
+            );
         } catch (Exception e) {
-            log.error("Error contando registros", e);
+            log.error("Error contando registros para fecha: {}, IDs: {} - {}",
+                    date, startId, endId, e);
             return 0L;
         }
     }
@@ -485,7 +486,6 @@ public class SpringBatchJob {
                     report.put("executionTime",
                             Duration.between(jobExecution.getStartTime(), jobExecution.getEndTime()).toMillis());
                     report.put("status", "COMPLETED");
-                    report.put("partitions", numberOfPartitions);
                     report.put("partitionsGridSize", gridSize);
                     log.info("Job completado exitosamente. Leídos: {}, Escritos: {}",
                             readCount, writeCount);
