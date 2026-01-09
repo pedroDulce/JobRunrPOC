@@ -10,7 +10,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/batch")
+@RequestMapping("/batch-runner")
 public class BatchController {
 
     private final JobLauncher jobLauncher;

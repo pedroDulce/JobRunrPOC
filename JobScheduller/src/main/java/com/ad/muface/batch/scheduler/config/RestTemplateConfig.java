@@ -1,4 +1,4 @@
-package com.ad.muface.batch.scheduler.config.sacaraatominfra;
+package com.ad.muface.batch.scheduler.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

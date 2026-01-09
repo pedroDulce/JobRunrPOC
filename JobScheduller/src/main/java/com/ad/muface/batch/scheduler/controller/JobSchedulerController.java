@@ -1,6 +1,7 @@
 package com.ad.muface.batch.scheduler.controller;
 
 import com.ad.muface.batch.dto.JobRequest;
+import com.ad.muface.batch.scheduler.remotesender.BatchJobDispatcher;
 import com.ad.muface.batch.scheduler.remotesender.JobOrderInitRemoteBatch;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -26,10 +27,39 @@ import java.util.UUID;
 public class JobSchedulerController {
 
     private final JobOrderInitRemoteBatch publisherForJobs;
+    private final BatchJobDispatcher batchJobDispatcher;
     private final JobScheduler jobScheduler;
 
+    @PostMapping("/inmediate-remote-sync")
+    public ResponseEntity<Map<String, Object>> scheduleSyncInmediateJob(@RequestBody JobRequest request) {
+        UUID jobId = UUID.randomUUID();
+        request.setJobId(jobId.toString());
+
+        // JobRunr puede serializar estos parámetros String correctamente
+        jobScheduler.schedule(
+                jobId,
+                Instant.now(),
+                () -> batchJobDispatcher.invocarJobRemoto(request, null)
+        );
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("jobId", jobId.toString());
+        response.put("jobName", request.getJobName());
+        response.put("jobType", request.getJobType());
+        response.put("business-domain", request.getBusinessDomain());
+        response.put("status", "SCHEDULED");
+        response.put("cronExpression", request.getCronExpression());
+        response.put("processDate", request.getParameters().get("processDate"));
+        response.put("message", "Job programado con éxito.");
+        response.put("dashboardUrl", "http://localhost:8000");
+
+        log.info("✅ Job de ejecución inmediata {}", jobId);
+
+        return ResponseEntity.ok(response);
+    }
+
     @PostMapping("/schedule-remote-async")
-    public ResponseEntity<Map<String, Object>> scheduleRecurringJob(@RequestBody JobRequest request) {
+    public ResponseEntity<Map<String, Object>> scheduleAsyncRecurringJob(@RequestBody JobRequest request) {
         validateCronExpression(request.getCronExpression());
 
         String jobId = UUID.randomUUID().toString();

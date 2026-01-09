@@ -1,4 +1,4 @@
-package com.ad.muface.batch.scheduler.config.sacaraatominfra;
+package com.ad.muface.batch.scheduler.config;
 
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import io.github.resilience4j.circuitbreaker.CircuitBreakerConfig;

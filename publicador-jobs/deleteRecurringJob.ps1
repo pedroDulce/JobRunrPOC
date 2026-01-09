@@ -1,6 +1,6 @@
 # Configurar variables
 $baseUrl = "http://localhost:8080"
-$jobName = "ResumenDiarioClientesAsync" # Nombre del trabajo a eliminar
+$jobName = "springBatchSample" # Nombre del trabajo a eliminar
 $endpoint = "/api/v1/deleteRecurringJob/$jobName"
 
 # Realizar la petición DELETE

@@ -38,6 +38,9 @@ spring:
       properties:
         spring.json.add.type.headers: false
 
+dispatcher:
+  batch-runner-endpoint: /batch-runner/run/{jobName}
+
 jobrunr:
   job-scheduler:
     enabled: true

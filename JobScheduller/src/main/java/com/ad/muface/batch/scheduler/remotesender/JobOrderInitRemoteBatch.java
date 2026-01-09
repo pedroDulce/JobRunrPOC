@@ -13,6 +13,7 @@ import org.springframework.kafka.support.SendResult;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDateTime;
 import java.util.concurrent.CompletableFuture;
@@ -21,12 +22,13 @@ import java.util.concurrent.CompletableFuture;
 @Slf4j
 @Component
 public class JobOrderInitRemoteBatch {
-
     @Value("${kafka.topics.job-requests}")
     private String jobRequestsTopic;
-
     private final KafkaTemplate<String, JobRequest> kafkaTemplate;
     private final JobManagementOperations jobManagementOperations;
+
+    private final RestTemplate restTemplate;
+
 
     @Job(name= "Async Job")
     public void dispararJobRemoto(JobRequest request, JobContext jobContext) {
