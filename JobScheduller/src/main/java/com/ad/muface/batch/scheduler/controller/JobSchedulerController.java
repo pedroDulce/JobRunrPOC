@@ -99,7 +99,7 @@ public class JobSchedulerController {
         jobScheduler.scheduleRecurrently(
                 request.getJobName(),
                 request.getCronExpression(),
-                () -> publisherForJobs.dispararJobRemoto(request, null)
+                () -> batchJobDispatcher.invocarJobRemoto(request, null)
         );
         Map<String, Object> response = new HashMap<>();
         response.put("jobId", jobId);
@@ -133,7 +133,7 @@ public class JobSchedulerController {
     }
 
     @PostMapping("/inmediate-remote-async")
-    public ResponseEntity<Map<String, Object>> scheduleOnceExecutionJob(@RequestBody JobRequest request) {
+    public ResponseEntity<Map<String, Object>> scheduleRemoteInmediateAsyncJob(@RequestBody JobRequest request) {
 
         UUID jobId = UUID.randomUUID();
         request.setJobId(jobId.toString());
