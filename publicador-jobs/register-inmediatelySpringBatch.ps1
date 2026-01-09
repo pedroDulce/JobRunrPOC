@@ -4,12 +4,12 @@ Write-Host "==========================================="
 
 $baseUrl = "http://localhost:8080"
 
-Write-Host "Programando spring batch inmediato con enfoque asincrono en su ejecución..." -ForegroundColor Yellow
+Write-Host "Programando Spring Batch JOB inmediato con orden de ejecución por eventos Kafka (modo asincrono)..." -ForegroundColor Yellow
 $scheduleBody = @{
     jobName = "springBatchSample"
     businessDomain = "job-executor-service"
     heartBeatLapse = "5"
-    jobType = "BATCH_PROCESSING"
+    jobType = "ASYNCRONOUS"
     priority = "MEDIUM"
     parameters = @{
         "processDate" = "2025-12-04"
@@ -37,11 +37,10 @@ try {
 # 4. Dashboard
 Write-Host "URLs del sistema..." -ForegroundColor Yellow
 Write-Host "  Dashboard JobRunr: http://localhost:8000/dashboard" -ForegroundColor Cyan
-Write-Host "  API Docs: http://localhost:8080/swagger-ui.html" -ForegroundColor Cyan
 
 # 5. Esperar y verificar
-Write-Host "`Esperando 2 segundos..." -ForegroundColor Yellow
-Start-Sleep -Seconds 2
+Write-Host "`Esperando 1 segundo..." -ForegroundColor Yellow
+Start-Sleep -Seconds 1
 
 Write-Host "===========================================" -ForegroundColor Cyan
 Write-Host "REGISTRO COMPLETADO" -ForegroundColor Green
