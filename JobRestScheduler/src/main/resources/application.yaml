@@ -26,6 +26,7 @@ spring:
 dispatcher:
   batch-runner-endpoint: /batch-runner/run/{jobName}
   batch-status-batch-endpoint: /batch-runner/status/{executionId}
+  batch-heartbeats-frequency: 15
 
 jobrunr:
   job-scheduler:

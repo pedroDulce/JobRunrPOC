@@ -353,7 +353,7 @@ public class SpringBatchJob {
                     public void beforeWrite(Chunk<? extends ProcessedTransaction> items) {
                         log.debug("...voy a procesar {} transacciones...", items.size());
                         try {
-                            Thread.sleep(40000); // metemos un retardo para que tarde más el proceso de escritura
+                            Thread.sleep(60000); // metemos un retardo para que tarde más el proceso de escritura
                         } catch (InterruptedException e) {
                             throw new RuntimeException(e);
                         }

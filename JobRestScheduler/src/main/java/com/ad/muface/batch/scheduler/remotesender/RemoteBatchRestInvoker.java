@@ -21,7 +21,7 @@ import java.util.concurrent.TimeUnit;
 @Service
 @Slf4j
 @RequiredArgsConstructor
-public class RemoteJobRestInvoker {
+public class RemoteBatchRestInvoker {
 
     private final RestTemplate restJobResultTemplate;
 
@@ -35,6 +35,9 @@ public class RemoteJobRestInvoker {
     private String batchRunnerEndpoint;
     @Value("${dispatcher.batch-status-batch-endpoint}")
     private String batchStatusEndpoint;
+
+    @Value("${dispatcher.batch-heartbeats-frequency}")
+    private int batchHeartbeatsFrequency;
 
     /**
      * Envía un JobRequest al batch runner para ejecución
@@ -130,7 +133,7 @@ public class RemoteJobRestInvoker {
                 taskId,           // Identificador único
                 statusCheckTask,  // La tarea a ejecutar
                 0,                // Delay inicial (0 = inmediato)
-                5,                // Cada 5 segundos
+                batchHeartbeatsFrequency,                // Cada x segundos
                 TimeUnit.SECONDS
         );
 

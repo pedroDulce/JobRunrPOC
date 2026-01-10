@@ -1,7 +1,7 @@
 package com.ad.muface.batch.scheduler.controller;
 
 import com.ad.muface.batch.dto.JobRequest;
-import com.ad.muface.batch.scheduler.remotesender.RemoteJobRestInvoker;
+import com.ad.muface.batch.scheduler.remotesender.RemoteBatchRestInvoker;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,7 +25,7 @@ import java.util.UUID;
 @Slf4j
 public class JobSchedulerController {
 
-    private final RemoteJobRestInvoker remoteJobRestInvoker;
+    private final RemoteBatchRestInvoker remoteBatchRestInvoker;
 
     private final JobScheduler jobScheduler;
 
@@ -38,7 +38,7 @@ public class JobSchedulerController {
         jobScheduler.schedule(
                 jobId,
                 Instant.now(),
-                () -> remoteJobRestInvoker.invocarJobRemoto(request, null)
+                () -> remoteBatchRestInvoker.invocarJobRemoto(request, null)
         );
 
         Map<String, Object> response = new HashMap<>();
@@ -69,7 +69,7 @@ public class JobSchedulerController {
         jobScheduler.scheduleRecurrently(
                 request.getJobName(),
                 request.getCronExpression(),
-                () -> remoteJobRestInvoker.invocarJobRemoto(request, null)
+                () -> remoteBatchRestInvoker.invocarJobRemoto(request, null)
         );
         Map<String, Object> response = new HashMap<>();
         response.put("jobId", jobId);
