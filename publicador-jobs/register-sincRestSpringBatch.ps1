@@ -9,7 +9,6 @@ $scheduleBody = @{
     jobName = "dailyTransactionBatchJob"
     businessDomain = "job-executor-service"
     urlMicroDestino = "http://localhost:8082"
-    heartBeatLapse = "5"
     jobType = "SYNCRONOUS"
     priority = "MEDIUM"
     parameters = @{

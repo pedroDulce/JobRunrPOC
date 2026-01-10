@@ -8,7 +8,6 @@ Write-Host "Programando Spring Batch JOB remoto con orden de ejecución por even
 $scheduleBody = @{
     jobName = "springBatchSample"
     businessDomain = "job-executor-service"
-    heartBeatLapse = "5"
     jobType = "ASYNCRONOUS"
     priority = "MEDIUM"
     cronExpression = "0 */30 * * * *"
