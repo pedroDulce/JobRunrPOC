@@ -8,7 +8,7 @@ Write-Host "Lanzando Spring Batch JOB remoto de forma inmediata con orden de eje
 $scheduleBody = @{
     jobName = "dailyTransactionBatchJob"
     businessDomain = "job-executor-service"
-    jobType = "ASYNCRONOUS"
+    jobType = "EVENTBROKER_BASED"
     priority = "MEDIUM"
     parameters = @{
         "processDate" = "2025-12-04"

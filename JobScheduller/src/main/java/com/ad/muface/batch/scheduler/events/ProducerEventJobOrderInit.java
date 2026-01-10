@@ -64,7 +64,7 @@ public class ProducerEventJobOrderInit {
                 .setHeader("job-id", request.getJobId())
                 .setHeader("jobrunr-job-id", request.getJobId())
                 // Headers de routing/filtrado
-                .setHeader("job-type", request.getJobType())          // "ASYNCRONOUS"
+                .setHeader("job-type", request.getJobType())          // "EVENTBROKER_BASED" | "REST_MODE"
                 .setHeader("business-domain", request.getBusinessDomain()) // Ej: "application-job-demo"
                 .setHeader("target-batch", request.getJobName()) // Ej: "ResumenDiarioClientesAsync"
 

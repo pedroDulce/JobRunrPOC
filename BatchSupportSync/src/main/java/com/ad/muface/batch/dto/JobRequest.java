@@ -25,7 +25,7 @@ public class JobRequest implements Serializable {
     private LocalDateTime scheduledAt;
 
     // Campos para routing/filtrado
-    private String jobType;           // Ej: "SYNCRONOUS" o "ASYNCRONOUS"
+    private String jobType;           // Ej: "EVENTBROKER_BASED" o "REST_BASED"
     private String priority;          // Ej: "HIGH", "MEDIUM", "LOW"
     private LocalDateTime ttl;        // Time To Live (expiración)
 

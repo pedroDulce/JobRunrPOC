@@ -26,7 +26,7 @@ public class JobRequest implements Serializable {
     private Integer heartBeatLapse = 5; // en segundos, valor por defecto para la PoC
 
     // Campos para routing/filtrado
-    private String jobType;           // Ej: "SYNCRONOUS" o "ASYNCRONOUS"
+    private String jobType;           // Ej: "EVENTBROKER_BASED" o "REST_BASED"
     private String priority;          // Ej: "HIGH", "MEDIUM", "LOW"
     private LocalDateTime ttl;        // Time To Live (expiración)
 
