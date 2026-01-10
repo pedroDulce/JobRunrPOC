@@ -59,7 +59,7 @@ public class SpringBatchJob {
     @Bean
     public ApplicationRunner disableBatchAutoStart(JobLauncher jobLauncher, JobRepository jobRepository) {
         return args -> {
-            log.info("Batch auto-start deshabilitado. Los jobs se ejecutarán cuando se invoquen de forma síncrona o asíncrona.");
+            log.info("Batch auto-start deshabilitado. Los jobs se ejecutarán cuando se invoquen de forma síncrona.");
         };
     }
 

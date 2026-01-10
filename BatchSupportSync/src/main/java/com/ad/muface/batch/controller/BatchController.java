@@ -13,25 +13,30 @@ import org.springframework.batch.core.JobParameters;
 import org.springframework.batch.core.configuration.JobRegistry;
 import org.springframework.batch.core.explore.JobExplorer;
 import org.springframework.batch.core.launch.JobLauncher;
+import org.springframework.core.task.TaskExecutor;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Duration;
+import java.time.LocalDateTime;
 
 @RestController
 @Slf4j
 @RequestMapping("/batch-runner")
 public class BatchController {
 
-    private final JobLauncher jobLauncher;
+    private final JobLauncher asyncJobLauncher;
     private final JobRegistry jobRegistry;
     private final JobExplorer jobExplorer;
-    private final ObjectMapper objectMapper; // P
+    private final ObjectMapper objectMapper;
+    private final TaskExecutor taskExecutor;
 
-    public BatchController(JobLauncher jobLauncher, JobRegistry jobRegistry, JobExplorer jobExplorer, ObjectMapper objectMapper) {
-        this.jobLauncher = jobLauncher;
+    public BatchController(JobLauncher jobLauncher, JobRegistry jobRegistry, JobExplorer jobExplorer,
+                           ObjectMapper objectMapper, TaskExecutor taskExecutor) {
+        this.asyncJobLauncher = jobLauncher;
         this.jobRegistry = jobRegistry;
         this.jobExplorer = jobExplorer;
         this.objectMapper = objectMapper;
+        this.taskExecutor = taskExecutor;
     }
 
     @PostMapping("/run/{jobName}")
@@ -57,31 +62,23 @@ public class BatchController {
         // Construir parámetros del job
         JobParameters jobParameters = JobMetadataUtils.createJobRequestParameters(jobRequest);
 
-        JobExecution exec = jobLauncher.run(job, jobParameters);
+        JobExecution exec = asyncJobLauncher.run(job, jobParameters);
 
         JobResult jobResult = new JobResult();
-        if (exec != null) {
-            jobResult.setExecutionId(exec.getId());
-            jobResult.setJobId(exec.getJobParameters().getString("externalJobId"));
-            jobResult.setJobName(exec.getJobInstance().getJobName());
-            jobResult.setMessage("Iniciado el batch-job-remoto con id: " + jobResult.getExecutionId());
+        jobResult.setExecutionId(exec.getId());
+        jobResult.setJobId(jobRequest.getJobId());
+        jobResult.setJobName(jobRequest.getJobName());
+        jobResult.setMessage("Iniciado el batch-job-remoto con id: " + jobResult.getExecutionId());
 
-            log.info("BatchController::Iniciado el batch-job-remoto con id {} ", jobResult.getExecutionId());
-            log.info("BatchController::Iniciado el batch-job del batch registrado en JobScheduler como {} , ID {}: ",
-                    jobResult.getJobName(),
-                    jobResult.getJobId());
+        log.info("BatchController::Iniciado el batch-job-remoto con id {} ", jobResult.getExecutionId());
+        log.info("BatchController::Iniciado el batch-job del batch registrado en JobScheduler como {} , ID {}: ",
+                jobResult.getJobName(),
+                jobResult.getJobId());
+        jobResult.setStatus(JobStatusEnum.IN_PROGRESS);
+        jobResult.setStartedAt(LocalDateTime.now());
 
-            BatchStatus status = exec.getStatus();
-            if (status == BatchStatus.COMPLETED) {
-                jobResult.setStatus(JobStatusEnum.COMPLETED);
-            } else if (status == BatchStatus.FAILED || status == BatchStatus.STOPPED) {
-                jobResult.setStatus(JobStatusEnum.FAILED);
-            } else {
-                jobResult.setStatus(JobStatusEnum.IN_PROGRESS);
-            }
-            jobResult.setStartedAt(exec.getStartTime());
-        }
         return jobResult;
+
     }
 
     @GetMapping("/status/{executionId}")

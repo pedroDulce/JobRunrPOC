@@ -8,7 +8,7 @@ Write-Host "Programando Spring Batch JOB remoto con orden de ejecución API Rest
 $scheduleBody = @{
     jobName = "dailyTransactionBatchJob"
     businessDomain = "job-executor-service"
-    urlDestino = "http://localhost:8082"
+    urlMicroDestino = "http://localhost:8082"
     heartBeatLapse = "5"
     jobType = "SYNCRONOUS"
     cronExpression = "0 */5 * * * *"
