@@ -37,36 +37,6 @@ public class RemoteJobRestInvoker {
     private String batchStatusEndpoint;
 
     /**
-     * Método que inicia el monitoreo periódico
-     */
-    public void iniciarMonitoreo(Long executionId, JobRequest jobRequest) {
-        String taskId = "monitor-" + executionId + "-" + jobRequest.getJobId();
-
-        // Crear un Runnable que ejecute tu método
-        Runnable statusCheckTask = () -> {
-            try {
-                // Tu método se ejecuta aquí, el retorno se ignora
-                // porque ya lo procesas internamente
-                this.getJobExecutionStatus(executionId, jobRequest);
-            } catch (Exception e) {
-                // Manejo adicional si es necesario
-                log.error("Error en verificación de estado para ejecución: {}", executionId, e);
-            }
-        };
-
-        // Iniciar el heartbeat con el Runnable
-        statusbeatService.startHeartbeat(
-                taskId,           // Identificador único
-                statusCheckTask,  // La tarea a ejecutar
-                0,                // Delay inicial (0 = inmediato)
-                5,                // Cada 5 segundos
-                TimeUnit.SECONDS
-        );
-
-        log.info("Monitoreo iniciado para ejecución: {}", executionId);
-    }
-
-    /**
      * Envía un JobRequest al batch runner para ejecución
      *
      * @param jobRequest Objeto JobRequest con todos los parámetros
@@ -125,25 +95,7 @@ public class RemoteJobRestInvoker {
                     jobResult.setStartedAt(LocalDateTime.now());
                     jobManagementOperations.updateJobRunrStatus(job, jobResult);
 
-                    // Crear un Runnable que ejecute tu método
-                    Runnable statusCheckTask = () -> {
-                        try {
-                            // Tu método se ejecuta aquí, el retorno se ignora
-                            // porque ya lo procesas internamente
-                            this.getJobExecutionStatus(executionId, jobRequest);
-                        } catch (Exception e) {
-                            // Manejo adicional si es necesario
-                            log.error("Error en verificación de estado para ejecución: {}", executionId, e);
-                        }
-                    };
-
-                    statusbeatService.startHeartbeat(
-                            jobRequest.getJobId(),  // jobId
-                            statusCheckTask,        // Runnable
-                            0,                      // initialDelay
-                            5,                      // period
-                            TimeUnit.SECONDS        // unit
-                    );
+                    iniciarMonitoreo(executionId, jobRequest);
                 }
             }
 
@@ -155,6 +107,36 @@ public class RemoteJobRestInvoker {
             throw new RuntimeException("Error al enviar job al batch runner", e);
         }
     }
+
+    /**
+     * Método que inicia el monitoreo periódico
+     */
+    public void iniciarMonitoreo(Long executionId, JobRequest jobRequest) {
+        String taskId = "monitor-" + executionId + "-" + jobRequest.getJobId();
+
+        // Crear un Runnable que ejecute tu método
+        Runnable statusCheckTask = () -> {
+            try {
+                // Tu método se ejecuta aquí, el retorno se ignora porque ya lo procesas internamente
+                this.getJobExecutionStatus(executionId, jobRequest);
+            } catch (Exception e) {
+                // Manejo adicional si es necesario
+                log.error("Error en verificación de estado para ejecución: {}", executionId, e);
+            }
+        };
+
+        // Iniciar el heartbeat con el Runnable
+        statusbeatService.startHeartbeat(
+                taskId,           // Identificador único
+                statusCheckTask,  // La tarea a ejecutar
+                0,                // Delay inicial (0 = inmediato)
+                5,                // Cada 5 segundos
+                TimeUnit.SECONDS
+        );
+
+        log.info("Monitoreo iniciado para ejecución: {}", executionId);
+    }
+
 
     /**
      * Método para validar el JobRequest
