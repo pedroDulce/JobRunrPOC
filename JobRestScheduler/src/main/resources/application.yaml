@@ -1,0 +1,64 @@
+server:
+  port: 8080
+
+spring:
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.batch.BatchAutoConfiguration
+
+  application:
+    name: batch-scheduler-service
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/batch-scheduler
+    username: batch_user
+    password: batch_password
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 5
+      minimum-idle: 2
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      pool-name: Batch-Hikari
+
+
+dispatcher:
+  batch-runner-endpoint: /batch-runner/run/{jobName}
+  batch-status-batch-endpoint: /batch-runner/status/{executionId}
+
+jobrunr:
+  job-scheduler:
+    enabled: true
+  background-job-server:
+    enabled: true
+    poll-interval-in-seconds: 15
+    worker-count: 10
+    retry-policy:
+      max-retries: 0
+  dashboard:
+    enabled: true
+    port: 8000
+    username: admin
+    password: admin
+  database:
+    type: sql
+    skip-create: false
+
+resilience4j.circuitbreaker:
+  instances:
+    remoteJob:
+      register-health-indicator: true
+      sliding-window-size: 10
+      minimum-number-of-calls: 5
+      permitted-number-of-calls-in-half-open-state: 3
+      automatic-transition-from-open-to-half-open-enabled: true
+      wait-duration-in-open-state: 5s
+      failure-rate-threshold: 50
+      event-consumer-buffer-size: 10
+
+logging:
+  level:
+    org.jobrunr: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{40} - %msg%n%ex{0}" # Sin stack trace

@@ -1,0 +1,40 @@
+package com.ad.muface.batch;
+
+import io.swagger.v3.oas.annotations.OpenAPIDefinition;
+import io.swagger.v3.oas.annotations.info.Info;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.FilterType;
+import org.springframework.scheduling.annotation.EnableAsync;
+
+
+@SpringBootApplication
+@ComponentScan(
+        basePackages = "com.ad.muface.batch.scheduler",
+        excludeFilters = @ComponentScan.Filter(
+                type = FilterType.ASSIGNABLE_TYPE,
+                classes = com.ad.muface.batch.config.DataSourceConfig.class
+        )
+)
+@EnableAsync
+@OpenAPIDefinition(
+        info = @Info(
+                title = "Batch Scheduler API",
+                version = "1.0",
+                description = "API para programación y gestión de jobs batch"
+        )
+)
+public class JobRestSchedulerApplication {
+
+    public static void main(String[] args) {
+        SpringApplication.run(JobRestSchedulerApplication.class, args);
+        System.out.println("\n=========================================");
+        System.out.println("🚀 Batch Scheduler Service INICIADO");
+        System.out.println("=========================================");
+        System.out.println("📊 Dashboard: http://localhost:8000");
+        System.out.println("🔗 API Docs: http://localhost:8080/swagger-ui.html");
+        System.out.println("🏥 Health: http://localhost:8080/api/v1/health");
+        System.out.println("=========================================\n");
+    }
+}

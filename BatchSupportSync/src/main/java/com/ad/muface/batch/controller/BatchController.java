@@ -74,7 +74,9 @@ public class BatchController {
         log.info("BatchController::Iniciado el batch-job del batch registrado en JobScheduler como {} , ID {}: ",
                 jobResult.getJobName(),
                 jobResult.getJobId());
-        jobResult.setStatus(JobStatusEnum.IN_PROGRESS);
+        jobResult.setStatus(exec.getStatus() == BatchStatus.STARTED || exec.getStatus() == BatchStatus.STARTING ?
+                JobStatusEnum.IN_PROGRESS
+                : JobStatusEnum.FAILED);
         jobResult.setStartedAt(LocalDateTime.now());
 
         return jobResult;

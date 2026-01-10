@@ -24,6 +24,7 @@
     <module>BatchSupport</module>
       <module>BatchDemo</module>
     <module>BatchSupportSync</module>
+      <module>JobRestScheduler</module>
   </modules>
 
   <properties>
