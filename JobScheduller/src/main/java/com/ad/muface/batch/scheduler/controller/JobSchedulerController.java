@@ -1,8 +1,8 @@
 package com.ad.muface.batch.scheduler.controller;
 
 import com.ad.muface.batch.dto.JobRequest;
-import com.ad.muface.batch.scheduler.remotesender.BatchJobDispatcher;
-import com.ad.muface.batch.scheduler.remotesender.JobOrderInitRemoteBatch;
+import com.ad.muface.batch.scheduler.remotesender.RemoteJobRestInvoker;
+import com.ad.muface.batch.scheduler.events.ProducerEventJobOrderInit;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,8 +26,8 @@ import java.util.UUID;
 @Slf4j
 public class JobSchedulerController {
 
-    private final JobOrderInitRemoteBatch publisherForJobs;
-    private final BatchJobDispatcher batchJobDispatcher;
+    private final ProducerEventJobOrderInit publisherForJobs;
+    private final RemoteJobRestInvoker remoteJobRestInvoker;
     private final JobScheduler jobScheduler;
 
     @PostMapping("/inmediate-remote-sync")
@@ -39,13 +39,13 @@ public class JobSchedulerController {
         jobScheduler.schedule(
                 jobId,
                 Instant.now(),
-                () -> batchJobDispatcher.invocarJobRemoto(request, null)
+                () -> remoteJobRestInvoker.invocarJobRemoto(request, null)
         );
 
         Map<String, Object> response = new HashMap<>();
         response.put("jobId", jobId.toString());
         response.put("jobName", request.getJobName());
-        response.put("jobUrlBaseDestino", request.getUrlDestino());
+        response.put("jobUrlBaseDestino", request.getUrlMicroDestino());
         response.put("jobType", request.getJobType());
         response.put("business-domain", request.getBusinessDomain());
         response.put("status", "SCHEDULED");
@@ -70,7 +70,7 @@ public class JobSchedulerController {
         jobScheduler.scheduleRecurrently(
                 request.getJobName(),
                 request.getCronExpression(),
-                () -> batchJobDispatcher.invocarJobRemoto(request, null)
+                () -> remoteJobRestInvoker.invocarJobRemoto(request, null)
         );
         Map<String, Object> response = new HashMap<>();
         response.put("jobId", jobId);
@@ -99,7 +99,7 @@ public class JobSchedulerController {
         jobScheduler.scheduleRecurrently(
                 request.getJobName(),
                 request.getCronExpression(),
-                () -> batchJobDispatcher.invocarJobRemoto(request, null)
+                () -> remoteJobRestInvoker.invocarJobRemoto(request, null)
         );
         Map<String, Object> response = new HashMap<>();
         response.put("jobId", jobId);

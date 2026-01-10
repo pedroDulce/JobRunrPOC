@@ -21,5 +21,6 @@ public class RestTemplateConfig {
         factory.setReadTimeout(timeout);
         return factory;
     }
+
 }
 

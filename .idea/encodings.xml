@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="Encoding">
+    <file url="file://$PROJECT_DIR$/BatchDemo/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/BatchSupport/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/BatchSupportSync/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/CommonJobUtils/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/JobDemo/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/JobScheduller/src/main/java" charset="UTF-8" />

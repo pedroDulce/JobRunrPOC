@@ -1,0 +1,41 @@
+server:
+  port: 8082
+
+spring:
+
+  config:
+    import: "classpath:/batch-common.yaml"
+
+  application:
+    name: job-executor-service
+
+  datasource:
+    business:
+      jdbc-url: jdbc:postgresql://localhost:5432/job_demo_database
+      username: postgres
+      password: postgres
+      driver-class-name: org.postgresql.Driver
+      hikari:
+        maximum-pool-size: 10
+        minimum-idle: 5
+        connection-timeout: 30000
+        idle-timeout: 600000
+        max-lifetime: 1800000
+        pool-name: Business-Hikari
+
+  # Configuración JPA para el DataSource BBDD
+  jpa:
+    hibernate:
+      ddl-auto: update    # crea/actualiza tablas automáticamente
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+app:
+  batch:
+    chunk-size: 100
+    grid-size: 4 # esto es el num. de particiones/hilos
+    partition-size: 25  # Ajusta el tamanio rango de cada partition.
+    # En nuestro particionador, cuando gridSize>1, no se usa partitionSize para calcular el rango, sino idsPerPartition calculado a partir del rango total en BBDD.
+    mail:
+      enabled: false # Cambiar a true cuando configures email

@@ -22,6 +22,8 @@
     <module>JobDemo</module>
     <module>JobScheduller</module>
     <module>BatchSupport</module>
+      <module>BatchDemo</module>
+    <module>BatchSupportSync</module>
   </modules>
 
   <properties>

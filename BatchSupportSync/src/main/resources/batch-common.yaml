@@ -1,0 +1,32 @@
+spring:
+
+  batch:
+    job:
+      enabled: false  # Para que solo se ejecute un job cuando es invocado, de forma asíncrona o síncrona
+    jdbc:
+      initialize-schema: always # Crea las tablas BATCH_* la primera vez
+    # Configuración del pool
+    task:
+      execution:
+        pool:
+          core-size: 10
+          max-size: 20
+          queue-capacity: 500
+
+  datasource:
+    batch:
+      jdbc-url: jdbc:postgresql://localhost:5432/spring_batch_db
+      username: spring_batch_user
+      password: spring_batch_password
+      driver-class-name: org.postgresql.Driver
+      hikari:
+        maximum-pool-size: 5
+        minimum-idle: 2
+        connection-timeout: 30000
+        idle-timeout: 600000
+        max-lifetime: 1800000
+        pool-name: Batch-Hikari
+
+logging:
+  level:
+    com.ad.muface.batch: DEBUG

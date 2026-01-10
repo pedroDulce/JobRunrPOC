@@ -1,4 +1,4 @@
-package com.ad.muface.batch.scheduler.remotesender;
+package com.ad.muface.batch.scheduler.events;
 
 import com.ad.muface.batch.dto.JobRequest;
 import com.ad.muface.batch.scheduler.service.JobManagementOperations;
@@ -21,7 +21,7 @@ import java.util.concurrent.CompletableFuture;
 @RequiredArgsConstructor
 @Slf4j
 @Component
-public class JobOrderInitRemoteBatch {
+public class ProducerEventJobOrderInit {
     @Value("${kafka.topics.job-requests}")
     private String jobRequestsTopic;
     private final KafkaTemplate<String, JobRequest> kafkaTemplate;

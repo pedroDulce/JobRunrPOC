@@ -40,6 +40,7 @@ spring:
 
 dispatcher:
   batch-runner-endpoint: /batch-runner/run/{jobName}
+  batch-status-batch-endpoint: /batch-runner/status/{executionId}
 
 jobrunr:
   job-scheduler:
