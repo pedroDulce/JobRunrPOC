@@ -46,7 +46,7 @@ public class RemoteBatchRestInvoker {
      * @param jobContext Objeto JobContext de JobRunr
      * @return Respuesta del batch runner
      */
-    @Job(name= "Sync Job")
+    @Job(name= "Batch Job remoto")
     public JobResult invocarJobRemoto(JobRequest jobRequest, JobContext jobContext) {
         try {
             jobRequest.setJobId(jobContext.getJobId().toString());
